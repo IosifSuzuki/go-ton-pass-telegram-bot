@@ -15,5 +15,6 @@ FROM alpine:latest
 WORKDIR /
 
 COPY --from=BuildStage app/main /main
+COPY --from=BuildStage app/locales /locales
 
 CMD ["./main"]
