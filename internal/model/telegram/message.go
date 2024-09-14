@@ -5,4 +5,5 @@ type Message struct {
 	From User   `json:"from"`
 	Text string `json:"text"`
 	Chat Chat   `json:"chat"`
+	Date int64  `json:"date"`
 }

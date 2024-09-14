@@ -1,0 +1,10 @@
+{
+  "select_preferred_language": "Виберіть бажану мову інтерфейсу",
+  "balance": "Баланс",
+  "buy_number": "Купити номер",
+  "help": "Допомога",
+  "history": "Історія",
+  "language": "Мова",
+  "unknown_telegram_command": "Невідома команда телеграм",
+  "unknown_error": "Невідома помилка"
+}
