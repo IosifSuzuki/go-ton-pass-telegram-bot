@@ -1,10 +1,14 @@
 {
-  "select_preferred_language": "Vyberte preferovaný jazyk",
   "balance": "Zostatok",
   "buy_number": "Kúpiť číslo",
   "help": "Pomoc",
   "history": "História",
   "language": "Jazyk",
-  "unknown_telegram_command": "Neznámy telegramový príkaz",
-  "unknown_error": "Neznáma chyba"
+  "short_description": "Jednoducho získajte SMS aktivačné kódy pre rôzne online služby. Stačí si vyžiadať kód pre služby ako Google, Instagram a Facebook, a rýchlo a efektívne obdržíte svoje overovacie SMS.",
+  "unknown_telegram_command": "Neznámy telegram príkaz",
+  "select_preferred_language": "Vyberte preferovaný jazyk",
+  "select_preferred_currency": "Vyberte preferovanú menu",
+  "unknown_error": "Neznáma chyba",
+  "help_cmd_text": "Tento bot vám umožňuje jednoducho posielať SMS aktivačné kódy na overenie účtov pre obľúbené online služby.\n\n \uD83D\uDCCB Dostupné príkazy:\n/start – Začnite interagovať s botom",
+  "unknown_cmd_text": "Nepodporovaný príkaz\n\nĽutujeme, príkaz, ktorý ste zadali, nie je rozpoznaný. Uistite sa, že používate jeden z podporovaných príkazov. Napíšte /help, aby ste si pozreli zoznam dostupných príkazov a ich používanie."
 }

@@ -1,10 +1,14 @@
 {
-  "select_preferred_language": "Please select your preferred language",
   "balance": "Balance",
   "buy_number": "Buy Number",
   "help": "Help",
   "history": "History",
   "language": "Language",
+  "short_description": "Easily receive SMS activation codes for various online services. Simply request a code for services like Google, Instagram, and Facebook, and get your verification SMS quickly and efficiently.",
   "unknown_telegram_command": "Unknown telegram command",
-  "unknown_error": "Unknown error"
+  "select_preferred_language": "Please select your preferred language",
+  "select_preferred_currency": "Please select your preferred currency",
+  "unknown_error": "Unknown error",
+  "help_cmd_text": "This bot allows you to easily send SMS activation codes to verify accounts for popular online services.\n\n \uD83D\uDCCB Available Commands:\n/start – Start interacting with the bot",
+  "unknown_cmd_text": "Unsupported Command\n\nSorry, the command you entered is not recognized. Please make sure to use one of the supported commands. Type /help to see the list of available commands and how to use them."
 }

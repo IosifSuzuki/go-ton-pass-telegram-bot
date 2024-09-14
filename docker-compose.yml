@@ -8,6 +8,28 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    depends_on:
+      - cache
     restart: unless-stopped
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
+    networks:
+      - my_network
+  cache:
+    container_name: "redis-cache-service"
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - my_network
+    volumes:
+      - cache:/data
+
+volumes:
+  cache:
+    driver: local
+
+networks:
+  my_network:
+    driver: bridge

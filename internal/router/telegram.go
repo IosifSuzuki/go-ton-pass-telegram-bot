@@ -5,23 +5,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"go-ton-pass-telegram-bot/internal/container"
+	"go-ton-pass-telegram-bot/internal/controller"
 	"go-ton-pass-telegram-bot/internal/model/app"
 	"go-ton-pass-telegram-bot/internal/model/telegram"
-	"go-ton-pass-telegram-bot/internal/service/telegramBot"
+	"go-ton-pass-telegram-bot/internal/service"
 	"go-ton-pass-telegram-bot/pkg/logger"
 	"io"
 	"net/http"
 )
 
 type TelegramRouter struct {
-	container   container.Container
-	telegramBot telegramBot.Bot
+	container  container.Container
+	controller controller.TelegramBotController
 }
 
-func NewTelegramRouter(container container.Container) *TelegramRouter {
+func NewTelegramRouter(container container.Container, sessionService service.SessionService) *TelegramRouter {
 	return &TelegramRouter{
-		container:   container,
-		telegramBot: telegramBot.NewTelegramBot(container),
+		container:  container,
+		controller: controller.NewTelegramBotController(container, sessionService),
 	}
 }
 
@@ -33,7 +34,7 @@ func (t *TelegramRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	resp, err := t.telegramBot.Processing(&update)
+	resp, err := t.controller.Serve(&update)
 	if err != nil {
 		log.Fatal("fail to processing message from bot", logger.FError(err))
 		w.WriteHeader(http.StatusInternalServerError)

@@ -5,14 +5,27 @@ import (
 	"go-ton-pass-telegram-bot/internal/utils"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 )
 
 type Config interface {
 	Address() string
 	TelegramBotToken() string
+	Redis() Redis
 	AvailableCurrencies() []app.Currency
 	AvailableLanguages() []app.Language
+}
+
+type Redis struct {
+	Host     string
+	Port     string
+	Password string
+	DataBase int
+}
+
+func (r *Redis) Address() string {
+	return net.JoinHostPort(r.Host, r.Port)
 }
 
 type config struct {
@@ -23,6 +36,7 @@ type config struct {
 	allLanguages          []app.Language
 	localizedLanguageTags []string
 	availableCurrencies   []app.Currency
+	redis                 Redis
 }
 
 func (c *config) Address() string {
@@ -48,6 +62,10 @@ func (c *config) AvailableLanguages() []app.Language {
 	})
 }
 
+func (c *config) Redis() Redis {
+	return c.redis
+}
+
 func ParseConfig() (Config, error) {
 	config := config{
 		serverAddr:       os.Getenv("SERVER_HOST"),
@@ -71,13 +89,25 @@ func ParseConfig() (Config, error) {
 	config.allLanguages = allLanguages
 	config.localizedLanguageTags = localizedLanguageTags
 	config.availableCurrencies = availableCurrencies
+	config.redis = ParseRedisConfig()
 
 	return &config, nil
 }
 
+func ParseRedisConfig() Redis {
+	redis := Redis{
+		Host:     os.Getenv("REDIS_HOST"),
+		Port:     os.Getenv("REDIS_PORT"),
+		Password: os.Getenv("REDIS_PASSWORD"),
+	}
+	dataBase, _ := strconv.Atoi(os.Getenv("REDIS_DATABASE"))
+	redis.DataBase = dataBase
+	return redis
+}
+
 func fetchAllLanguages() ([]app.Language, error) {
 	var allLanguages = make([]app.Language, 0)
-	if err := utils.MarshalFromFile("/jsons/languages.json", allLanguages); err != nil {
+	if err := utils.MarshalFromFile("/jsons/languages.json", &allLanguages); err != nil {
 		return nil, err
 	}
 	return allLanguages, nil
@@ -85,7 +115,7 @@ func fetchAllLanguages() ([]app.Language, error) {
 
 func fetchAvailableCurrencies() ([]app.Currency, error) {
 	var availableCurrencies = make([]app.Currency, 0)
-	if err := utils.MarshalFromFile("/jsons/currencies.json", availableCurrencies); err != nil {
+	if err := utils.MarshalFromFile("/jsons/currencies.json", &availableCurrencies); err != nil {
 		return nil, err
 	}
 	return availableCurrencies, nil
