@@ -7,6 +7,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"go-ton-pass-telegram-bot/internal/config"
 	"go-ton-pass-telegram-bot/internal/container"
+	"go-ton-pass-telegram-bot/internal/model/app"
 	"go-ton-pass-telegram-bot/internal/router"
 	"go-ton-pass-telegram-bot/internal/service"
 	"go-ton-pass-telegram-bot/pkg/logger"
@@ -26,6 +27,7 @@ func main() {
 	box := container.NewContainer(l, conf, bundle)
 	redisClient := configureAndConnectToRedisClient(conf)
 	sessionService := service.NewSessionService(box, redisClient)
+	updateTelegramBotProfile(box)
 	RunServer(box, sessionService)
 }
 
@@ -68,5 +70,34 @@ func RunServer(box container.Container, sessionService service.SessionService) {
 	}
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatalln(err)
+	}
+}
+
+func updateTelegramBotProfile(box container.Container) {
+	telegramService := service.NewTelegramBot(box)
+
+	go setBotCommands(telegramService)
+	go setBotDescription(telegramService)
+	go setBotName(telegramService)
+}
+
+func setBotCommands(telegramService service.TelegramBotService) {
+	model := telegramService.GetSetMyCommands()
+	if err := telegramService.SendResponse(model, app.SetMyCommandsTelegramMethod); err != nil {
+		log.Println("setBotCommands: ", err)
+	}
+}
+
+func setBotDescription(telegramService service.TelegramBotService) {
+	model := telegramService.GetSetMyDescription()
+	if err := telegramService.SendResponse(model, app.SetMyDescriptionTelegramMethod); err != nil {
+		log.Println("setBotDescription: ", err)
+	}
+}
+
+func setBotName(telegramService service.TelegramBotService) {
+	model := telegramService.GetSetMyName()
+	if err := telegramService.SendResponse(model, app.SetMyNameTelegramMethod); err != nil {
+		log.Println("setMyName: ", err)
 	}
 }

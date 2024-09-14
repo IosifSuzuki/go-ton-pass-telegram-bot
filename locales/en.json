@@ -1,9 +1,13 @@
 {
+  "bot_name": "TonPass",
+  "bot_description": "\uD83C\uDF1F *Welcome to TonPass Bot!* \uD83C\uDF1F\n\nWe're thrilled to have you here! \uD83D\uDE0A\nTonPass provides *instant and secure* SMS activation services\nfor all your online verification needs. \uD83C\uDF10\n\nReady to get started? Just choose an option below and experience\nseamless, reliable SMS verifications.\n\n\uD83D\uDD25 *Quick, Simple, and Efficient!* \uD83D\uDD25",
   "balance": "Balance",
   "buy_number": "Buy Number",
   "help": "Help",
   "history": "History",
   "language": "Language",
+  "start_cmd_short_description_cmd": "Start interacting with the bot",
+  "help_cmd_short_description_cmd": "Provide instructions for interacting with the bot",
   "short_description": "Easily receive SMS activation codes for various online services. Simply request a code for services like Google, Instagram, and Facebook, and get your verification SMS quickly and efficiently.",
   "unknown_telegram_command": "Unknown telegram command",
   "select_preferred_language": "Please select your preferred language",

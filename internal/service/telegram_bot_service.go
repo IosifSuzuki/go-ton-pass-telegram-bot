@@ -1,11 +1,15 @@
 package service
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"go-ton-pass-telegram-bot/internal/container"
 	"go-ton-pass-telegram-bot/internal/model/app"
 	"go-ton-pass-telegram-bot/internal/model/telegram"
 	"go-ton-pass-telegram-bot/pkg/logger"
+	"io"
+	"net/http"
 	"strings"
 )
 
@@ -13,6 +17,11 @@ type TelegramBotService interface {
 	ParseTelegramCommand(update *telegram.Update) (app.TelegramCommand, error)
 	GetLanguagesReplyKeyboardMarkup() *telegram.ReplyKeyboardMarkup
 	GetCurrenciesReplyKeyboardMarkup() *telegram.ReplyKeyboardMarkup
+	SendResponse(model any, method app.TelegramMethod) error
+
+	GetSetMyCommands() *telegram.SetMyCommands
+	GetSetMyDescription() *telegram.SetMyDescription
+	GetSetMyName() *telegram.SetMyName
 }
 
 type telegramBotService struct {
@@ -59,6 +68,33 @@ func (t *telegramBotService) GetLanguagesReplyKeyboardMarkup() *telegram.ReplyKe
 	}
 }
 
+func (t *telegramBotService) GetSetMyCommands() *telegram.SetMyCommands {
+	startBotCommand := telegram.BotCommand{
+		Command:     "start",
+		Description: t.container.GetLocalizer("en").LocalizedString("start_cmd_short_description_cmd"),
+	}
+	helpBotCommand := telegram.BotCommand{
+		Command:     "help",
+		Description: t.container.GetLocalizer("en").LocalizedString("help_cmd_short_description_cmd"),
+	}
+	return &telegram.SetMyCommands{Commands: []telegram.BotCommand{
+		startBotCommand,
+		helpBotCommand,
+	}}
+}
+
+func (t *telegramBotService) GetSetMyDescription() *telegram.SetMyDescription {
+	return &telegram.SetMyDescription{
+		Description: t.container.GetLocalizer("en").LocalizedString("bot_description"),
+	}
+}
+
+func (t *telegramBotService) GetSetMyName() *telegram.SetMyName {
+	return &telegram.SetMyName{
+		Name: t.container.GetLocalizer("en").LocalizedString("bot_name"),
+	}
+}
+
 func (t *telegramBotService) GetCurrenciesReplyKeyboardMarkup() *telegram.ReplyKeyboardMarkup {
 	log := t.container.GetLogger()
 	currencies := t.container.GetConfig().AvailableCurrencies()
@@ -80,6 +116,42 @@ func (t *telegramBotService) GetCurrenciesReplyKeyboardMarkup() *telegram.ReplyK
 		OneTimeKeyboard:           true,
 		Placeholder:               nil,
 	}
+}
+
+func (t *telegramBotService) SendResponse(model any, method app.TelegramMethod) error {
+	log := t.container.GetLogger()
+	telegramBotToken := t.container.GetConfig().TelegramBotToken()
+	const baseTelegramAPI = "https://api.telegram.org/bot"
+	path := fmt.Sprintf("%s%s/%s", baseTelegramAPI, telegramBotToken, method)
+	sendBody, err := json.Marshal(model)
+	if err != nil {
+		log.Error("fail to encode telegram message", logger.FError(err))
+		return err
+	}
+	bodyBuffer := bytes.NewBuffer(sendBody)
+	resp, err := http.Post(path, "application/json", bodyBuffer)
+	if err != nil {
+		log.Error("fail to send data to telegram server", logger.FError(err))
+		return err
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Error("fail to read body from telegram server", logger.FError(err))
+		return err
+	}
+	var result *telegram.Result
+	if err := json.Unmarshal(body, &result); err != nil {
+		log.Error("fail to decode body from telegram server", logger.FError(err))
+		return err
+	}
+	if !result.OK {
+		log.Error("telegram server return without status code ok",
+			logger.F("description", result.Description),
+			logger.F("json", string(sendBody)),
+		)
+		return app.TelegramResponseBotError
+	}
+	return nil
 }
 
 func parseTelegramCommand(text string) (app.TelegramCommand, error) {

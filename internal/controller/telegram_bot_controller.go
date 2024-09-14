@@ -10,7 +10,7 @@ import (
 )
 
 type TelegramBotController interface {
-	Serve(update *telegram.Update) (*telegram.SendResponse, error)
+	Serve(update *telegram.Update) error
 }
 
 type telegramBotController struct {
@@ -27,7 +27,7 @@ func NewTelegramBotController(container container.Container, sessionService serv
 	}
 }
 
-func (t *telegramBotController) Serve(update *telegram.Update) (*telegram.SendResponse, error) {
+func (t *telegramBotController) Serve(update *telegram.Update) error {
 	log := t.container.GetLogger()
 	ctx := context.Background()
 	userID := update.Message.From.ID
@@ -46,7 +46,7 @@ func (t *telegramBotController) Serve(update *telegram.Update) (*telegram.SendRe
 	}
 	if err != nil && telegramCmd == app.UnknownTelegramCommand {
 		if err := t.sessionService.ClearBotStateForUser(ctx, userID); err != nil {
-			return nil, err
+			return err
 		}
 		return t.unknownTelegramCommandHandler(ctx, update)
 	}
@@ -62,72 +62,72 @@ func (t *telegramBotController) Serve(update *telegram.Update) (*telegram.SendRe
 	return t.helpTelegramCommandHandler(ctx, update)
 }
 
-func (t *telegramBotController) startTelegramCommandHandler(ctx context.Context, update *telegram.Update) (*telegram.SendResponse, error) {
+func (t *telegramBotController) startTelegramCommandHandler(ctx context.Context, update *telegram.Update) error {
 	userID := update.Message.From.ID
 	langTag := update.Message.From.LanguageCode
 
 	if err := t.sessionService.SaveBotStateForUser(ctx, app.SelectLanguageBotState, userID); err != nil {
-		return nil, err
+		return err
 	}
 	resp := telegram.SendResponse{}
 	resp.ChatId = update.Message.Chat.ID
 	resp.Text = t.container.GetLocalizer(langTag).LocalizedString("select_preferred_language")
 	resp.ReplyMarkup = t.telegramBotService.GetLanguagesReplyKeyboardMarkup()
-	return &resp, nil
+	return t.telegramBotService.SendResponse(resp, app.SendMessageTelegramMethod)
 }
 
-func (t *telegramBotController) helpTelegramCommandHandler(ctx context.Context, update *telegram.Update) (*telegram.SendResponse, error) {
+func (t *telegramBotController) helpTelegramCommandHandler(ctx context.Context, update *telegram.Update) error {
 	userID := update.Message.From.ID
 	langTag := update.Message.From.LanguageCode
 
 	if err := t.sessionService.ClearBotStateForUser(ctx, userID); err != nil {
-		return nil, err
+		return err
 	}
 
 	resp := telegram.SendResponse{}
 	resp.ChatId = update.Message.Chat.ID
 	resp.Text = t.container.GetLocalizer(langTag).LocalizedString("help_cmd_text")
-	return &resp, nil
+	return t.telegramBotService.SendResponse(resp, app.SendMessageTelegramMethod)
 }
 
-func (t *telegramBotController) unknownTelegramCommandHandler(ctx context.Context, update *telegram.Update) (*telegram.SendResponse, error) {
+func (t *telegramBotController) unknownTelegramCommandHandler(ctx context.Context, update *telegram.Update) error {
 	userID := update.Message.From.ID
 	langTag := update.Message.From.LanguageCode
 
 	if err := t.sessionService.ClearBotStateForUser(ctx, userID); err != nil {
-		return nil, err
+		return err
 	}
 
 	resp := telegram.SendResponse{}
 	resp.ChatId = update.Message.Chat.ID
 	resp.Text = t.container.GetLocalizer(langTag).LocalizedString("unknown_cmd_text")
-	return &resp, nil
+	return t.telegramBotService.SendResponse(resp, app.SendMessageTelegramMethod)
 }
 
-func (t *telegramBotController) userSelectedLanguageHandler(ctx context.Context, update *telegram.Update) (*telegram.SendResponse, error) {
+func (t *telegramBotController) userSelectedLanguageHandler(ctx context.Context, update *telegram.Update) error {
 	userID := update.Message.From.ID
 	langTag := update.Message.From.LanguageCode
 
 	if err := t.sessionService.SaveBotStateForUser(ctx, app.SelectCurrencyBotState, userID); err != nil {
-		return nil, err
+		return err
 	}
 	resp := telegram.SendResponse{}
 	resp.ChatId = update.Message.Chat.ID
 	resp.Text = t.container.GetLocalizer(langTag).LocalizedString("select_preferred_currency")
 	resp.ReplyMarkup = t.telegramBotService.GetCurrenciesReplyKeyboardMarkup()
-	return &resp, nil
+	return t.telegramBotService.SendResponse(resp, app.SendMessageTelegramMethod)
 }
 
-func (t *telegramBotController) userSelectedCurrencyHandler(ctx context.Context, update *telegram.Update) (*telegram.SendResponse, error) {
+func (t *telegramBotController) userSelectedCurrencyHandler(ctx context.Context, update *telegram.Update) error {
 	userID := update.Message.From.ID
 	langTag := update.Message.From.LanguageCode
 
 	if err := t.sessionService.ClearBotStateForUser(ctx, userID); err != nil {
-		return nil, err
+		return err
 	}
 
 	resp := telegram.SendResponse{}
 	resp.ChatId = update.Message.Chat.ID
 	resp.Text = t.container.GetLocalizer(langTag).LocalizedString("short_description")
-	return &resp, nil
+	return t.telegramBotService.SendResponse(resp, app.SendMessageTelegramMethod)
 }
