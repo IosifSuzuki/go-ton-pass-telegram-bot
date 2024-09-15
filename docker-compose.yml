@@ -10,6 +10,7 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - cache
+      - database
     restart: unless-stopped
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
@@ -25,9 +26,23 @@ services:
       - my_network
     volumes:
       - cache:/data
+  database:
+    env_file:
+      - .env
+    container_name: "ton-pass-db"
+    image: postgres:alpine
+    restart: always
+    networks:
+      - my_network
+    ports:
+      - "5432:5432"
+    volumes:
+      - data:/var/lib/postgresql/data
 
 volumes:
   cache:
+    driver: local
+  data:
     driver: local
 
 networks:

@@ -14,5 +14,6 @@
   "select_preferred_currency": "Vyberte preferovanú menu",
   "unknown_error": "Neznáma chyba",
   "help_cmd_text": "Tento bot vám umožňuje jednoducho posielať SMS aktivačné kódy na overenie účtov pre obľúbené online služby.\n\n 📋 Dostupné príkazy:\n/start – Začnite interagovať s botom",
-  "unknown_cmd_text": "Nepodporovaný príkaz\n\nĽutujeme, príkaz, ktorý ste zadali, nie je rozpoznaný. Uistite sa, že používate jeden z podporovaných príkazov. Napíšte /help, aby ste si pozreli zoznam dostupných príkazov a ich používanie."
+  "unknown_cmd_text": "Nepodporovaný príkaz\n\nĽutujeme, príkaz, ktorý ste zadali, nie je rozpoznaný. Uistite sa, že používate jeden z podporovaných príkazov. Napíšte /help, aby ste si pozreli zoznam dostupných príkazov a ich používanie.",
+  "your_balance_is": "Váš zostatok je: "
 }

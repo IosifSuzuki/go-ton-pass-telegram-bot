@@ -51,6 +51,9 @@ func NewTelegramBot(container container.Container) TelegramBotService {
 }
 
 func (t *telegramBotService) ParseCallbackQueryCommand(update *telegram.Update) app.CallbackQueryCommand {
+	if update.CallbackQuery == nil {
+		return app.NotCallbackQueryCommand
+	}
 	callbackQueryCommand := update.CallbackQuery.Data
 	switch callbackQueryCommand {
 	case balanceCallbackQueryCmdText:

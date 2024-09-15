@@ -5,7 +5,6 @@ import (
 	"go-ton-pass-telegram-bot/internal/container"
 	telegramController "go-ton-pass-telegram-bot/internal/controller/telegram"
 	"go-ton-pass-telegram-bot/internal/model/telegram"
-	"go-ton-pass-telegram-bot/internal/service"
 	"go-ton-pass-telegram-bot/pkg/logger"
 	"net/http"
 )
@@ -15,10 +14,10 @@ type TelegramRouter struct {
 	controller telegramController.BotController
 }
 
-func NewTelegramRouter(container container.Container, sessionService service.SessionService) *TelegramRouter {
+func NewTelegramRouter(container container.Container, telegramBotController telegramController.BotController) *TelegramRouter {
 	return &TelegramRouter{
 		container:  container,
-		controller: telegramController.NewBotController(container, sessionService),
+		controller: telegramBotController,
 	}
 }
 

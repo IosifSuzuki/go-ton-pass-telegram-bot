@@ -13,6 +13,7 @@ type Config interface {
 	Address() string
 	TelegramBotToken() string
 	Redis() Redis
+	DB() DB
 	AvailableCurrencies() []app.Currency
 	AvailableLanguages() []app.Language
 }
@@ -22,6 +23,15 @@ type Redis struct {
 	Port     string
 	Password string
 	DataBase int
+}
+
+type DB struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	Name     string
+	Mode     string
 }
 
 func (r *Redis) Address() string {
@@ -37,6 +47,7 @@ type config struct {
 	localizedLanguageTags []string
 	availableCurrencies   []app.Currency
 	redis                 Redis
+	db                    DB
 }
 
 func (c *config) Address() string {
@@ -66,6 +77,10 @@ func (c *config) Redis() Redis {
 	return c.redis
 }
 
+func (c *config) DB() DB {
+	return c.db
+}
+
 func ParseConfig() (Config, error) {
 	config := config{
 		serverAddr:       os.Getenv("SERVER_HOST"),
@@ -90,6 +105,7 @@ func ParseConfig() (Config, error) {
 	config.localizedLanguageTags = localizedLanguageTags
 	config.availableCurrencies = availableCurrencies
 	config.redis = ParseRedisConfig()
+	config.db = ParseDBConfig()
 
 	return &config, nil
 }
@@ -103,6 +119,17 @@ func ParseRedisConfig() Redis {
 	dataBase, _ := strconv.Atoi(os.Getenv("REDIS_DATABASE"))
 	redis.DataBase = dataBase
 	return redis
+}
+
+func ParseDBConfig() DB {
+	return DB{
+		Host:     os.Getenv("POSTGRES_HOST"),
+		Port:     os.Getenv("POSTGRES_PORT"),
+		User:     os.Getenv("POSTGRES_USER"),
+		Password: os.Getenv("POSTGRES_PASSWORD"),
+		Name:     os.Getenv("POSTGRES_DB"),
+		Mode:     os.Getenv("POSTGRES_MODE"),
+	}
 }
 
 func fetchAllLanguages() ([]app.Language, error) {

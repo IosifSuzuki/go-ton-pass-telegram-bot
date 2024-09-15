@@ -2,12 +2,16 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"fmt"
+	_ "github.com/lib/pq"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/redis/go-redis/v9"
 	"go-ton-pass-telegram-bot/internal/config"
 	"go-ton-pass-telegram-bot/internal/container"
 	"go-ton-pass-telegram-bot/internal/model/app"
+	"go-ton-pass-telegram-bot/internal/repository"
 	"go-ton-pass-telegram-bot/internal/router"
 	"go-ton-pass-telegram-bot/internal/service"
 	"go-ton-pass-telegram-bot/pkg/logger"
@@ -22,13 +26,17 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	db, err := openConnectionToDB(conf.DB())
+	if err != nil {
+		log.Fatalln(err)
+	}
 	bundle := loadBundle()
 	l := logger.NewLogger(logger.DEV, logger.LevelDebug)
 	box := container.NewContainer(l, conf, bundle)
 	redisClient := configureAndConnectToRedisClient(conf)
 	sessionService := service.NewSessionService(box, redisClient)
-	updateTelegramBotProfile(box)
-	RunServer(box, sessionService)
+	//updateTelegramBotProfile(box)
+	RunServer(box, db, sessionService)
 }
 
 func configureAndConnectToRedisClient(conf config.Config) *redis.Client {
@@ -51,17 +59,9 @@ func configureAndConnectToRedisClient(conf config.Config) *redis.Client {
 	return client
 }
 
-func loadBundle() *i18n.Bundle {
-	bundle := i18n.NewBundle(language.English)
-	bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
-	bundle.MustLoadMessageFile("locales/en.json")
-	bundle.MustLoadMessageFile("locales/sk.json")
-	bundle.MustLoadMessageFile("locales/uk.json")
-	return bundle
-}
-
-func RunServer(box container.Container, sessionService service.SessionService) {
-	r := router.PrepareAndConfigureRouter(box, sessionService)
+func RunServer(box container.Container, conn *sql.DB, sessionService service.SessionService) {
+	profileRepository := repository.NewProfileRepository(conn)
+	r := router.PrepareAndConfigureRouter(box, sessionService, profileRepository)
 	server := &http.Server{
 		Handler:      r,
 		Addr:         box.GetConfig().Address(),
@@ -71,6 +71,33 @@ func RunServer(box container.Container, sessionService service.SessionService) {
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatalln(err)
 	}
+}
+
+func loadBundle() *i18n.Bundle {
+	bundle := i18n.NewBundle(language.English)
+	bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
+	bundle.MustLoadMessageFile("locales/en.json")
+	bundle.MustLoadMessageFile("locales/sk.json")
+	bundle.MustLoadMessageFile("locales/uk.json")
+	return bundle
+}
+
+func openConnectionToDB(db config.DB) (*sql.DB, error) {
+	psqlConn := fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		db.Host,
+		db.Port,
+		db.User,
+		db.Password,
+		db.Name,
+		db.Mode,
+	)
+	conn, err := sql.Open("postgres", psqlConn)
+	if err != nil {
+		return conn, err
+	}
+	err = conn.Ping()
+	return conn, err
 }
 
 func updateTelegramBotProfile(box container.Container) {
