@@ -7,6 +7,7 @@ import (
 	"go-ton-pass-telegram-bot/internal/container"
 	"go-ton-pass-telegram-bot/internal/model/app"
 	"go-ton-pass-telegram-bot/internal/model/telegram"
+	"go-ton-pass-telegram-bot/internal/utils"
 	"go-ton-pass-telegram-bot/pkg/logger"
 	"io"
 	"net/http"
@@ -15,8 +16,10 @@ import (
 
 type TelegramBotService interface {
 	ParseTelegramCommand(update *telegram.Update) (app.TelegramCommand, error)
+	ParseCallbackQueryCommand(update *telegram.Update) app.CallbackQueryCommand
 	GetLanguagesReplyKeyboardMarkup() *telegram.ReplyKeyboardMarkup
 	GetCurrenciesReplyKeyboardMarkup() *telegram.ReplyKeyboardMarkup
+	GetMenuInlineKeyboardMarkup(langTag string) *telegram.InlineKeyboardMarkup
 	SendResponse(model any, method app.TelegramMethod) error
 
 	GetSetMyCommands() *telegram.SetMyCommands
@@ -33,9 +36,35 @@ const (
 	helpCmdText  = "/help"
 )
 
+const (
+	balanceCallbackQueryCmdText   = "balance"
+	buyNumberCallbackQueryCmdText = "buy_number"
+	historyCallbackQueryCmdText   = "history"
+	helpCallbackQueryCmdText      = "help"
+	languageCallbackQueryCmdText  = "language"
+)
+
 func NewTelegramBot(container container.Container) TelegramBotService {
 	return &telegramBotService{
 		container: container,
+	}
+}
+
+func (t *telegramBotService) ParseCallbackQueryCommand(update *telegram.Update) app.CallbackQueryCommand {
+	callbackQueryCommand := update.CallbackQuery.Data
+	switch callbackQueryCommand {
+	case balanceCallbackQueryCmdText:
+		return app.BalanceCallbackQueryCommand
+	case buyNumberCallbackQueryCmdText:
+		return app.BuyNumberCallbackQueryCommand
+	case historyCallbackQueryCmdText:
+		return app.HistoryCallbackQueryCommand
+	case helpCallbackQueryCmdText:
+		return app.HelpCallbackQueryCommand
+	case languageCallbackQueryCmdText:
+		return app.LanguageCallbackQueryCommand
+	default:
+		return app.NotCallbackQueryCommand
 	}
 }
 
@@ -65,6 +94,39 @@ func (t *telegramBotService) GetLanguagesReplyKeyboardMarkup() *telegram.ReplyKe
 		ResizeKeyboard:            true,
 		OneTimeKeyboard:           true,
 		Placeholder:               nil,
+	}
+}
+
+func (t *telegramBotService) GetMenuInlineKeyboardMarkup(langTag string) *telegram.InlineKeyboardMarkup {
+	localizer := t.container.GetLocalizer(langTag)
+	inlineKeyboardButtons := [][]telegram.InlineKeyboardButton{
+		{
+			telegram.InlineKeyboardButton{
+				Text: localizer.LocalizedString("balance"),
+				Data: utils.NewString(balanceCallbackQueryCmdText),
+			},
+			telegram.InlineKeyboardButton{
+				Text: localizer.LocalizedString("buy_number"),
+				Data: utils.NewString(buyNumberCallbackQueryCmdText),
+			},
+		},
+		{
+			telegram.InlineKeyboardButton{
+				Text: localizer.LocalizedString("help"),
+				Data: utils.NewString(helpCallbackQueryCmdText),
+			},
+			telegram.InlineKeyboardButton{
+				Text: localizer.LocalizedString("history"),
+				Data: utils.NewString(historyCallbackQueryCmdText),
+			},
+			telegram.InlineKeyboardButton{
+				Text: localizer.LocalizedString("language"),
+				Data: utils.NewString(languageCallbackQueryCmdText),
+			},
+		},
+	}
+	return &telegram.InlineKeyboardMarkup{
+		InlineKeyboard: inlineKeyboardButtons,
 	}
 }
 
