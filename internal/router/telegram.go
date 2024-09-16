@@ -22,6 +22,9 @@ func NewTelegramRouter(container container.Container, telegramBotController tele
 }
 
 func (t *TelegramRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		w.WriteHeader(http.StatusOK)
+	}()
 	log := t.container.GetLogger()
 	var update telegram.Update
 	if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
@@ -35,5 +38,4 @@ func (t *TelegramRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 }

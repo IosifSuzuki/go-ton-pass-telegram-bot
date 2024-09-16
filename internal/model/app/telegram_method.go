@@ -8,4 +8,5 @@ const (
 	SetMyDescriptionTelegramMethod                   = "setMyDescription"
 	SetMyNameTelegramMethod                          = "setMyName"
 	AnswerCallbackQueryTelegramMethod                = "answerCallbackQuery"
+	SendPhotoTelegramMethod                          = "sendPhoto"
 )

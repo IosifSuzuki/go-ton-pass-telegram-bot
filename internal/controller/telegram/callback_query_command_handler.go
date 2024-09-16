@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-ton-pass-telegram-bot/internal/model/app"
 	"go-ton-pass-telegram-bot/internal/model/telegram"
+	"go-ton-pass-telegram-bot/internal/utils"
 	"go-ton-pass-telegram-bot/pkg/logger"
 )
 
@@ -26,7 +27,6 @@ func (b *botController) balanceCallbackQueryCommandHandler(ctx context.Context, 
 		ID:        callbackQuery.ID,
 		Text:      &balanceResponse,
 		ShowAlert: true,
-		CacheTime: 10,
 	}
 	return b.telegramBotService.SendResponse(answerCallbackQuery, app.AnswerCallbackQueryTelegramMethod)
 }
@@ -34,9 +34,8 @@ func (b *botController) balanceCallbackQueryCommandHandler(ctx context.Context, 
 func (b *botController) unsupportedCallbackQueryCommandHandle(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
 	answerCallbackQuery := telegram.AnswerCallbackQuery{
 		ID:        callbackQuery.ID,
-		Text:      nil,
+		Text:      utils.NewString(""),
 		ShowAlert: false,
-		CacheTime: 10,
 	}
 	return b.telegramBotService.SendResponse(answerCallbackQuery, app.AnswerCallbackQueryTelegramMethod)
 }

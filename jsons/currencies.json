@@ -1,14 +1,32 @@
 [
   {
-    "abbr": "USDT"
+    "name": "United States Dollar",
+    "abbr": "USD",
+    "symbol": "$"
   },
   {
-    "abbr": "TON"
+    "name": "Euro",
+    "abbr": "EUR",
+    "symbol": "€"
   },
   {
-    "abbr": "BTC"
+    "name": "British Pound Sterling",
+    "abbr": "GBP",
+    "symbol": "£"
   },
   {
-    "abbr": "ETH"
+    "name": "British Pound Sterling",
+    "abbr": "GBP",
+    "symbol": "£"
+  },
+  {
+    "name": "Ukrainian Hryvnia",
+    "abbr": "UAH",
+    "symbol": "₴"
+  },
+  {
+    "name": "Czech Koruna",
+    "abbr": "CZK",
+    "symbol": "Kč"
   }
 ]

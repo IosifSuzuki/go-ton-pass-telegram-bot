@@ -167,7 +167,7 @@ func (t *telegramBotService) GetCurrenciesReplyKeyboardMarkup() *telegram.ReplyK
 	log.Debug("AvailableCurrencies from configuration", logger.F("AvailableCurrencies", currencies))
 	keyboardButtons := make([][]telegram.KeyboardButton, 0, len(currencies))
 	for _, currency := range currencies {
-		buttonText := fmt.Sprintf("%s", currency.ABBR)
+		buttonText := fmt.Sprintf("%s %s", currency.Symbol, currency.ABBR)
 		keyboardButtons = append(keyboardButtons, []telegram.KeyboardButton{
 			{
 				Text: buttonText,
@@ -193,6 +193,10 @@ func (t *telegramBotService) SendResponse(model any, method app.TelegramMethod) 
 		log.Error("fail to encode telegram message", logger.FError(err))
 		return err
 	}
+	log.Debug("send response to telegram servers",
+		logger.F("message", string(sendBody)),
+		logger.F("path", path),
+	)
 	bodyBuffer := bytes.NewBuffer(sendBody)
 	resp, err := http.Post(path, "application/json", bodyBuffer)
 	if err != nil {

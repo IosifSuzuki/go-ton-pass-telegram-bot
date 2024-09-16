@@ -1,5 +1,7 @@
 package app
 
 type Currency struct {
-	ABBR string `json:"abbr"`
+	Name   string `json:"name"`
+	ABBR   string `json:"abbr"`
+	Symbol string `json:"symbol"`
 }

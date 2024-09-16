@@ -32,14 +32,14 @@ func NewBotController(container container.Container, sessionService service.Sess
 }
 
 func (b *botController) Serve(update *telegram.Update) error {
+	log := b.container.GetLogger()
+	log.Debug("receive telegram message", logger.F("update", update))
 	if isEmpty(update) {
 		return app.EmptyUpdateError
 	}
 
-	log := b.container.GetLogger()
 	ctx := context.Background()
 	telegramID := getTelegramID(update)
-	log.Debug("receive telegram message", logger.F("update", update))
 
 	if err := b.recordTelegramProfile(ctx, update); err != nil {
 		return err

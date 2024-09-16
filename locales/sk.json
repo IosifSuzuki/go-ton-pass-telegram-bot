@@ -1,6 +1,7 @@
 {
   "bot_name": "TonPass",
-  "bot_description": "🌟 *Vitajte v TonPass Bote!* 🌟\n\nSme radi, že vás tu máme! 😊\nTonPass poskytuje *okamžité a bezpečné* SMS aktivačné služby\npre všetky vaše online overovacie potreby. 🌐\n\nSte pripravení začať? Stačí si vybrať možnosť nižšie a zažiť\nplynulé, spoľahlivé SMS overovania.\n\n🔥 *Rýchle, jednoduché a efektívne!* 🔥",
+  "bot_markdown": "🌟 Vitajte v TonPass Bote! 🌟\n\nSme radi, že vás tu máme! 😊\nTonPass poskytuje okamžité a bezpečné SMS aktivačné služby\npre všetky vaše online overovacie potreby. 🌐\n\nSte pripravení začať? Stačí si vybrať možnosť nižšie a zažiť\nplynulé, spoľahlivé SMS overovania.\n\n🔥 Rýchle, jednoduché a efektívne! 🔥",
+  "bot_markdown_description": "🌟 *Vitajte v TonPass Bote\\!* 🌟\n\nSme radi, že vás tu máme\\! 😊\nTonPass poskytuje *okamžité a bezpečné* SMS aktivačné služby\npre všetky vaše online overovacie potreby. 🌐\n\nSte pripravení začať? Stačí si vybrať možnosť nižšie a zažiť\nplynulé, spoľahlivé SMS overovania.\n\n🔥 *Rýchle, jednoduché a efektívne\\!* 🔥",
   "balance": "Zostatok",
   "buy_number": "Kúpiť číslo",
   "help": "Pomoc",
@@ -10,7 +11,7 @@
   "help_cmd_short_description_cmd": "Poskytuje pokyny na interakciu s botom",
   "short_description": "Jednoducho získajte SMS aktivačné kódy pre rôzne online služby. Stačí si vyžiadať kód pre služby ako Google, Instagram a Facebook a rýchlo a efektívne získate svoje overovacie SMS.",
   "unknown_telegram_command": "Neznámy telegram príkaz",
-  "select_preferred_language": "Vyberte preferovaný jazyk",
+  "select_preferred_language": "Vyberte preferovaný jazyk bota",
   "select_preferred_currency": "Vyberte preferovanú menu",
   "unknown_error": "Neznáma chyba",
   "help_cmd_text": "Tento bot vám umožňuje jednoducho posielať SMS aktivačné kódy na overenie účtov pre obľúbené online služby.\n\n 📋 Dostupné príkazy:\n/start – Začnite interagovať s botom",
