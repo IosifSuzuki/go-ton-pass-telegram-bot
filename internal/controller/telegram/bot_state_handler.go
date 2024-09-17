@@ -25,23 +25,15 @@ func (b *botController) userSelectedLanguageBotStageHandler(ctx context.Context,
 	if err := b.profileRepository.SetPreferredLanguage(ctx, telegramID, selectedLanguage.Code); err != nil {
 		return err
 	}
-	if err := b.sessionService.SaveBotStateForUser(ctx, app.SelectCurrencyBotState, telegramID); err != nil {
+	if err := b.messageWelcome(ctx, update); err != nil {
 		return err
 	}
-
-	langTag := b.getLanguageCode(ctx, update.Message.From)
-
-	resp := telegram.SendResponse{}
-	resp.ChatID = update.Message.Chat.ID
-	resp.Text = b.container.GetLocalizer(langTag).LocalizedString("select_preferred_currency")
-	resp.ReplyMarkup = b.telegramBotService.GetCurrenciesReplyKeyboardMarkup()
-	return b.telegramBotService.SendResponse(resp, app.SendMessageTelegramMethod)
+	return b.messageToSelectCurrency(ctx, update)
 }
 
 func (b *botController) userSelectedCurrencyBotStageHandler(ctx context.Context, update *telegram.Update) error {
 	telegramID := update.Message.From.ID
 	selectedCurrencyText := update.Message.Text
-	langTag := b.getLanguageCode(ctx, update.Message.From)
 
 	availableCurrencies := b.container.GetConfig().AvailableCurrencies()
 	filteredCurrencies := utils.Filter(availableCurrencies, func(currency app.Currency) bool {
@@ -52,16 +44,11 @@ func (b *botController) userSelectedCurrencyBotStageHandler(ctx context.Context,
 		return app.UnknownLanguageError
 	}
 	selectedCurrency := filteredCurrencies[0]
-
 	if err := b.profileRepository.SetPreferredCurrency(ctx, telegramID, selectedCurrency.ABBR); err != nil {
 		return err
 	}
 	if err := b.sessionService.ClearBotStateForUser(ctx, telegramID); err != nil {
 		return err
 	}
-	resp := telegram.SendResponse{}
-	resp.ChatID = update.Message.Chat.ID
-	resp.Text = b.container.GetLocalizer(langTag).LocalizedString("short_description")
-	resp.ReplyMarkup = b.telegramBotService.GetMenuInlineKeyboardMarkup(langTag)
-	return b.telegramBotService.SendResponse(resp, app.SendMessageTelegramMethod)
+	return b.messageMainMenu(ctx, update)
 }
