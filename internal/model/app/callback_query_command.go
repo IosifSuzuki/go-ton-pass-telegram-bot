@@ -9,4 +9,5 @@ const (
 	HelpCallbackQueryCommand
 	HistoryCallbackQueryCommand
 	LanguageCallbackQueryCommand
+	MainMenuCallbackQueryCommand
 )

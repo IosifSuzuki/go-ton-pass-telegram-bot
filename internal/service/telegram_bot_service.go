@@ -20,6 +20,7 @@ type TelegramBotService interface {
 	GetLanguagesReplyKeyboardMarkup() *telegram.ReplyKeyboardMarkup
 	GetCurrenciesReplyKeyboardMarkup() *telegram.ReplyKeyboardMarkup
 	GetMenuInlineKeyboardMarkup(langTag string) *telegram.InlineKeyboardMarkup
+	GetBackToMenuInlineKeyboardMarkup(langTag string) *telegram.InlineKeyboardMarkup
 	SendResponse(model any, method app.TelegramMethod) error
 
 	GetSetMyCommands() *telegram.SetMyCommands
@@ -42,6 +43,7 @@ const (
 	historyCallbackQueryCmdText   = "history"
 	helpCallbackQueryCmdText      = "help"
 	languageCallbackQueryCmdText  = "language"
+	mainMenuCallbackQueryCmdText  = "main_menu"
 )
 
 func NewTelegramBot(container container.Container) TelegramBotService {
@@ -66,13 +68,18 @@ func (t *telegramBotService) ParseCallbackQueryCommand(update *telegram.Update) 
 		return app.HelpCallbackQueryCommand
 	case languageCallbackQueryCmdText:
 		return app.LanguageCallbackQueryCommand
+	case mainMenuCallbackQueryCmdText:
+		return app.MainMenuCallbackQueryCommand
 	default:
 		return app.NotCallbackQueryCommand
 	}
 }
 
 func (t *telegramBotService) ParseTelegramCommand(update *telegram.Update) (app.TelegramCommand, error) {
-	text := update.Message.Text
+	var text = ""
+	if update.Message != nil {
+		text = *update.Message.Text
+	}
 	return parseTelegramCommand(text)
 }
 
@@ -125,6 +132,21 @@ func (t *telegramBotService) GetMenuInlineKeyboardMarkup(langTag string) *telegr
 			telegram.InlineKeyboardButton{
 				Text: localizer.LocalizedString("language"),
 				Data: utils.NewString(languageCallbackQueryCmdText),
+			},
+		},
+	}
+	return &telegram.InlineKeyboardMarkup{
+		InlineKeyboard: inlineKeyboardButtons,
+	}
+}
+
+func (t *telegramBotService) GetBackToMenuInlineKeyboardMarkup(langTag string) *telegram.InlineKeyboardMarkup {
+	localizer := t.container.GetLocalizer(langTag)
+	inlineKeyboardButtons := [][]telegram.InlineKeyboardButton{
+		{
+			telegram.InlineKeyboardButton{
+				Text: localizer.LocalizedString("back"),
+				Data: utils.NewString(mainMenuCallbackQueryCmdText),
 			},
 		},
 	}

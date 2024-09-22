@@ -1,20 +1,26 @@
 {
   "bot_name": "TonPass",
-  "bot_description": "\uD83C\uDF1F Welcome to TonPass Bot! \uD83C\uDF1F\n\nWe're thrilled to have you here! \uD83D\uDE0A\nTonPass provides instant and secure SMS activation services\nfor all your online verification needs. \uD83C\uDF10\n\nReady to get started? Just choose an option below and experience\nseamless, reliable SMS verifications.\n\n\uD83D\uDD25 Quick, Simple, and Efficient\\! \uD83D\uDD25",
-  "bot_markdown_description": "\uD83C\uDF1F *Welcome to TonPass Bot\\!* \uD83C\uDF1F\n\nWe're thrilled to have you here\\! \uD83D\uDE0A\nTonPass provides *instant and secure* SMS activation services\nfor all your online verification needs\\. \uD83C\uDF10\n\nReady to get started? Just choose an option below and experience\nseamless, reliable SMS verifications\\.\n\n\uD83D\uDD25 *Quick, Simple, and Efficient\\!* \uD83D\uDD25",
+  "back": "Back",
+  "bot_description": "🌟 Welcome to the TonPass Bot! 🌟\n\nWe're glad to have you here! 😊\nTonPass provides instant and secure SMS activation services\nfor all your online verification needs. 🌐\n\nReady to get started? Simply choose an option below and experience\nsmooth, reliable SMS verifications.\n\n🔥 Fast, simple, and efficient! 🔥",
+  "bot_markdown_description": "🌟 *Welcome to the TonPass Bot\\!* 🌟\n\nWe're glad to have you here\\! 😊\nTonPass provides *instant and secure* SMS activation services\nfor all your online verification needs\\. 🌐\n\nReady to get started? Simply choose an option below and experience\nsmooth, reliable SMS verifications\\.\n\n🔥 *Fast, simple, and efficient\\!* 🔥",
   "balance": "Balance",
   "buy_number": "Buy Number",
   "help": "Help",
   "history": "History",
   "language": "Language",
   "start_cmd_short_description_cmd": "Start interacting with the bot",
-  "help_cmd_short_description_cmd": "Provide instructions for interacting with the bot",
-  "short_description": "Easily receive SMS activation codes for various online services. Simply request a code for services like Google, Instagram, and Facebook, and get your verification SMS quickly and efficiently.",
+  "help_cmd_short_description_cmd": "Provides instructions for interacting with the bot",
+  "short_description": "Easily obtain SMS activation codes for various online services. Simply request a code for services like Google, Instagram, and Facebook, and quickly and efficiently receive your verification SMS.",
   "unknown_telegram_command": "Unknown telegram command",
-  "select_preferred_language": "Please select bot language",
-  "select_preferred_currency": "Please select your preferred currency",
+  "select_preferred_language": "Select preferred bot language",
+  "select_preferred_currency": "Select preferred currency",
   "unknown_error": "Unknown error",
-  "help_cmd_text": "This bot allows you to easily send SMS activation codes to verify accounts for popular online services.\n\n \uD83D\uDCCB Available Commands:\n/start – Start interacting with the bot",
-  "unknown_cmd_text": "Unsupported Command\n\nSorry, the command you entered is not recognized. Please make sure to use one of the supported commands. Type /help to see the list of available commands and how to use them.",
-  "your_balance_is": "Your balance is"
+  "help_cmd_text": "This bot allows you to easily send SMS activation codes to verify accounts for popular online services.\n\n 📋 Available commands:\n/start – Start interacting with the bot",
+  "unknown_cmd_text": "Unsupported command\n\nSorry, the command you entered is not recognized. Please ensure you are using one of the supported commands. Type /help to view the list of available commands and their usage.",
+  "your_balance_is": {
+    "description": "Your balance is",
+    "one": "Your balance is {{ .Balance }} {{ .Currency }}",
+    "other": "Your balance is {{ .Balance }} {{ .Currency }}"
+  },
+  "development_process": "\uD83D\uDEA7 Feature Under Development \uD83D\uDEA7"
 }

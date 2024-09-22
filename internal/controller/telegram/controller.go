@@ -39,9 +39,13 @@ func (b *botController) Serve(update *telegram.Update) error {
 	}
 
 	ctx := context.Background()
-	telegramID := getTelegramID(update)
-
+	telegramID, err := getTelegramID(update)
+	if err != nil {
+		log.Error("can't get telegram id", logger.FError(err))
+		return err
+	}
 	if err := b.recordTelegramProfile(ctx, update); err != nil {
+		log.Error("recordTelegramProfile has failed", logger.FError(err))
 		return err
 	}
 
@@ -53,13 +57,13 @@ func (b *botController) Serve(update *telegram.Update) error {
 		return b.helpTelegramCommandHandler(ctx, update)
 	}
 	if err != nil && telegramCmd == app.UnknownTelegramCommand {
-		if err := b.sessionService.ClearBotStateForUser(ctx, telegramID); err != nil {
+		if err := b.sessionService.ClearBotStateForUser(ctx, *telegramID); err != nil {
 			return err
 		}
 		return b.unknownTelegramCommandHandler(ctx, update)
 	}
 
-	userBotState := b.sessionService.GetBotStateForUser(ctx, telegramID)
+	userBotState := b.sessionService.GetBotStateForUser(ctx, *telegramID)
 	switch userBotState {
 	case app.SelectLanguageBotState:
 		return b.userSelectedLanguageBotStageHandler(ctx, update)
@@ -71,6 +75,8 @@ func (b *botController) Serve(update *telegram.Update) error {
 	switch callbackQueryCommand {
 	case app.BalanceCallbackQueryCommand:
 		return b.balanceCallbackQueryCommandHandler(ctx, update.CallbackQuery)
+	case app.MainMenuCallbackQueryCommand:
+		return b.mainMenuCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.HelpCallbackQueryCommand, app.HistoryCallbackQueryCommand, app.BuyNumberCallbackQueryCommand, app.LanguageCallbackQueryCommand:
 		return b.unsupportedCallbackQueryCommandHandle(ctx, update.CallbackQuery)
 	}
@@ -80,17 +86,24 @@ func (b *botController) Serve(update *telegram.Update) error {
 
 func (b *botController) recordTelegramProfile(ctx context.Context, update *telegram.Update) error {
 	log := b.container.GetLogger()
-	telegramID := getTelegramID(update)
-	username := getTelegramUsername(update)
-	profileExist, err := b.profileRepository.ExistsWithTelegramID(ctx, telegramID)
+	telegramID, err := getTelegramID(update)
+	if err != nil {
+		return err
+	}
+	username, err := getTelegramUsername(update)
+	if err != nil {
+		log.Error("can't get telegram username", logger.FError(err))
+		return err
+	}
+	profileExist, err := b.profileRepository.ExistsWithTelegramID(ctx, *telegramID)
 	if err != nil {
 		log.Error("existsWithTelegramID has failed", logger.FError(err))
 		return err
 	} else if !profileExist {
 		log.Debug("record profile to db", logger.F("telegramID", telegramID))
 		profile := &domain.Profile{
-			TelegramID: telegramID,
-			Username:   &username,
+			TelegramID: *telegramID,
+			Username:   username,
 		}
 		_, err := b.profileRepository.Create(ctx, profile)
 		if err != nil {
@@ -101,33 +114,47 @@ func (b *botController) recordTelegramProfile(ctx context.Context, update *teleg
 	return nil
 }
 
-func (b *botController) getLanguageCode(ctx context.Context, user telegram.User) string {
+func (b *botController) getLanguageCode(ctx context.Context, user telegram.User) (*string, error) {
 	profile, err := b.profileRepository.FetchByTelegramID(ctx, user.ID)
 	if err != nil {
-		return user.LanguageCode
+		return nil, err
 	}
 	if preferredLanguage := profile.PreferredLanguage; preferredLanguage != nil {
-		return *preferredLanguage
+		return preferredLanguage, nil
 	}
-	return user.LanguageCode
+	return user.LanguageCode, nil
 }
 
-func getTelegramID(update *telegram.Update) int64 {
-	telegramID := update.Message.From.ID
-	if telegramID == 0 && update.CallbackQuery != nil {
-		telegramID = update.CallbackQuery.From.ID
+func getTelegramID(update *telegram.Update) (*int64, error) {
+	var from *telegram.User
+	if update.Message != nil {
+		from = update.Message.From
+	} else if update.CallbackQuery != nil {
+		from = &update.CallbackQuery.From
 	}
-	return telegramID
+	if from == nil {
+		return nil, app.NilError
+	}
+	return &from.ID, nil
 }
 
-func getTelegramUsername(update *telegram.Update) string {
-	username := update.Message.From.Username
-	if len(username) == 0 && update.CallbackQuery != nil {
-		username = update.CallbackQuery.From.Username
+func getTelegramUsername(update *telegram.Update) (*string, error) {
+	var from *telegram.User
+	if update.Message != nil {
+		from = update.Message.From
+	} else if update.CallbackQuery != nil {
+		from = &update.CallbackQuery.From
 	}
-	return username
+	if from == nil {
+		return nil, app.NilError
+	}
+	username := from.Username
+	if username == nil {
+		return nil, app.NilError
+	}
+	return username, nil
 }
 
 func isEmpty(update *telegram.Update) bool {
-	return update.Message.ID == 0 && update.CallbackQuery == nil
+	return update.Message == nil && update.CallbackQuery == nil
 }

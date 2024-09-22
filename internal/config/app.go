@@ -15,6 +15,7 @@ type Config interface {
 	Redis() Redis
 	DB() DB
 	AvailableCurrencies() []app.Currency
+	CurrencyByAbbr(abbr string) *app.Currency
 	AvailableLanguages() []app.Language
 }
 
@@ -60,6 +61,15 @@ func (c *config) TelegramBotToken() string {
 
 func (c *config) AvailableCurrencies() []app.Currency {
 	return c.availableCurrencies
+}
+
+func (c *config) CurrencyByAbbr(abbr string) *app.Currency {
+	for _, currency := range c.availableCurrencies {
+		if currency.ABBR == abbr {
+			return &currency
+		}
+	}
+	return nil
 }
 
 func (c *config) AvailableLanguages() []app.Language {

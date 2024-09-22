@@ -10,7 +10,10 @@ import (
 
 func (b *botController) userSelectedLanguageBotStageHandler(ctx context.Context, update *telegram.Update) error {
 	telegramID := update.Message.From.ID
-	selectedLanguageNativeName := update.Message.Text
+	if update.Message.Text == nil {
+		return app.NilError
+	}
+	selectedLanguageNativeName := *update.Message.Text
 
 	availableLanguages := b.container.GetConfig().AvailableLanguages()
 	filteredLanguages := utils.Filter(availableLanguages, func(language app.Language) bool {
@@ -33,7 +36,10 @@ func (b *botController) userSelectedLanguageBotStageHandler(ctx context.Context,
 
 func (b *botController) userSelectedCurrencyBotStageHandler(ctx context.Context, update *telegram.Update) error {
 	telegramID := update.Message.From.ID
-	selectedCurrencyText := update.Message.Text
+	if update.Message.Text == nil {
+		return app.NilError
+	}
+	selectedCurrencyText := *update.Message.Text
 
 	availableCurrencies := b.container.GetConfig().AvailableCurrencies()
 	filteredCurrencies := utils.Filter(availableCurrencies, func(currency app.Currency) bool {

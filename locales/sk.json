@@ -1,7 +1,8 @@
 {
   "bot_name": "TonPass",
-  "bot_markdown": "🌟 Vitajte v TonPass Bote! 🌟\n\nSme radi, že vás tu máme! 😊\nTonPass poskytuje okamžité a bezpečné SMS aktivačné služby\npre všetky vaše online overovacie potreby. 🌐\n\nSte pripravení začať? Stačí si vybrať možnosť nižšie a zažiť\nplynulé, spoľahlivé SMS overovania.\n\n🔥 Rýchle, jednoduché a efektívne! 🔥",
-  "bot_markdown_description": "🌟 *Vitajte v TonPass Bote\\!* 🌟\n\nSme radi, že vás tu máme\\! 😊\nTonPass poskytuje *okamžité a bezpečné* SMS aktivačné služby\npre všetky vaše online overovacie potreby. 🌐\n\nSte pripravení začať? Stačí si vybrať možnosť nižšie a zažiť\nplynulé, spoľahlivé SMS overovania.\n\n🔥 *Rýchle, jednoduché a efektívne\\!* 🔥",
+  "back": "Späť",
+  "bot_description": "🌟 Vitajte v TonPass Bote! 🌟\n\nSme radi, že vás tu máme! 😊\nTonPass poskytuje okamžité a bezpečné SMS aktivačné služby\npre všetky vaše online overovacie potreby. 🌐\n\nSte pripravení začať? Stačí si vybrať možnosť nižšie a zažiť\nplynulé, spoľahlivé SMS overovania.\n\n🔥 Rýchle, jednoduché a efektívne! 🔥",
+  "bot_markdown_description": "🌟 *Vitajte v TonPass Bote\\!* 🌟\n\nSme radi, že vás tu máme\\! 😊\nTonPass poskytuje *okamžité a bezpečné* SMS aktivačné služby\npre všetky vaše online overovacie potreby\\. 🌐\n\nSte pripravení začať? Stačí si vybrať možnosť nižšie a zažiť\nplynulé, spoľahlivé SMS overovania\\.\n\n🔥 *Rýchle, jednoduché a efektívne\\!* 🔥",
   "balance": "Zostatok",
   "buy_number": "Kúpiť číslo",
   "help": "Pomoc",
@@ -16,5 +17,10 @@
   "unknown_error": "Neznáma chyba",
   "help_cmd_text": "Tento bot vám umožňuje jednoducho posielať SMS aktivačné kódy na overenie účtov pre obľúbené online služby.\n\n 📋 Dostupné príkazy:\n/start – Začnite interagovať s botom",
   "unknown_cmd_text": "Nepodporovaný príkaz\n\nĽutujeme, príkaz, ktorý ste zadali, nie je rozpoznaný. Uistite sa, že používate jeden z podporovaných príkazov. Napíšte /help, aby ste si pozreli zoznam dostupných príkazov a ich používanie.",
-  "your_balance_is": "Váš zostatok je: "
+  "your_balance_is": {
+    "description": "Váš zostatok je",
+    "one": "Váš zostatok je {{ .Balance }} {{ .Currency }}",
+    "other": "Váš zostatok je {{ .Balance }} {{ .Currency }}"
+  },
+  "development_process": "\uD83D\uDEA7 Funkcia vo vývoji \uD83D\uDEA7"
 }

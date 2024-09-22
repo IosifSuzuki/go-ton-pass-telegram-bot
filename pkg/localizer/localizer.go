@@ -6,6 +6,7 @@ import (
 
 type Localizer interface {
 	LocalizedString(key string) string
+	LocalizedStringWithTemplateData(key string, templateData map[string]any) string
 }
 
 type localizer struct {
@@ -26,5 +27,13 @@ func (l *localizer) LocalizedString(key string) string {
 		// fallback with localized key
 		return key
 	}
+	return localizedString
+}
+
+func (l *localizer) LocalizedStringWithTemplateData(key string, templateData map[string]any) string {
+	localizedString := l.localizer.MustLocalize(&i18n.LocalizeConfig{
+		MessageID:    key,
+		TemplateData: templateData,
+	})
 	return localizedString
 }

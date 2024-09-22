@@ -8,4 +8,5 @@ var (
 	TelegramResponseBotError         = errors.New("telegram response bot error")
 	UnknownLanguageError             = errors.New("unknown language error")
 	EmptyUpdateError                 = errors.New("receive empty update from telegram servers")
+	NilError                         = errors.New("nil pointer")
 )
