@@ -19,14 +19,21 @@ type botController struct {
 	container          container.Container
 	telegramBotService service.TelegramBotService
 	sessionService     service.SessionService
+	smsService         service.SMSService
 	profileRepository  repository.ProfileRepository
 }
 
-func NewBotController(container container.Container, sessionService service.SessionService, profileRepository repository.ProfileRepository) BotController {
+func NewBotController(
+	container container.Container,
+	sessionService service.SessionService,
+	smsService service.SMSService,
+	profileRepository repository.ProfileRepository,
+) BotController {
 	return &botController{
 		container:          container,
 		telegramBotService: service.NewTelegramBot(container),
 		sessionService:     sessionService,
+		smsService:         smsService,
 		profileRepository:  profileRepository,
 	}
 }
@@ -77,7 +84,9 @@ func (b *botController) Serve(update *telegram.Update) error {
 		return b.balanceCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.MainMenuCallbackQueryCommand:
 		return b.mainMenuCallbackQueryCommandHandler(ctx, update.CallbackQuery)
-	case app.HelpCallbackQueryCommand, app.HistoryCallbackQueryCommand, app.BuyNumberCallbackQueryCommand, app.LanguageCallbackQueryCommand:
+	case app.BuyNumberCallbackQueryCommand:
+		return b.servicesCallbackQueryCommandHandle(ctx, update.CallbackQuery)
+	case app.HelpCallbackQueryCommand, app.HistoryCallbackQueryCommand, app.LanguageCallbackQueryCommand:
 		return b.unsupportedCallbackQueryCommandHandle(ctx, update.CallbackQuery)
 	}
 

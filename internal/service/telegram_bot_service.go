@@ -43,7 +43,7 @@ const (
 	historyCallbackQueryCmdText   = "history"
 	helpCallbackQueryCmdText      = "help"
 	languageCallbackQueryCmdText  = "language"
-	mainMenuCallbackQueryCmdText  = "main_menu"
+	MainMenuCallbackQueryCmdText  = "main_menu"
 )
 
 func NewTelegramBot(container container.Container) TelegramBotService {
@@ -68,7 +68,7 @@ func (t *telegramBotService) ParseCallbackQueryCommand(update *telegram.Update) 
 		return app.HelpCallbackQueryCommand
 	case languageCallbackQueryCmdText:
 		return app.LanguageCallbackQueryCommand
-	case mainMenuCallbackQueryCmdText:
+	case MainMenuCallbackQueryCmdText:
 		return app.MainMenuCallbackQueryCommand
 	default:
 		return app.NotCallbackQueryCommand
@@ -146,7 +146,7 @@ func (t *telegramBotService) GetBackToMenuInlineKeyboardMarkup(langTag string) *
 		{
 			telegram.InlineKeyboardButton{
 				Text: localizer.LocalizedString("back"),
-				Data: utils.NewString(mainMenuCallbackQueryCmdText),
+				Data: utils.NewString(MainMenuCallbackQueryCmdText),
 			},
 		},
 	}

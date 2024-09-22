@@ -12,6 +12,7 @@ import (
 type Config interface {
 	Address() string
 	TelegramBotToken() string
+	SMSKey() string
 	Redis() Redis
 	DB() DB
 	AvailableCurrencies() []app.Currency
@@ -59,6 +60,10 @@ func (c *config) TelegramBotToken() string {
 	return c.telegramBotToken
 }
 
+func (c *config) SMSKey() string {
+	return c.smsServiceToken
+}
+
 func (c *config) AvailableCurrencies() []app.Currency {
 	return c.availableCurrencies
 }
@@ -96,7 +101,7 @@ func ParseConfig() (Config, error) {
 		serverAddr:       os.Getenv("SERVER_HOST"),
 		serverPort:       os.Getenv("SERVER_PORT"),
 		telegramBotToken: os.Getenv("TELEGRAM_BOT_TOKEN"),
-		smsServiceToken:  os.Getenv("SMS_SERVICE_TOKEN"),
+		smsServiceToken:  os.Getenv("SMS_SERVICE_API_KEY"),
 	}
 	allLanguages, err := fetchAllLanguages()
 	if err != nil {

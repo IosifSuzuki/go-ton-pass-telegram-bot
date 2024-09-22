@@ -22,5 +22,6 @@
     "one": "Váš zostatok je {{ .Balance }} {{ .Currency }}",
     "other": "Váš zostatok je {{ .Balance }} {{ .Currency }}"
   },
-  "development_process": "\uD83D\uDEA7 Funkcia vo vývoji \uD83D\uDEA7"
+  "development_process": "\uD83D\uDEA7 Funkcia vo vývoji \uD83D\uDEA7",
+  "select_sms_service": "Please choose the online service you want to activate via SMS"
 }
