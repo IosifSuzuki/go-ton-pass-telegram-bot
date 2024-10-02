@@ -16,11 +16,9 @@ import (
 
 type TelegramBotService interface {
 	ParseTelegramCommand(update *telegram.Update) (app.TelegramCommand, error)
-	ParseCallbackQueryCommand(update *telegram.Update) app.CallbackQueryCommand
+	ParseTelegramCallbackData(callbackQuery *telegram.CallbackQuery) (*app.TelegramCallbackData, error)
 	GetLanguagesReplyKeyboardMarkup() *telegram.ReplyKeyboardMarkup
 	GetCurrenciesReplyKeyboardMarkup() *telegram.ReplyKeyboardMarkup
-	GetMenuInlineKeyboardMarkup(langTag string) *telegram.InlineKeyboardMarkup
-	GetBackToMenuInlineKeyboardMarkup(langTag string) *telegram.InlineKeyboardMarkup
 	SendResponse(model any, method app.TelegramMethod) error
 
 	GetSetMyCommands() *telegram.SetMyCommands
@@ -37,42 +35,18 @@ const (
 	helpCmdText  = "/help"
 )
 
-const (
-	balanceCallbackQueryCmdText   = "balance"
-	buyNumberCallbackQueryCmdText = "buy_number"
-	historyCallbackQueryCmdText   = "history"
-	helpCallbackQueryCmdText      = "help"
-	languageCallbackQueryCmdText  = "language"
-	MainMenuCallbackQueryCmdText  = "main_menu"
-)
-
 func NewTelegramBot(container container.Container) TelegramBotService {
 	return &telegramBotService{
 		container: container,
 	}
 }
 
-func (t *telegramBotService) ParseCallbackQueryCommand(update *telegram.Update) app.CallbackQueryCommand {
-	if update.CallbackQuery == nil {
-		return app.NotCallbackQueryCommand
+func (t *telegramBotService) ParseTelegramCallbackData(callbackQuery *telegram.CallbackQuery) (*app.TelegramCallbackData, error) {
+	telegramCallbackData, err := utils.DecodeTelegramCallbackData(callbackQuery.Data)
+	if err != nil {
+		return nil, err
 	}
-	callbackQueryCommand := update.CallbackQuery.Data
-	switch callbackQueryCommand {
-	case balanceCallbackQueryCmdText:
-		return app.BalanceCallbackQueryCommand
-	case buyNumberCallbackQueryCmdText:
-		return app.BuyNumberCallbackQueryCommand
-	case historyCallbackQueryCmdText:
-		return app.HistoryCallbackQueryCommand
-	case helpCallbackQueryCmdText:
-		return app.HelpCallbackQueryCommand
-	case languageCallbackQueryCmdText:
-		return app.LanguageCallbackQueryCommand
-	case MainMenuCallbackQueryCmdText:
-		return app.MainMenuCallbackQueryCommand
-	default:
-		return app.NotCallbackQueryCommand
-	}
+	return telegramCallbackData, nil
 }
 
 func (t *telegramBotService) ParseTelegramCommand(update *telegram.Update) (app.TelegramCommand, error) {
@@ -104,54 +78,6 @@ func (t *telegramBotService) GetLanguagesReplyKeyboardMarkup() *telegram.ReplyKe
 		ResizeKeyboard:            true,
 		OneTimeKeyboard:           true,
 		Placeholder:               nil,
-	}
-}
-
-func (t *telegramBotService) GetMenuInlineKeyboardMarkup(langTag string) *telegram.InlineKeyboardMarkup {
-	localizer := t.container.GetLocalizer(langTag)
-	inlineKeyboardButtons := [][]telegram.InlineKeyboardButton{
-		{
-			telegram.InlineKeyboardButton{
-				Text: localizer.LocalizedString("balance"),
-				Data: utils.NewString(balanceCallbackQueryCmdText),
-			},
-			telegram.InlineKeyboardButton{
-				Text: localizer.LocalizedString("buy_number"),
-				Data: utils.NewString(buyNumberCallbackQueryCmdText),
-			},
-		},
-		{
-			telegram.InlineKeyboardButton{
-				Text: localizer.LocalizedString("help"),
-				Data: utils.NewString(helpCallbackQueryCmdText),
-			},
-			telegram.InlineKeyboardButton{
-				Text: localizer.LocalizedString("history"),
-				Data: utils.NewString(historyCallbackQueryCmdText),
-			},
-			telegram.InlineKeyboardButton{
-				Text: localizer.LocalizedString("language"),
-				Data: utils.NewString(languageCallbackQueryCmdText),
-			},
-		},
-	}
-	return &telegram.InlineKeyboardMarkup{
-		InlineKeyboard: inlineKeyboardButtons,
-	}
-}
-
-func (t *telegramBotService) GetBackToMenuInlineKeyboardMarkup(langTag string) *telegram.InlineKeyboardMarkup {
-	localizer := t.container.GetLocalizer(langTag)
-	inlineKeyboardButtons := [][]telegram.InlineKeyboardButton{
-		{
-			telegram.InlineKeyboardButton{
-				Text: localizer.LocalizedString("back"),
-				Data: utils.NewString(MainMenuCallbackQueryCmdText),
-			},
-		},
-	}
-	return &telegram.InlineKeyboardMarkup{
-		InlineKeyboard: inlineKeyboardButtons,
 	}
 }
 
@@ -236,11 +162,11 @@ func (t *telegramBotService) SendResponse(model any, method app.TelegramMethod) 
 		return err
 	}
 	if !result.OK {
-		log.Error("telegram server return without status code ok",
+		log.Debug("telegram server return without status code ok",
 			logger.F("description", result.Description),
 			logger.F("json", string(sendBody)),
 		)
-		return app.TelegramResponseBotError
+		return nil
 	}
 	return nil
 }

@@ -10,4 +10,7 @@ const (
 	HistoryCallbackQueryCommand
 	LanguageCallbackQueryCommand
 	MainMenuCallbackQueryCommand
+	SelectSMSServiceCallbackQueryCommand
+	SelectSMSServiceWithPriceCallbackQueryCommand
+	SelectLanguageCallbackQueryCommand
 )

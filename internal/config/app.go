@@ -18,6 +18,9 @@ type Config interface {
 	AvailableCurrencies() []app.Currency
 	CurrencyByAbbr(abbr string) *app.Currency
 	AvailableLanguages() []app.Language
+	AllLanguages() []app.Language
+	LanguageByCode(code string) *app.Language
+	LanguageByName(name string) *app.Language
 }
 
 type Redis struct {
@@ -75,6 +78,28 @@ func (c *config) CurrencyByAbbr(abbr string) *app.Currency {
 		}
 	}
 	return nil
+}
+
+func (c *config) LanguageByCode(code string) *app.Language {
+	for _, language := range c.AvailableLanguages() {
+		if language.Code == code {
+			return &language
+		}
+	}
+	return nil
+}
+
+func (c *config) LanguageByName(name string) *app.Language {
+	for _, language := range c.allLanguages {
+		if language.Name == name {
+			return &language
+		}
+	}
+	return nil
+}
+
+func (c *config) AllLanguages() []app.Language {
+	return c.allLanguages
 }
 
 func (c *config) AvailableLanguages() []app.Language {

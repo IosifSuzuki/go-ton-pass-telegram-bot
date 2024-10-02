@@ -29,12 +29,14 @@ func (b *botController) messageToSelectLanguage(ctx context.Context, update *tel
 }
 
 func (b *botController) messageToSelectCurrency(ctx context.Context, update *telegram.Update) error {
+	log := b.container.GetLogger()
 	telegramID, err := getTelegramID(update)
-	if err == nil {
+	if err != nil {
 		return err
 	}
+	log.Debug("prepare message messageToSelectCurrency")
 	langTag, err := b.getLanguageCode(ctx, *update.Message.From)
-	if err == nil {
+	if err != nil {
 		return err
 	}
 	resp := telegram.SendResponse{
@@ -42,6 +44,7 @@ func (b *botController) messageToSelectCurrency(ctx context.Context, update *tel
 		Text:        b.container.GetLocalizer(*langTag).LocalizedString("select_preferred_currency"),
 		ReplyMarkup: b.telegramBotService.GetCurrenciesReplyKeyboardMarkup(),
 	}
+	log.Debug("prepared message messageToSelectCurrency")
 	if err := b.sessionService.SaveBotStateForUser(ctx, app.SelectCurrencyBotState, *telegramID); err != nil {
 		return err
 	}
@@ -67,15 +70,19 @@ func (b *botController) messageMainMenu(ctx context.Context, update *telegram.Up
 	if err != nil {
 		return err
 	}
+	mainMenuInlineKeyboardMarkup, err := b.getMainMenuInlineKeyboardMarkup(ctx, *update.Message.From)
+	if err != nil {
+		return err
+	}
 	resp := telegram.SendResponse{
 		ChatID:      update.Message.Chat.ID,
 		Text:        b.container.GetLocalizer(*langTag).LocalizedString("short_description"),
-		ReplyMarkup: b.telegramBotService.GetMenuInlineKeyboardMarkup(*langTag),
+		ReplyMarkup: mainMenuInlineKeyboardMarkup,
 	}
 	return b.telegramBotService.SendResponse(resp, app.SendMessageTelegramMethod)
 }
 
-func (b *botController) messageWithPlainText(ctx context.Context, text string, update *telegram.Update) error {
+func (b *botController) messageWithPlainText(_ context.Context, text string, update *telegram.Update) error {
 	resp := telegram.SendResponse{
 		ChatID: update.Message.Chat.ID,
 		Text:   text,

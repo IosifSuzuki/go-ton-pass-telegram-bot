@@ -71,6 +71,7 @@ func (b *botController) Serve(update *telegram.Update) error {
 	}
 
 	userBotState := b.sessionService.GetBotStateForUser(ctx, *telegramID)
+	log.Debug("got bot state from session service", logger.F("userBotState", userBotState))
 	switch userBotState {
 	case app.SelectLanguageBotState:
 		return b.userSelectedLanguageBotStageHandler(ctx, update)
@@ -78,19 +79,36 @@ func (b *botController) Serve(update *telegram.Update) error {
 		return b.userSelectedCurrencyBotStageHandler(ctx, update)
 	}
 
-	callbackQueryCommand := b.telegramBotService.ParseCallbackQueryCommand(update)
-	switch callbackQueryCommand {
+	if update.CallbackQuery == nil {
+		return b.helpTelegramCommandHandler(ctx, update)
+	}
+	telegramCallbackData, err := b.telegramBotService.ParseTelegramCallbackData(update.CallbackQuery)
+	if err != nil {
+		log.Debug("fail to parse telegram callback data", logger.F("telegramCallbackData", telegramCallbackData), logger.FError(err))
+		return err
+	}
+	switch telegramCallbackData.CallbackQueryCommand() {
 	case app.BalanceCallbackQueryCommand:
 		return b.balanceCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.MainMenuCallbackQueryCommand:
 		return b.mainMenuCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.BuyNumberCallbackQueryCommand:
 		return b.servicesCallbackQueryCommandHandle(ctx, update.CallbackQuery)
-	case app.HelpCallbackQueryCommand, app.HistoryCallbackQueryCommand, app.LanguageCallbackQueryCommand:
+	case app.SelectSMSServiceCallbackQueryCommand:
+		return b.selectServiceCallbackQueryCommandHandle(ctx, update.CallbackQuery)
+	case app.HelpCallbackQueryCommand:
+		return b.helpCallbackQueryCommandHandle(ctx, update.CallbackQuery)
+	case app.LanguageCallbackQueryCommand:
+		return b.languagesCallbackQueryCommandHandle(ctx, update.CallbackQuery)
+	case app.SelectLanguageCallbackQueryCommand:
+		return b.selectLanguageCallbackQueryCommandHandle(ctx, update.CallbackQuery)
+	case app.HistoryCallbackQueryCommand:
+		return b.historyCallbackQueryCommandHandle(ctx, update.CallbackQuery)
+	case app.SelectSMSServiceWithPriceCallbackQueryCommand:
+		return b.unsupportedCallbackQueryCommandHandle(ctx, update.CallbackQuery)
+	default:
 		return b.unsupportedCallbackQueryCommandHandle(ctx, update.CallbackQuery)
 	}
-
-	return b.helpTelegramCommandHandler(ctx, update)
 }
 
 func (b *botController) recordTelegramProfile(ctx context.Context, update *telegram.Update) error {

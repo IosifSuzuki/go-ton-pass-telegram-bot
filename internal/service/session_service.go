@@ -37,16 +37,21 @@ func (s *sessionService) GetBotStateForUser(ctx context.Context, userID int64) a
 		return app.IDLEState
 	}
 
+	log.Debug("get BotState", logger.F("bot state", app.BotState(value)))
 	return app.BotState(value)
 }
 
 func (s *sessionService) SaveBotStateForUser(ctx context.Context, botState app.BotState, userID int64) error {
+	log := s.container.GetLogger()
 	key := keyForBotState(userID)
 	ttl := 5 * time.Minute
+	log.Debug("will save bot state", logger.F("userID", userID), logger.F("bot state", botState))
 	return s.client.Set(ctx, key, int64(botState), ttl).Err()
 }
 
 func (s *sessionService) ClearBotStateForUser(ctx context.Context, userID int64) error {
+	log := s.container.GetLogger()
+	log.Debug("will clear bot state", logger.F("userID", userID))
 	key := keyForBotState(userID)
 	return s.client.Del(ctx, key).Err()
 }

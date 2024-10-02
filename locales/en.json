@@ -1,6 +1,7 @@
 {
   "bot_name": "TonPass",
   "back": "Back",
+  "back_to_main_menu": "\uD83C\uDFE0 Main Menu",
   "bot_description": "🌟 Welcome to the TonPass Bot! 🌟\n\nWe're glad to have you here! 😊\nTonPass provides instant and secure SMS activation services\nfor all your online verification needs. 🌐\n\nReady to get started? Simply choose an option below and experience\nsmooth, reliable SMS verifications.\n\n🔥 Fast, simple, and efficient! 🔥",
   "bot_markdown_description": "🌟 *Welcome to the TonPass Bot\\!* 🌟\n\nWe're glad to have you here\\! 😊\nTonPass provides *instant and secure* SMS activation services\nfor all your online verification needs\\. 🌐\n\nReady to get started? Simply choose an option below and experience\nsmooth, reliable SMS verifications\\.\n\n🔥 *Fast, simple, and efficient\\!* 🔥",
   "balance": "Balance",
@@ -22,6 +23,13 @@
     "one": "Your balance is {{ .Balance }} {{ .Currency }}",
     "other": "Your balance is {{ .Balance }} {{ .Currency }}"
   },
+  "choose_language": {
+    "description": "Choose an option below",
+    "one": "Your selected language is {{ .Language }}. Choose an option below",
+    "other": "Your selected language is {{ .Language }}. Choose an option below"
+  },
+  "empty_history": "No recent activity found",
   "development_process": "\uD83D\uDEA7 Feature Under Development \uD83D\uDEA7",
-  "select_sms_service": "Please choose the online service you want to activate via SMS"
+  "select_sms_service": "Please choose the online service you want to activate via SMS",
+  "select_sms_service_with_country": "Select the country whose numbers you want to use:"
 }
