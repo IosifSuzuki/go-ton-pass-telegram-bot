@@ -12,6 +12,7 @@ type Invoice struct {
 	FeeAsset      *string `json:"fee_asset"`
 	FeeAmount     *string `json:"fee_amount"`
 	BotInvoiceURL string  `json:"bot_invoice_url"`
+	PaidUsdRate   *string `json:"paid_usd_rate"`
 	Status        string  `json:"status"`
 	PaidAt        string  `json:"paid_at"`
 }

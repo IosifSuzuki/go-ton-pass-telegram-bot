@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS profile (
     username TEXT,
     preferred_currency VARCHAR(127),
     preferred_language VARCHAR(127),
-    balance INT,
+    balance DOUBLE PRECISION,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-ton-pass-telegram-bot/internal/model/app"
+	"go-ton-pass-telegram-bot/internal/model/domain"
 	"go-ton-pass-telegram-bot/internal/model/telegram"
 	"go-ton-pass-telegram-bot/internal/service"
 	"go-ton-pass-telegram-bot/internal/utils"
@@ -92,6 +93,11 @@ func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Contex
 		log.Error("can't get telegram ID")
 		return err
 	}
+	profile, err := b.profileRepository.FetchByTelegramID(ctx, *telegramID)
+	if err != nil {
+		log.Error("can't get telegram profile")
+		return err
+	}
 	if update.Message.Text == nil {
 		return app.NilError
 	}
@@ -106,6 +112,15 @@ func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Contex
 		return b.messageMainMenu(ctx, update)
 	}
 	invoice, err := b.cryptoPayBot.CreateInvoice(*currency, amount)
+	var domainInvoice domain.Invoice
+	domainInvoice.InvoiceID = invoice.ID
+	domainInvoice.Status = invoice.Status
+	domainInvoice.ChatID = update.Message.Chat.ID
+	domainInvoice.ProfileID = profile.ID
+	if _, err := b.invoiceRepository.Create(ctx, &domainInvoice); err != nil {
+		log.Debug("fail to save invoice to db", logger.FError(err))
+		return err
+	}
 	if err != nil {
 		return err
 	}

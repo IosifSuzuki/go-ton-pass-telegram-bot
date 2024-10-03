@@ -8,7 +8,7 @@ type Profile struct {
 	Username          *string
 	PreferredCurrency *string
 	PreferredLanguage *string
-	Balance           int64
+	Balance           float64
 	UpdatedAt         *time.Time
 	CreatedAt         *time.Time
 }

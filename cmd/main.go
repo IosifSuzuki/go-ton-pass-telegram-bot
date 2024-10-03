@@ -61,8 +61,9 @@ func configureAndConnectToRedisClient(conf config.Config) *redis.Client {
 
 func RunServer(box container.Container, conn *sql.DB, sessionService service.SessionService) {
 	profileRepository := repository.NewProfileRepository(conn)
+	invoiceRepository := repository.NewInvoiceRepository(conn)
 	smsService := service.NewSMSService(box)
-	r := router.PrepareAndConfigureRouter(box, sessionService, smsService, profileRepository)
+	r := router.PrepareAndConfigureRouter(box, sessionService, smsService, profileRepository, invoiceRepository)
 	server := &http.Server{
 		Handler:      r,
 		Addr:         box.GetConfig().Address(),

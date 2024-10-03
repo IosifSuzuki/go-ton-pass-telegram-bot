@@ -22,6 +22,7 @@ type botController struct {
 	sessionService     service.SessionService
 	smsService         service.SMSService
 	profileRepository  repository.ProfileRepository
+	invoiceRepository  repository.InvoiceRepository
 }
 
 func NewBotController(
@@ -29,6 +30,7 @@ func NewBotController(
 	sessionService service.SessionService,
 	smsService service.SMSService,
 	profileRepository repository.ProfileRepository,
+	invoiceRepository repository.InvoiceRepository,
 ) BotController {
 	return &botController{
 		container:          container,
@@ -37,6 +39,7 @@ func NewBotController(
 		sessionService:     sessionService,
 		smsService:         smsService,
 		profileRepository:  profileRepository,
+		invoiceRepository:  invoiceRepository,
 	}
 }
 

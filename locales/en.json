@@ -38,5 +38,6 @@
   "select_currency_to_pay": "Choose a currency for payment.",
   "enter_amount_for_payment_in_currency": "Enter the amount for payment in the currency",
   "enter_amount_for_payment_in_currency_error": "Please enter the amount in currency using the correct number format. Examples: 12.30, 12, 100, etc.",
-  "crypto_bot_pay_title": "To make a payment, press the 'Pay' button."
+  "crypto_bot_pay_title": "To make a payment, press the 'Pay' button.",
+  "balance_updated": "Your account balance has been updated. Thank you for using our service!"
 }
