@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"go-ton-pass-telegram-bot/internal/model/app"
 	"go-ton-pass-telegram-bot/internal/model/telegram"
+	"go-ton-pass-telegram-bot/internal/service"
 	"go-ton-pass-telegram-bot/internal/utils"
+	"go-ton-pass-telegram-bot/pkg/logger"
+	"strconv"
 )
 
 func (b *botController) userSelectedLanguageBotStageHandler(ctx context.Context, update *telegram.Update) error {
@@ -31,17 +34,17 @@ func (b *botController) userSelectedLanguageBotStageHandler(ctx context.Context,
 	if err := b.messageWelcome(ctx, update); err != nil {
 		return err
 	}
-	return b.messageToSelectCurrency(ctx, update)
+	return b.messageToSelectPreferredCurrency(ctx, update)
 }
 
-func (b *botController) userSelectedCurrencyBotStageHandler(ctx context.Context, update *telegram.Update) error {
+func (b *botController) userSelectedPreferredCurrencyBotStageHandler(ctx context.Context, update *telegram.Update) error {
 	telegramID := update.Message.From.ID
 	if update.Message.Text == nil {
 		return app.NilError
 	}
 	selectedCurrencyText := *update.Message.Text
 
-	availableCurrencies := b.container.GetConfig().AvailableCurrencies()
+	availableCurrencies := b.container.GetConfig().AvailablePreferredCurrencies()
 	filteredCurrencies := utils.Filter(availableCurrencies, func(currency app.Currency) bool {
 		presentableCurrencyText := fmt.Sprintf("%s %s", currency.Symbol, currency.ABBR)
 		return presentableCurrencyText == selectedCurrencyText
@@ -57,4 +60,63 @@ func (b *botController) userSelectedCurrencyBotStageHandler(ctx context.Context,
 		return err
 	}
 	return b.messageMainMenu(ctx, update)
+}
+
+func (b *botController) enterAmountCurrencyBotStageHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
+	telegramID := callbackQuery.From.ID
+	telegramCallbackData, err := utils.DecodeTelegramCallbackData(callbackQuery.Data)
+	if err != nil {
+		return err
+	}
+	parameters := *telegramCallbackData.Parameters
+	selectedPayCurrencyAbbr := parameters[0].(string)
+	if err := b.sessionService.SaveString(ctx, service.SelectedPayCurrencyAbbrKey, selectedPayCurrencyAbbr, telegramID); err != nil {
+		return err
+	}
+	if err := b.sessionService.SaveBotStateForUser(ctx, app.EnteringAmountCurrencyBotState, telegramID); err != nil {
+		return err
+	}
+	return b.messageEnterAmountCurrency(ctx, callbackQuery)
+}
+
+func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Context, update *telegram.Update) error {
+	log := b.container.GetLogger()
+	langTag, err := b.getLanguageCode(ctx, *update.Message.From)
+	if err != nil {
+		log.Error("can't parse lang tag")
+		return err
+	}
+	localizer := b.container.GetLocalizer(*langTag)
+	telegramID, err := getTelegramID(update)
+	if err != nil {
+		log.Error("can't get telegram ID")
+		return err
+	}
+	if update.Message.Text == nil {
+		return app.NilError
+	}
+	text := *update.Message.Text
+	amount, err := strconv.ParseFloat(text, 64)
+	if err != nil {
+		return b.messageWithPlainText(ctx, localizer.LocalizedString("enter_amount_for_payment_in_currency_error"), update)
+	}
+	currency, err := b.sessionService.GetString(ctx, service.SelectedPayCurrencyAbbrKey, *telegramID)
+	if err != nil {
+		log.Debug("fail to get selected pay currency", logger.FError(err))
+		return b.messageMainMenu(ctx, update)
+	}
+	invoice, err := b.cryptoPayBot.CreateInvoice(*currency, amount)
+	if err != nil {
+		return err
+	}
+	replyMarkup, err := b.getCryptoPayBotKeyboardMarkup(*langTag, invoice.BotInvoiceURL)
+	if err != nil {
+		return err
+	}
+	resp := telegram.SendResponse{
+		ChatID:      update.Message.Chat.ID,
+		Text:        localizer.LocalizedString("crypto_bot_pay_title"),
+		ReplyMarkup: replyMarkup,
+	}
+	return b.telegramBotService.SendResponse(resp, app.SendMessageTelegramMethod)
 }

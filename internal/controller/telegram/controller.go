@@ -18,6 +18,7 @@ type BotController interface {
 type botController struct {
 	container          container.Container
 	telegramBotService service.TelegramBotService
+	cryptoPayBot       service.CryptoPayBot
 	sessionService     service.SessionService
 	smsService         service.SMSService
 	profileRepository  repository.ProfileRepository
@@ -32,6 +33,7 @@ func NewBotController(
 	return &botController{
 		container:          container,
 		telegramBotService: service.NewTelegramBot(container),
+		cryptoPayBot:       service.NewCryptoPayBot(container),
 		sessionService:     sessionService,
 		smsService:         smsService,
 		profileRepository:  profileRepository,
@@ -70,22 +72,30 @@ func (b *botController) Serve(update *telegram.Update) error {
 		return b.unknownTelegramCommandHandler(ctx, update)
 	}
 
+	var telegramCallbackData *app.TelegramCallbackData
+	if callbackQuery := update.CallbackQuery; callbackQuery != nil {
+		telegramCallbackData, err = b.telegramBotService.ParseTelegramCallbackData(update.CallbackQuery)
+		if err != nil {
+			log.Debug("fail to parse telegram callback data", logger.F("telegramCallbackData", telegramCallbackData), logger.FError(err))
+			return err
+		}
+	}
 	userBotState := b.sessionService.GetBotStateForUser(ctx, *telegramID)
 	log.Debug("got bot state from session service", logger.F("userBotState", userBotState))
 	switch userBotState {
 	case app.SelectLanguageBotState:
 		return b.userSelectedLanguageBotStageHandler(ctx, update)
 	case app.SelectCurrencyBotState:
-		return b.userSelectedCurrencyBotStageHandler(ctx, update)
+		return b.userSelectedPreferredCurrencyBotStageHandler(ctx, update)
+	case app.EnteringAmountCurrencyBotState:
+		if callbackQuery := update.CallbackQuery; callbackQuery == nil {
+			return b.enteringAmountCurrencyBotStageHandler(ctx, update)
+		}
+		break
 	}
 
-	if update.CallbackQuery == nil {
+	if telegramCallbackData == nil {
 		return b.helpTelegramCommandHandler(ctx, update)
-	}
-	telegramCallbackData, err := b.telegramBotService.ParseTelegramCallbackData(update.CallbackQuery)
-	if err != nil {
-		log.Debug("fail to parse telegram callback data", logger.F("telegramCallbackData", telegramCallbackData), logger.FError(err))
-		return err
 	}
 	switch telegramCallbackData.CallbackQueryCommand() {
 	case app.BalanceCallbackQueryCommand:
@@ -93,21 +103,25 @@ func (b *botController) Serve(update *telegram.Update) error {
 	case app.MainMenuCallbackQueryCommand:
 		return b.mainMenuCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.BuyNumberCallbackQueryCommand:
-		return b.servicesCallbackQueryCommandHandle(ctx, update.CallbackQuery)
+		return b.servicesCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.SelectSMSServiceCallbackQueryCommand:
-		return b.selectServiceCallbackQueryCommandHandle(ctx, update.CallbackQuery)
+		return b.selectServiceCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.HelpCallbackQueryCommand:
-		return b.helpCallbackQueryCommandHandle(ctx, update.CallbackQuery)
+		return b.helpCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.LanguageCallbackQueryCommand:
-		return b.languagesCallbackQueryCommandHandle(ctx, update.CallbackQuery)
+		return b.languagesCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.SelectLanguageCallbackQueryCommand:
-		return b.selectLanguageCallbackQueryCommandHandle(ctx, update.CallbackQuery)
+		return b.selectLanguageCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.HistoryCallbackQueryCommand:
-		return b.historyCallbackQueryCommandHandle(ctx, update.CallbackQuery)
+		return b.historyCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.SelectSMSServiceWithPriceCallbackQueryCommand:
-		return b.unsupportedCallbackQueryCommandHandle(ctx, update.CallbackQuery)
+		return b.unsupportedCallbackQueryCommandHandler(ctx, update.CallbackQuery)
+	case app.ListPayCurrenciesCallbackQueryCommand:
+		return b.listPayCurrenciesCallbackQueryCommandHandler(ctx, update.CallbackQuery)
+	case app.SelectPayCurrencyCallbackQueryCommand:
+		return b.selectedPayCurrenciesCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	default:
-		return b.unsupportedCallbackQueryCommandHandle(ctx, update.CallbackQuery)
+		return b.unsupportedCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	}
 }
 

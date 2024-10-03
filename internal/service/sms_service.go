@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	baseURL = "https://api.sms-activate.org/stubs/handler_api.php"
+	baseSMSURL = "https://api.sms-activate.org/stubs/handler_api.php"
 )
 
 type SMSService interface {
@@ -131,7 +131,7 @@ func (s *smsService) RequestNumber(serviceCode string) (*sms.RequestedNumber, er
 func (s *smsService) prepareRequest(smsAction app.SMSAction, queryParams url.Values) (*http.Request, error) {
 	log := s.container.GetLogger()
 	apiKey := s.container.GetConfig().SMSKey()
-	urlPath, err := url.Parse(baseURL)
+	urlPath, err := url.Parse(baseSMSURL)
 	if err != nil {
 		return nil, err
 	}

@@ -8,3 +8,12 @@ func Filter[T any](ss []T, test func(T) bool) (ret []T) {
 	}
 	return
 }
+
+func Contains[T any](ss []T, test func(T) bool) (ret bool) {
+	for _, s := range ss {
+		if test(s) {
+			return true
+		}
+	}
+	return false
+}

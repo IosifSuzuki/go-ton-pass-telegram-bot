@@ -13,4 +13,6 @@ const (
 	SelectSMSServiceCallbackQueryCommand
 	SelectSMSServiceWithPriceCallbackQueryCommand
 	SelectLanguageCallbackQueryCommand
+	ListPayCurrenciesCallbackQueryCommand
+	SelectPayCurrencyCallbackQueryCommand
 )

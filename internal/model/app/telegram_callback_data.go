@@ -10,6 +10,8 @@ const (
 	SelectSMSServiceCallbackQueryCmdText          = "select_service"
 	SelectSMSServiceWithPriceCallbackQueryCmdText = "select_service_with_price"
 	SelectLanguageCallbackQueryCmdText            = "select_language"
+	ListPayCurrenciesCallbackQueryCmdText         = "list_pay_currencies"
+	SelectPayCurrencyCallbackQueryCmdText         = "select_pay_currency"
 )
 
 type TelegramCallbackData struct {
@@ -37,6 +39,10 @@ func (t *TelegramCallbackData) CallbackQueryCommand() CallbackQueryCommand {
 		return SelectSMSServiceWithPriceCallbackQueryCommand
 	case SelectLanguageCallbackQueryCmdText:
 		return SelectLanguageCallbackQueryCommand
+	case ListPayCurrenciesCallbackQueryCmdText:
+		return ListPayCurrenciesCallbackQueryCommand
+	case SelectPayCurrencyCallbackQueryCmdText:
+		return SelectPayCurrencyCallbackQueryCommand
 	default:
 		return NotCallbackQueryCommand
 	}

@@ -1,6 +1,8 @@
 {
   "bot_name": "TonPass",
   "back": "Späť",
+  "pay": "Pay",
+  "cancel": "Cancel",
   "back_to_main_menu": "\uD83C\uDFE0 Hlavné menu",
   "bot_description": "🌟 Vitajte v TonPass Bote! 🌟\n\nSme radi, že ste tu! 😊\nTonPass poskytuje okamžité a bezpečné SMS aktivačné služby\npre všetky vaše potreby online overovania. 🌐\n\nPripravení začať? Stačí si vybrať jednu z možností nižšie a zažite\nhladké a spoľahlivé SMS overovanie.\n\n🔥 Rýchle, jednoduché a efektívne! 🔥",
   "bot_markdown_description": "🌟 *Vitajte v TonPass Bote\\!* 🌟\n\nSme radi, že ste tu\\! 😊\nTonPass poskytuje *okamžité a bezpečné* SMS aktivačné služby\npre všetky vaše potreby online overovania\\. 🌐\n\nPripravení začať? Stačí si vybrať jednu z možností nižšie a zažite\nhladké a spoľahlivé SMS overovanie\\.\n\n🔥 *Rýchle, jednoduché a efektívne\\!* 🔥",
@@ -31,5 +33,10 @@
   "empty_history": "Nenašli sa žiadne nedávne aktivity",
   "development_process": "\uD83D\uDEA7 Funkcia vo vývoji \uD83D\uDEA7",
   "select_sms_service": "Vyberte si online službu, ktorú chcete aktivovať cez SMS",
-  "select_sms_service_with_country": "Vyberte krajinu, ktorú čísla chcete použiť:"
+  "top_up_balance": "Top up balance",
+  "select_sms_service_with_country": "Select the country whose numbers you want to use:",
+  "select_currency_to_pay": "Choose a currency for payment.",
+  "enter_amount_for_payment_in_currency": "Enter the amount for payment in the currency",
+  "enter_amount_for_payment_in_currency_error": "Please enter the amount in currency using the correct number format. Examples: 12.30, 12, 100, etc.",
+  "crypto_bot_pay_title": "To make a payment, press the 'Pay' button."
 }

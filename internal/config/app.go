@@ -12,10 +12,12 @@ import (
 type Config interface {
 	Address() string
 	TelegramBotToken() string
+	CryptoBotToken() string
 	SMSKey() string
 	Redis() Redis
 	DB() DB
-	AvailableCurrencies() []app.Currency
+	AvailablePreferredCurrencies() []app.Currency
+	AvailablePayCurrencies() []app.Currency
 	CurrencyByAbbr(abbr string) *app.Currency
 	AvailableLanguages() []app.Language
 	AllLanguages() []app.Language
@@ -47,10 +49,11 @@ type config struct {
 	serverAddr            string
 	serverPort            string
 	telegramBotToken      string
+	cryptoBotToken        string
 	smsServiceToken       string
 	allLanguages          []app.Language
 	localizedLanguageTags []string
-	availableCurrencies   []app.Currency
+	allCurrencies         []app.Currency
 	redis                 Redis
 	db                    DB
 }
@@ -63,16 +66,43 @@ func (c *config) TelegramBotToken() string {
 	return c.telegramBotToken
 }
 
+func (c *config) CryptoBotToken() string {
+	return c.cryptoBotToken
+}
+
 func (c *config) SMSKey() string {
 	return c.smsServiceToken
 }
 
-func (c *config) AvailableCurrencies() []app.Currency {
-	return c.availableCurrencies
+func (c *config) AvailablePreferredCurrencies() []app.Currency {
+	allPreferredCurrencyABBRs := []string{
+		"USD",
+		"EUR",
+		"GBP",
+	}
+	return utils.Filter(c.allCurrencies, func(currency app.Currency) bool {
+		return utils.Contains(allPreferredCurrencyABBRs, func(abbr string) bool {
+			return strings.EqualFold(abbr, currency.ABBR)
+		})
+	})
+}
+
+func (c *config) AvailablePayCurrencies() []app.Currency {
+	allPayCurrenciesABBRs := []string{
+		"USDT",
+		"ETH",
+		"BTC",
+		"TON",
+	}
+	return utils.Filter(c.allCurrencies, func(currency app.Currency) bool {
+		return utils.Contains(allPayCurrenciesABBRs, func(abbr string) bool {
+			return strings.EqualFold(abbr, currency.ABBR)
+		})
+	})
 }
 
 func (c *config) CurrencyByAbbr(abbr string) *app.Currency {
-	for _, currency := range c.availableCurrencies {
+	for _, currency := range c.allCurrencies {
 		if currency.ABBR == abbr {
 			return &currency
 		}
@@ -126,6 +156,7 @@ func ParseConfig() (Config, error) {
 		serverAddr:       os.Getenv("SERVER_HOST"),
 		serverPort:       os.Getenv("SERVER_PORT"),
 		telegramBotToken: os.Getenv("TELEGRAM_BOT_TOKEN"),
+		cryptoBotToken:   os.Getenv("CRYPTO_BOT_TOKEN"),
 		smsServiceToken:  os.Getenv("SMS_SERVICE_API_KEY"),
 	}
 	allLanguages, err := fetchAllLanguages()
@@ -136,14 +167,14 @@ func ParseConfig() (Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	availableCurrencies, err := fetchAvailableCurrencies()
+	allCurrencies, err := fetchAllCurrencies()
 	if err != nil {
 		return nil, err
 	}
 
 	config.allLanguages = allLanguages
 	config.localizedLanguageTags = localizedLanguageTags
-	config.availableCurrencies = availableCurrencies
+	config.allCurrencies = allCurrencies
 	config.redis = ParseRedisConfig()
 	config.db = ParseDBConfig()
 
@@ -180,12 +211,12 @@ func fetchAllLanguages() ([]app.Language, error) {
 	return allLanguages, nil
 }
 
-func fetchAvailableCurrencies() ([]app.Currency, error) {
-	var availableCurrencies = make([]app.Currency, 0)
-	if err := utils.MarshalFromFile("/jsons/currencies.json", &availableCurrencies); err != nil {
+func fetchAllCurrencies() ([]app.Currency, error) {
+	var allCurrencies = make([]app.Currency, 0)
+	if err := utils.MarshalFromFile("/jsons/currencies.json", &allCurrencies); err != nil {
 		return nil, err
 	}
-	return availableCurrencies, nil
+	return allCurrencies, nil
 }
 
 func fetchLocalizedLanguageTags() ([]string, error) {

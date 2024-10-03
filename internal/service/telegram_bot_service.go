@@ -110,9 +110,9 @@ func (t *telegramBotService) GetSetMyName() *telegram.SetMyName {
 
 func (t *telegramBotService) GetCurrenciesReplyKeyboardMarkup() *telegram.ReplyKeyboardMarkup {
 	log := t.container.GetLogger()
-	currencies := t.container.GetConfig().AvailableCurrencies()
+	currencies := t.container.GetConfig().AvailablePreferredCurrencies()
 
-	log.Debug("AvailableCurrencies from configuration", logger.F("AvailableCurrencies", currencies))
+	log.Debug("AvailablePreferredCurrencies from configuration", logger.F("AvailablePreferredCurrencies", currencies))
 	keyboardButtons := make([][]telegram.KeyboardButton, 0, len(currencies))
 	for _, currency := range currencies {
 		buttonText := fmt.Sprintf("%s %s", currency.Symbol, currency.ABBR)

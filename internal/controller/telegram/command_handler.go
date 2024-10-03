@@ -19,7 +19,7 @@ func (b *botController) startTelegramCommandHandler(ctx context.Context, update 
 	if profile.PreferredLanguage == nil {
 		return b.messageToSelectLanguage(ctx, update)
 	} else if profile.PreferredCurrency == nil {
-		return b.messageToSelectCurrency(ctx, update)
+		return b.messageToSelectPreferredCurrency(ctx, update)
 	}
 	if err := b.messageWelcome(ctx, update); err != nil {
 		return err

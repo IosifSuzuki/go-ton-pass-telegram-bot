@@ -18,6 +18,7 @@ func (b *botController) balanceCallbackQueryCommandHandler(ctx context.Context, 
 		return err
 	}
 	langTag, err := b.getLanguageCode(ctx, callbackQuery.From)
+	localizer := b.container.GetLocalizer(*langTag)
 	if err != nil {
 		log.Error("fail to getLanguageCode", logger.FError(err))
 		return err
@@ -37,15 +38,28 @@ func (b *botController) balanceCallbackQueryCommandHandler(ctx context.Context, 
 		log.Error("fail to send a AnswerCallbackQuery to telegram servers", logger.FError(err))
 		return err
 	}
-	backToMenuInlineKeyboardMarkup, err := b.getMenuInlineKeyboardMarkup(*langTag)
+	listPayCurrenciesTelegramCallbackData := app.TelegramCallbackData{
+		Name:       app.ListPayCurrenciesCallbackQueryCmdText,
+		Parameters: nil,
+	}
+	listPayCurrenciesData, err := utils.EncodeTelegramCallbackData(listPayCurrenciesTelegramCallbackData)
 	if err != nil {
 		return err
 	}
+	listPayCurrenciesKeyboardButton := telegram.InlineKeyboardButton{
+		Text: localizer.LocalizedString("top_up_balance"),
+		Data: listPayCurrenciesData,
+	}
+	replyKeyboardMarkup, err := b.getInlineKeyboardMarkupWithMainMenuButton(
+		*langTag,
+		[]telegram.InlineKeyboardButton{listPayCurrenciesKeyboardButton},
+		1,
+	)
 	editMessage := telegram.EditMessage{
 		ChatID:      &callbackQuery.Message.Chat.ID,
 		MessageID:   &callbackQuery.Message.ID,
 		Text:        balanceText,
-		ReplyMarkup: backToMenuInlineKeyboardMarkup,
+		ReplyMarkup: replyKeyboardMarkup,
 	}
 	if err := b.telegramBotService.SendResponse(editMessage, app.EditMessageTextTelegramMethod); err != nil {
 		log.Error("fail to send a EditMessage to telegram servers", logger.FError(err))
@@ -54,11 +68,45 @@ func (b *botController) balanceCallbackQueryCommandHandler(ctx context.Context, 
 	return nil
 }
 
-func (b *botController) languagesCallbackQueryCommandHandle(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
+func (b *botController) listPayCurrenciesCallbackQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
+	log := b.container.GetLogger()
+	answerCallbackQuery := telegram.AnswerCallbackQuery{
+		ID:        callbackQuery.ID,
+		Text:      nil,
+		ShowAlert: false,
+	}
+	if err := b.telegramBotService.SendResponse(answerCallbackQuery, app.AnswerCallbackQueryTelegramMethod); err != nil {
+		return err
+	}
+	if err := b.messageListPayCurrencies(ctx, callbackQuery); err != nil {
+		log.Error("fail to send message select pay currency", logger.FError(err))
+		return err
+	}
+	return nil
+}
+
+func (b *botController) selectedPayCurrenciesCallbackQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
+	log := b.container.GetLogger()
+	answerCallbackQuery := telegram.AnswerCallbackQuery{
+		ID:        callbackQuery.ID,
+		Text:      nil,
+		ShowAlert: false,
+	}
+	if err := b.telegramBotService.SendResponse(answerCallbackQuery, app.AnswerCallbackQueryTelegramMethod); err != nil {
+		return err
+	}
+	telegramID := callbackQuery.From.ID
+	if err := b.sessionService.SaveBotStateForUser(ctx, app.EnterAmountCurrencyBotState, telegramID); err != nil {
+		log.Error("fail to save bot state", logger.FError(err))
+		return err
+	}
+	return b.enterAmountCurrencyBotStageHandler(ctx, callbackQuery)
+}
+
+func (b *botController) languagesCallbackQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
 	log := b.container.GetLogger()
 	telegramID := callbackQuery.From.ID
 	telegramProfile, err := b.profileRepository.FetchByTelegramID(ctx, telegramID)
-	b.container.GetConfig().AvailableLanguages()
 	languageCode := telegramProfile.PreferredLanguage
 	selectedLanguage := b.container.GetConfig().LanguageByCode(*languageCode)
 	answerCallbackQuery := telegram.AnswerCallbackQuery{
@@ -89,7 +137,7 @@ func (b *botController) languagesCallbackQueryCommandHandle(ctx context.Context,
 	return nil
 }
 
-func (b *botController) selectLanguageCallbackQueryCommandHandle(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
+func (b *botController) selectLanguageCallbackQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
 	log := b.container.GetLogger()
 	telegramID := callbackQuery.From.ID
 	answerCallbackQuery := telegram.AnswerCallbackQuery{
@@ -127,7 +175,7 @@ func (b *botController) selectLanguageCallbackQueryCommandHandle(ctx context.Con
 	return nil
 }
 
-func (b *botController) historyCallbackQueryCommandHandle(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
+func (b *botController) historyCallbackQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
 	log := b.container.GetLogger()
 	langTag, err := b.getLanguageCode(ctx, callbackQuery.From)
 	if err != nil {
@@ -159,7 +207,7 @@ func (b *botController) historyCallbackQueryCommandHandle(ctx context.Context, c
 	return nil
 }
 
-func (b *botController) helpCallbackQueryCommandHandle(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
+func (b *botController) helpCallbackQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
 	log := b.container.GetLogger()
 	langTag, err := b.getLanguageCode(ctx, callbackQuery.From)
 	if err != nil {
@@ -191,7 +239,7 @@ func (b *botController) helpCallbackQueryCommandHandle(ctx context.Context, call
 	return nil
 }
 
-func (b *botController) unsupportedCallbackQueryCommandHandle(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
+func (b *botController) unsupportedCallbackQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
 	log := b.container.GetLogger()
 	langTag, err := b.getLanguageCode(ctx, callbackQuery.From)
 	if err != nil {
@@ -208,6 +256,7 @@ func (b *botController) unsupportedCallbackQueryCommandHandle(ctx context.Contex
 
 func (b *botController) mainMenuCallbackQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
 	log := b.container.GetLogger()
+	telegramID := callbackQuery.From.ID
 	langTag, err := b.getLanguageCode(ctx, callbackQuery.From)
 	if err != nil {
 		log.Error("fail to getLanguageCode", logger.FError(err))
@@ -220,6 +269,10 @@ func (b *botController) mainMenuCallbackQueryCommandHandler(ctx context.Context,
 	}
 	if err := b.telegramBotService.SendResponse(answerCallbackQuery, app.AnswerCallbackQueryTelegramMethod); err != nil {
 		log.Error("fail to send a AnswerCallbackQuery to telegram servers", logger.FError(err))
+		return err
+	}
+	if err := b.sessionService.ClearBotStateForUser(ctx, telegramID); err != nil {
+		log.Error("fail to clear bot state for user", logger.FError(err), logger.F("telegramID", telegramID))
 		return err
 	}
 	mainMenuInlineKeyboardMarkup, err := b.getMainMenuInlineKeyboardMarkup(ctx, callbackQuery.From)
@@ -239,7 +292,7 @@ func (b *botController) mainMenuCallbackQueryCommandHandler(ctx context.Context,
 	return nil
 }
 
-func (b *botController) servicesCallbackQueryCommandHandle(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
+func (b *botController) servicesCallbackQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
 	log := b.container.GetLogger()
 	langTag, err := b.getLanguageCode(ctx, callbackQuery.From)
 	if err != nil {
@@ -276,7 +329,7 @@ func (b *botController) servicesCallbackQueryCommandHandle(ctx context.Context, 
 	return nil
 }
 
-func (b *botController) selectServiceCallbackQueryCommandHandle(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
+func (b *botController) selectServiceCallbackQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
 	log := b.container.GetLogger()
 	langTag, err := b.getLanguageCode(ctx, callbackQuery.From)
 	telegramCallbackData, err := utils.DecodeTelegramCallbackData(callbackQuery.Data)

@@ -6,4 +6,6 @@ const (
 	IDLEState BotState = iota
 	SelectLanguageBotState
 	SelectCurrencyBotState
+	EnterAmountCurrencyBotState
+	EnteringAmountCurrencyBotState
 )

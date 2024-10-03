@@ -203,6 +203,23 @@ func (b *botController) getMenuInlineKeyboardMarkup(langTag string) (*telegram.I
 	}, nil
 }
 
+func (b *botController) getInlineKeyboardMarkupWithMainMenuButton(
+	langTag string,
+	extraKeyboardButtons []telegram.InlineKeyboardButton,
+	columns int,
+) (*telegram.InlineKeyboardMarkup, error) {
+	mainMenuKeyboardButton, err := b.getMenuInlineKeyboardButton(langTag)
+	if err != nil {
+		return nil, err
+	}
+	allKeyboardButtons := extraKeyboardButtons
+	allKeyboardButtons = append(allKeyboardButtons, *mainMenuKeyboardButton)
+	gridKeyboardButtons := b.prepareGridInlineKeyboardButton(allKeyboardButtons, columns)
+	return &telegram.InlineKeyboardMarkup{
+		InlineKeyboard: gridKeyboardButtons,
+	}, nil
+}
+
 func (b *botController) getMenuInlineKeyboardButton(langTag string) (*telegram.InlineKeyboardButton, error) {
 	localizer := b.container.GetLocalizer(langTag)
 	backToMenuTelegramCallbackData := app.TelegramCallbackData{
@@ -259,6 +276,49 @@ func (b *botController) getServicePricesInlineKeyboardMarkup(langTag string, ser
 	}
 	keyboardButtons = append(keyboardButtons, *menuKeyboardButton)
 	gridKeyboardButtons := b.prepareGridInlineKeyboardButton(keyboardButtons, 1)
+	return &telegram.InlineKeyboardMarkup{
+		InlineKeyboard: gridKeyboardButtons,
+	}, nil
+}
+
+func (b *botController) getPayCurrenciesInlineKeyboardMarkup(langTag string) (*telegram.InlineKeyboardMarkup, error) {
+	payCurrencies := b.container.GetConfig().AvailablePayCurrencies()
+	keyboardButtons := make([]telegram.InlineKeyboardButton, 0, len(payCurrencies))
+	for _, currency := range payCurrencies {
+		parameters := []any{currency.ABBR}
+		currencyCallbackData := app.TelegramCallbackData{
+			Name:       app.SelectPayCurrencyCallbackQueryCmdText,
+			Parameters: &parameters,
+		}
+		data, err := utils.EncodeTelegramCallbackData(currencyCallbackData)
+		if err != nil {
+			continue
+		}
+		representableText := fmt.Sprintf("%s %s", currency.ABBR, currency.Symbol)
+		keyboardButton := telegram.InlineKeyboardButton{
+			Text: representableText,
+			Data: data,
+		}
+		keyboardButtons = append(keyboardButtons, keyboardButton)
+	}
+	mainMenuKeyboardButton, err := b.getMenuInlineKeyboardButton(langTag)
+	if err != nil {
+		return nil, err
+	}
+	keyboardButtons = append(keyboardButtons, *mainMenuKeyboardButton)
+	gridKeyboardButtons := b.prepareGridInlineKeyboardButton(keyboardButtons, 2)
+	return &telegram.InlineKeyboardMarkup{
+		InlineKeyboard: gridKeyboardButtons,
+	}, nil
+}
+
+func (b *botController) getCryptoPayBotKeyboardMarkup(langTag string, url string) (*telegram.InlineKeyboardMarkup, error) {
+	localizer := b.container.GetLocalizer(langTag)
+	payKeyboardButton := telegram.InlineKeyboardButton{
+		Text: localizer.LocalizedString("pay"),
+		URL:  &url,
+	}
+	gridKeyboardButtons := b.prepareGridInlineKeyboardButton([]telegram.InlineKeyboardButton{payKeyboardButton}, 1)
 	return &telegram.InlineKeyboardMarkup{
 		InlineKeyboard: gridKeyboardButtons,
 	}, nil
