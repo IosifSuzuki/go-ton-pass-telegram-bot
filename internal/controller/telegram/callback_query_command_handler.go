@@ -26,7 +26,7 @@ func (b *botController) balanceCallbackQueryCommandHandler(ctx context.Context, 
 	currency := b.container.GetConfig().CurrencyByAbbr(*telegramProfile.PreferredCurrency)
 	log.Debug("execute balanceCallbackQueryCommandHandler", logger.F("callbackQuery", callbackQuery))
 	balanceText := b.container.GetLocalizer(*langTag).LocalizedStringWithTemplateData("your_balance_is", map[string]any{
-		"Balance":  telegramProfile.Balance,
+		"Balance":  fmt.Sprintf("%.2f", telegramProfile.Balance),
 		"Currency": currency.Symbol,
 	})
 	answerCallbackQuery := telegram.AnswerCallbackQuery{

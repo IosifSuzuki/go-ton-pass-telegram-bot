@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-ton-pass-telegram-bot/internal/model/app"
-	"go-ton-pass-telegram-bot/internal/model/domain"
+	"go-ton-pass-telegram-bot/internal/model/crypto/bot"
 	"go-ton-pass-telegram-bot/internal/model/telegram"
 	"go-ton-pass-telegram-bot/internal/service"
 	"go-ton-pass-telegram-bot/internal/utils"
@@ -84,21 +84,17 @@ func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Contex
 	log := b.container.GetLogger()
 	langTag, err := b.getLanguageCode(ctx, *update.Message.From)
 	if err != nil {
-		log.Error("can't parse lang tag")
+		log.Error("getLanguageCode has failed", logger.FError(err))
 		return err
 	}
 	localizer := b.container.GetLocalizer(*langTag)
 	telegramID, err := getTelegramID(update)
 	if err != nil {
-		log.Error("can't get telegram ID")
-		return err
-	}
-	profile, err := b.profileRepository.FetchByTelegramID(ctx, *telegramID)
-	if err != nil {
-		log.Error("can't get telegram profile")
+		log.Error("telegram id is missing", logger.FError(err))
 		return err
 	}
 	if update.Message.Text == nil {
+		log.Error("text has nil value")
 		return app.NilError
 	}
 	text := *update.Message.Text
@@ -111,21 +107,23 @@ func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Contex
 		log.Debug("fail to get selected pay currency", logger.FError(err))
 		return b.messageMainMenu(ctx, update)
 	}
-	invoice, err := b.cryptoPayBot.CreateInvoice(*currency, amount)
-	var domainInvoice domain.Invoice
-	domainInvoice.InvoiceID = invoice.ID
-	domainInvoice.Status = invoice.Status
-	domainInvoice.ChatID = update.Message.Chat.ID
-	domainInvoice.ProfileID = profile.ID
-	if _, err := b.invoiceRepository.Create(ctx, &domainInvoice); err != nil {
-		log.Debug("fail to save invoice to db", logger.FError(err))
+	invoicePayload := bot.InvoicePayload{
+		ChatID:     update.Message.Chat.ID,
+		TelegramID: *telegramID,
+	}
+	encodedInvoicePayload, err := utils.EncodeCryptoBotInvoicePayload(invoicePayload)
+	if err != nil {
+		log.Error("fail to encode a invoice payload", logger.FError(err))
 		return err
 	}
+	invoice, err := b.cryptoPayBot.CreateInvoice(*currency, amount, *encodedInvoicePayload)
 	if err != nil {
+		log.Error("fail to create a invoice", logger.FError(err))
 		return err
 	}
 	replyMarkup, err := b.getCryptoPayBotKeyboardMarkup(*langTag, invoice.BotInvoiceURL)
 	if err != nil {
+		log.Error("fail to get cryptoPayBotKeyboardMarkup", logger.FError(err))
 		return err
 	}
 	resp := telegram.SendResponse{

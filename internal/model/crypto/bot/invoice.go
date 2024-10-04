@@ -15,4 +15,5 @@ type Invoice struct {
 	PaidUsdRate   *string `json:"paid_usd_rate"`
 	Status        string  `json:"status"`
 	PaidAt        string  `json:"paid_at"`
+	Payload       *string `json:"payload"`
 }

@@ -15,7 +15,6 @@ func PrepareAndConfigureRouter(
 	sessionService service.SessionService,
 	smsService service.SMSService,
 	profileRepository repository.ProfileRepository,
-	invoiceRepository repository.InvoiceRepository,
 ) http.Handler {
 	router := mux.NewRouter()
 	telegramBotController := telegramController.NewBotController(
@@ -23,13 +22,11 @@ func PrepareAndConfigureRouter(
 		sessionService,
 		smsService,
 		profileRepository,
-		invoiceRepository,
 	)
 	cryptoController := crypto.NewCryptoController(
 		container,
 		sessionService,
 		profileRepository,
-		invoiceRepository,
 	)
 	telegramRouter := NewTelegramRouter(container, telegramBotController)
 	router.Handle("/telegram/handler/webhook", telegramRouter)

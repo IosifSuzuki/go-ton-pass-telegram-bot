@@ -16,7 +16,7 @@ const (
 )
 
 type CryptoPayBot interface {
-	CreateInvoice(currency string, amount float64) (*bot.Invoice, error)
+	CreateInvoice(currency string, amount float64, payloadData string) (*bot.Invoice, error)
 }
 
 type cryptoPayBot struct {
@@ -29,13 +29,14 @@ func NewCryptoPayBot(container container.Container) CryptoPayBot {
 	}
 }
 
-func (c *cryptoPayBot) CreateInvoice(currency string, amount float64) (*bot.Invoice, error) {
+func (c *cryptoPayBot) CreateInvoice(currency string, amount float64, payload string) (*bot.Invoice, error) {
 	log := c.container.GetLogger()
 	amountText := fmt.Sprintf("%.2f", amount)
 	queryParams := url.Values{}
 	queryParams.Set("currency_type", "crypto")
 	queryParams.Set("asset", currency)
 	queryParams.Set("amount", amountText)
+	queryParams.Set("payload", payload)
 	req, err := c.prepareRequest(app.CreateInvoiceCryptoBotMethod, queryParams)
 	if err != nil {
 		log.Debug("fail prepare a request", logger.FError(err))

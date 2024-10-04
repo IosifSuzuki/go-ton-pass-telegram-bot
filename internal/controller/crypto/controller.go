@@ -8,6 +8,7 @@ import (
 	"go-ton-pass-telegram-bot/internal/model/telegram"
 	"go-ton-pass-telegram-bot/internal/repository"
 	"go-ton-pass-telegram-bot/internal/service"
+	"go-ton-pass-telegram-bot/internal/utils"
 	"go-ton-pass-telegram-bot/pkg/logger"
 	"strconv"
 )
@@ -22,14 +23,12 @@ type cryptoController struct {
 	cryptoPayBot       service.CryptoPayBot
 	sessionService     service.SessionService
 	profileRepository  repository.ProfileRepository
-	invoiceRepository  repository.InvoiceRepository
 }
 
 func NewCryptoController(
 	container container.Container,
 	sessionService service.SessionService,
 	profileRepository repository.ProfileRepository,
-	invoiceRepository repository.InvoiceRepository,
 ) CryptoController {
 	return &cryptoController{
 		container:          container,
@@ -37,50 +36,55 @@ func NewCryptoController(
 		cryptoPayBot:       service.NewCryptoPayBot(container),
 		sessionService:     sessionService,
 		profileRepository:  profileRepository,
-		invoiceRepository:  invoiceRepository,
 	}
 }
 
 func (c *cryptoController) Serve(update *bot.WebhookUpdates) error {
 	ctx := context.Background()
 	log := c.container.GetLogger()
-	payloadInvoice := update.PayloadInvoice
-	if payloadInvoice == nil {
+	invoice := update.PayloadInvoice
+	if invoice == nil {
+		log.Debug("invoice is missing")
 		return app.NilError
 	}
-	invoice, err := c.invoiceRepository.GetInvoiceByInvoiceID(ctx, payloadInvoice.ID)
+	payloadInvoiceEncodedText := invoice.Payload
+	if payloadInvoiceEncodedText == nil {
+		log.Error("expected payload invoice")
+		return app.NilError
+	}
+	payloadInvoice, err := utils.DecodeCryptoBotInvoicePayload(*payloadInvoiceEncodedText)
 	if err != nil {
+		log.Error("decoded CryptoBotInvoicePayload has failed", logger.FError(err))
 		return err
 	}
-	profile, err := c.profileRepository.FetchByID(ctx, invoice.ProfileID)
+	profile, err := c.profileRepository.FetchByTelegramID(ctx, payloadInvoice.TelegramID)
 	if err != nil {
+		log.Error("fetchByTelegramID has failed", logger.FError(err))
 		return err
 	}
 	localizer := c.container.GetLocalizer(*profile.PreferredLanguage)
-	if err := c.invoiceRepository.UpdateStatus(ctx, invoice.InvoiceID, invoice.Status); err != nil {
-		return err
-	}
-	if update.PayloadInvoice.PaidUsdRate == nil {
-		log.Error("PaidUsdRate has nil")
-		return app.NilError
-	}
 	paidUsdRate, err := strconv.ParseFloat(*update.PayloadInvoice.PaidUsdRate, 64)
 	if err != nil {
-		log.Error("ParseFloat of PaidUsdRate has failed", logger.FError(err))
+		log.Error("paidUsdRate has unknown float format", logger.FError(err))
 		return err
 	}
 	amount, err := strconv.ParseFloat(update.PayloadInvoice.Amount, 64)
 	if err != nil {
-		log.Error("ParseFloat of amount has failed", logger.FError(err))
+		log.Error("amount has unknown float format", logger.FError(err))
 		return err
 	}
-	log.Debug("will top up balance", logger.F("paidUsdRate", paidUsdRate))
-	if err := c.profileRepository.TopUpBalance(ctx, invoice.ProfileID, paidUsdRate*amount); err != nil {
+	amountInUSD := amount * paidUsdRate
+	log.Debug("will top up balance", logger.F("amountInUSD", amountInUSD))
+	if err := c.profileRepository.TopUpBalance(ctx, payloadInvoice.TelegramID, amountInUSD); err != nil {
 		return err
 	}
 	resp := telegram.SendResponse{
-		ChatID: invoice.ChatID,
+		ChatID: payloadInvoice.ChatID,
 		Text:   localizer.LocalizedString("balance_updated"),
 	}
-	return c.telegramBotService.SendResponse(resp, app.SendMessageTelegramMethod)
+	if err := c.telegramBotService.SendResponse(resp, app.SendMessageTelegramMethod); err != nil {
+		log.Error("fail to send message with success top up balance", logger.FError(err))
+		return err
+	}
+	return nil
 }
