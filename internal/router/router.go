@@ -13,6 +13,7 @@ import (
 func PrepareAndConfigureRouter(
 	container container.Container,
 	sessionService service.SessionService,
+	cacheService service.Cache,
 	smsService service.SMSService,
 	profileRepository repository.ProfileRepository,
 ) http.Handler {
@@ -20,6 +21,7 @@ func PrepareAndConfigureRouter(
 	telegramBotController := telegramController.NewBotController(
 		container,
 		sessionService,
+		cacheService,
 		smsService,
 		profileRepository,
 	)

@@ -35,8 +35,9 @@ func main() {
 	box := container.NewContainer(l, conf, bundle)
 	redisClient := configureAndConnectToRedisClient(conf)
 	sessionService := service.NewSessionService(box, redisClient)
+	cacheService := service.NewCache(box, redisClient)
 	//updateTelegramBotProfile(box)
-	RunServer(box, db, sessionService)
+	RunServer(box, db, sessionService, cacheService)
 }
 
 func configureAndConnectToRedisClient(conf config.Config) *redis.Client {
@@ -59,10 +60,10 @@ func configureAndConnectToRedisClient(conf config.Config) *redis.Client {
 	return client
 }
 
-func RunServer(box container.Container, conn *sql.DB, sessionService service.SessionService) {
+func RunServer(box container.Container, conn *sql.DB, sessionService service.SessionService, cacheService service.Cache) {
 	profileRepository := repository.NewProfileRepository(conn)
 	smsService := service.NewSMSService(box)
-	r := router.PrepareAndConfigureRouter(box, sessionService, smsService, profileRepository)
+	r := router.PrepareAndConfigureRouter(box, sessionService, cacheService, smsService, profileRepository)
 	server := &http.Server{
 		Handler:      r,
 		Addr:         box.GetConfig().Address(),

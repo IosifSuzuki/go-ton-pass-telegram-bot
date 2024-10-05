@@ -12,6 +12,7 @@ import (
 func (b *botController) balanceCallbackQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
 	log := b.container.GetLogger()
 	telegramID := callbackQuery.From.ID
+	log.Debug("execute balanceCallbackQueryCommandHandler", logger.F("callbackQuery", callbackQuery))
 	telegramProfile, err := b.profileRepository.FetchByTelegramID(ctx, telegramID)
 	if err != nil {
 		log.Error("fail to fetchByTelegramID", logger.FError(err))
@@ -24,9 +25,18 @@ func (b *botController) balanceCallbackQueryCommandHandler(ctx context.Context, 
 		return err
 	}
 	currency := b.container.GetConfig().CurrencyByAbbr(*telegramProfile.PreferredCurrency)
-	log.Debug("execute balanceCallbackQueryCommandHandler", logger.F("callbackQuery", callbackQuery))
+	preferredCurrency := telegramProfile.PreferredCurrency
+	if preferredCurrency == nil {
+		log.Error("preferredCurrency is missing", logger.FError(err))
+		return app.NilError
+	}
+	convertedBalance, err := b.exchangeRateWorker.ConvertFromUSD(telegramProfile.Balance, *preferredCurrency)
+	if err != nil {
+		log.Error("convert currency failed", logger.F("from", "usd"), logger.F("to", *preferredCurrency))
+		return err
+	}
 	balanceText := b.container.GetLocalizer(*langTag).LocalizedStringWithTemplateData("your_balance_is", map[string]any{
-		"Balance":  fmt.Sprintf("%.2f", telegramProfile.Balance),
+		"Balance":  fmt.Sprintf("%.2f", *convertedBalance),
 		"Currency": currency.Symbol,
 	})
 	answerCallbackQuery := telegram.AnswerCallbackQuery{

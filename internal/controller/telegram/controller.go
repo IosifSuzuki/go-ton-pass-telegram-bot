@@ -8,6 +8,7 @@ import (
 	"go-ton-pass-telegram-bot/internal/model/telegram"
 	"go-ton-pass-telegram-bot/internal/repository"
 	"go-ton-pass-telegram-bot/internal/service"
+	"go-ton-pass-telegram-bot/internal/worker"
 	"go-ton-pass-telegram-bot/pkg/logger"
 )
 
@@ -20,23 +21,30 @@ type botController struct {
 	telegramBotService service.TelegramBotService
 	cryptoPayBot       service.CryptoPayBot
 	sessionService     service.SessionService
+	cacheService       service.Cache
 	smsService         service.SMSService
 	profileRepository  repository.ProfileRepository
+	exchangeRateWorker worker.ExchangeRate
 }
 
 func NewBotController(
 	container container.Container,
 	sessionService service.SessionService,
+	cacheService service.Cache,
 	smsService service.SMSService,
 	profileRepository repository.ProfileRepository,
 ) BotController {
+	cryptoPayBot := service.NewCryptoPayBot(container)
+	exchangeRateWorker := worker.NewExchangeRate(container, cacheService, cryptoPayBot)
 	return &botController{
 		container:          container,
 		telegramBotService: service.NewTelegramBot(container),
-		cryptoPayBot:       service.NewCryptoPayBot(container),
+		cryptoPayBot:       cryptoPayBot,
 		sessionService:     sessionService,
+		cacheService:       cacheService,
 		smsService:         smsService,
 		profileRepository:  profileRepository,
+		exchangeRateWorker: exchangeRateWorker,
 	}
 }
 

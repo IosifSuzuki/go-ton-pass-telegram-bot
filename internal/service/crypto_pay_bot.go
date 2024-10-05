@@ -17,6 +17,7 @@ const (
 
 type CryptoPayBot interface {
 	CreateInvoice(currency string, amount float64, payloadData string) (*bot.Invoice, error)
+	FetchExchangeRate() ([]bot.ExchangeRate, error)
 }
 
 type cryptoPayBot struct {
@@ -39,13 +40,13 @@ func (c *cryptoPayBot) CreateInvoice(currency string, amount float64, payload st
 	queryParams.Set("payload", payload)
 	req, err := c.prepareRequest(app.CreateInvoiceCryptoBotMethod, queryParams)
 	if err != nil {
-		log.Debug("fail prepare a request", logger.FError(err))
+		log.Error("fail prepare a request", logger.FError(err))
 		return nil, err
 	}
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Debug("fail to create a http client", logger.FError(err))
+		log.Error("fail to create a http client", logger.FError(err))
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -55,6 +56,28 @@ func (c *cryptoPayBot) CreateInvoice(currency string, amount float64, payload st
 		return nil, err
 	}
 	return &result.Result, nil
+}
+
+func (c *cryptoPayBot) FetchExchangeRate() ([]bot.ExchangeRate, error) {
+	log := c.container.GetLogger()
+	req, err := c.prepareRequest(app.ExchangeRateCryptoBotMethod, url.Values{})
+	if err != nil {
+		log.Error("fail prepare a request", logger.FError(err))
+		return nil, err
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Error("fail to create a http client", logger.FError(err))
+		return nil, err
+	}
+	defer resp.Body.Close()
+	var result bot.Result[[]bot.ExchangeRate]
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		log.Debug("fail to decode", logger.FError(err))
+		return nil, err
+	}
+	return result.Result, nil
 }
 
 func (c *cryptoPayBot) prepareRequest(method app.CryptoBotMethod, queryParams url.Values) (*http.Request, error) {
