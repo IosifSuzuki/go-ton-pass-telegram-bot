@@ -12,6 +12,8 @@ const (
 	SelectLanguageCallbackQueryCmdText            = "select_language"
 	ListPayCurrenciesCallbackQueryCmdText         = "list_pay_currencies"
 	SelectPayCurrencyCallbackQueryCmdText         = "select_pay_currency"
+	PreferredCurrenciesCallbackQueryCmdText       = "preferred_currencies"
+	SelectPreferredCurrencyCallbackQueryCmdText   = "select_preferred_currency"
 )
 
 type TelegramCallbackData struct {
@@ -43,6 +45,10 @@ func (t *TelegramCallbackData) CallbackQueryCommand() CallbackQueryCommand {
 		return ListPayCurrenciesCallbackQueryCommand
 	case SelectPayCurrencyCallbackQueryCmdText:
 		return SelectPayCurrencyCallbackQueryCommand
+	case PreferredCurrenciesCallbackQueryCmdText:
+		return PreferredCurrenciesCallbackQueryCommand
+	case SelectPreferredCurrencyCallbackQueryCmdText:
+		return SelectPreferredCurrencyCallbackQueryCommand
 	default:
 		return NotCallbackQueryCommand
 	}

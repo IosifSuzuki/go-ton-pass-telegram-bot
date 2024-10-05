@@ -137,6 +137,10 @@ func (b *botController) getMainMenuInlineKeyboardMarkup(ctx context.Context, use
 		Name:       app.LanguageCallbackQueryCmdText,
 		Parameters: nil,
 	}
+	preferredCurrenciesCallbackData := app.TelegramCallbackData{
+		Name:       app.PreferredCurrenciesCallbackQueryCmdText,
+		Parameters: nil,
+	}
 	balanceData, err := utils.EncodeTelegramCallbackData(balanceTelegramCallbackData)
 	if err != nil {
 		return nil, err
@@ -154,6 +158,10 @@ func (b *botController) getMainMenuInlineKeyboardMarkup(ctx context.Context, use
 		return nil, err
 	}
 	languageData, err := utils.EncodeTelegramCallbackData(languageTelegramCallbackData)
+	if err != nil {
+		return nil, err
+	}
+	preferredCurrenciesData, err := utils.EncodeTelegramCallbackData(preferredCurrenciesCallbackData)
 	if err != nil {
 		return nil, err
 	}
@@ -180,6 +188,12 @@ func (b *botController) getMainMenuInlineKeyboardMarkup(ctx context.Context, use
 			telegram.InlineKeyboardButton{
 				Text: localizer.LocalizedString("language"),
 				Data: languageData,
+			},
+		},
+		{
+			telegram.InlineKeyboardButton{
+				Text: localizer.LocalizedString("currency"),
+				Data: preferredCurrenciesData,
 			},
 		},
 	}
@@ -319,6 +333,37 @@ func (b *botController) getCryptoPayBotKeyboardMarkup(langTag string, url string
 		URL:  &url,
 	}
 	gridKeyboardButtons := b.prepareGridInlineKeyboardButton([]telegram.InlineKeyboardButton{payKeyboardButton}, 1)
+	return &telegram.InlineKeyboardMarkup{
+		InlineKeyboard: gridKeyboardButtons,
+	}, nil
+}
+
+func (b *botController) getPreferredCurrenciesKeyboardMarkup(langTag string) (*telegram.InlineKeyboardMarkup, error) {
+	mainMenuKeyboardButton, err := b.getMenuInlineKeyboardButton(langTag)
+	if err != nil {
+		return nil, err
+	}
+	preferredCurrencies := b.container.GetConfig().AvailablePreferredCurrencies()
+	keyboardButtons := make([]telegram.InlineKeyboardButton, 0, len(preferredCurrencies)+1)
+	for _, preferredCurrency := range preferredCurrencies {
+		parameters := []any{preferredCurrency.ABBR}
+		preferredCurrencyCallbackData := app.TelegramCallbackData{
+			Name:       app.SelectPreferredCurrencyCallbackQueryCmdText,
+			Parameters: &parameters,
+		}
+		data, err := utils.EncodeTelegramCallbackData(preferredCurrencyCallbackData)
+		if err != nil {
+			continue
+		}
+		representableText := fmt.Sprintf("%s %s", preferredCurrency.ABBR, preferredCurrency.Symbol)
+		keyboardButton := telegram.InlineKeyboardButton{
+			Text: representableText,
+			Data: data,
+		}
+		keyboardButtons = append(keyboardButtons, keyboardButton)
+	}
+	keyboardButtons = append(keyboardButtons, *mainMenuKeyboardButton)
+	gridKeyboardButtons := b.prepareGridInlineKeyboardButton(keyboardButtons, 2)
 	return &telegram.InlineKeyboardMarkup{
 		InlineKeyboard: gridKeyboardButtons,
 	}, nil

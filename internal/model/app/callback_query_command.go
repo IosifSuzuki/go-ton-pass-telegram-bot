@@ -15,4 +15,6 @@ const (
 	SelectLanguageCallbackQueryCommand
 	ListPayCurrenciesCallbackQueryCommand
 	SelectPayCurrencyCallbackQueryCommand
+	PreferredCurrenciesCallbackQueryCommand
+	SelectPreferredCurrencyCallbackQueryCommand
 )

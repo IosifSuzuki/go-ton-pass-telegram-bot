@@ -384,3 +384,97 @@ func (b *botController) selectServiceCallbackQueryCommandHandler(ctx context.Con
 	}
 	return nil
 }
+
+func (b *botController) preferredCurrenciesQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
+	log := b.container.GetLogger()
+	telegramID := callbackQuery.From.ID
+	langTag, err := b.getLanguageCode(ctx, callbackQuery.From)
+	if err != nil {
+		log.Error("fail to get language code", logger.FError(err))
+		return err
+	}
+	telegramProfile, err := b.profileRepository.FetchByTelegramID(ctx, telegramID)
+	if err != nil {
+		log.Error("fail to get profile by telegram id", logger.FError(err))
+		return err
+	}
+	preferredCurrency := telegramProfile.PreferredCurrency
+	if preferredCurrency == nil {
+		log.Error("preferredCurrency is missing")
+		return app.NilError
+	}
+	currency := b.container.GetConfig().CurrencyByAbbr(*preferredCurrency)
+	localizer := b.container.GetLocalizer(*langTag)
+	answerCallbackQuery := telegram.AnswerCallbackQuery{
+		ID:        callbackQuery.ID,
+		Text:      nil,
+		ShowAlert: false,
+	}
+	if err := b.telegramBotService.SendResponse(answerCallbackQuery, app.AnswerCallbackQueryTelegramMethod); err != nil {
+		log.Error("fail to send a AnswerCallbackQuery to telegram servers", logger.FError(err))
+		return err
+	}
+	inlineKeyboardMarkup, err := b.getPreferredCurrenciesKeyboardMarkup(*langTag)
+	if err != nil {
+		log.Error("fail to create a currencies keyboard markup", logger.FError(err))
+		return err
+	}
+	editMessage := telegram.EditMessage{
+		ChatID:    &callbackQuery.Message.Chat.ID,
+		MessageID: &callbackQuery.Message.ID,
+		Text: localizer.LocalizedStringWithTemplateData("choose_preferred_currency", map[string]any{
+			"Currency": currency.ABBR,
+		}),
+		ReplyMarkup: inlineKeyboardMarkup,
+	}
+	if err := b.telegramBotService.SendResponse(editMessage, app.EditMessageTextTelegramMethod); err != nil {
+		log.Error("fail to send a EditMessage to telegram servers", logger.FError(err))
+		return err
+	}
+	return nil
+}
+
+func (b *botController) selectPreferredCurrencyQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
+	log := b.container.GetLogger()
+	telegramID := callbackQuery.From.ID
+	langTag, err := b.getLanguageCode(ctx, callbackQuery.From)
+	if err != nil {
+		log.Error("fail to get language code", logger.FError(err))
+		return err
+	}
+	localizer := b.container.GetLocalizer(*langTag)
+	answerCallbackQuery := telegram.AnswerCallbackQuery{
+		ID:        callbackQuery.ID,
+		Text:      nil,
+		ShowAlert: false,
+	}
+	if err := b.telegramBotService.SendResponse(answerCallbackQuery, app.AnswerCallbackQueryTelegramMethod); err != nil {
+		log.Error("fail to send a AnswerCallbackQuery to telegram servers", logger.FError(err))
+		return err
+	}
+	telegramCallbackData, err := utils.DecodeTelegramCallbackData(callbackQuery.Data)
+	if err != nil {
+		return err
+	}
+	parameters := *telegramCallbackData.Parameters
+	selectedPreferredCurrency := parameters[0].(string)
+	if err := b.profileRepository.SetPreferredCurrency(ctx, telegramID, selectedPreferredCurrency); err != nil {
+		log.Error("fail to set preferred currency to profile", logger.FError(err))
+		return err
+	}
+	mainMenuInlineKeyboardMarkup, err := b.getMainMenuInlineKeyboardMarkup(ctx, callbackQuery.From)
+	if err != nil {
+		return err
+	}
+	editMessage := telegram.EditMessage{
+		ChatID:      &callbackQuery.Message.Chat.ID,
+		MessageID:   &callbackQuery.Message.ID,
+		Text:        localizer.LocalizedString("short_description"),
+		ReplyMarkup: mainMenuInlineKeyboardMarkup,
+	}
+	if err := b.telegramBotService.SendResponse(editMessage, app.EditMessageTextTelegramMethod); err != nil {
+		log.Error("fail to send a EditMessage to telegram servers", logger.FError(err))
+		return err
+	}
+	return nil
+}

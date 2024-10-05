@@ -78,7 +78,7 @@ func (c *config) AvailablePreferredCurrencies() []app.Currency {
 	allPreferredCurrencyABBRs := []string{
 		"USD",
 		"EUR",
-		"GBP",
+		"UAH",
 	}
 	return utils.Filter(c.allCurrencies, func(currency app.Currency) bool {
 		return utils.Contains(allPreferredCurrencyABBRs, func(abbr string) bool {

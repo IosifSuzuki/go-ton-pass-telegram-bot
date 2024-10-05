@@ -18,12 +18,6 @@
     "symbol": "£"
   },
   {
-    "name": "British Pound Sterling",
-    "currency_type": "fiat",
-    "abbr": "GBP",
-    "symbol": "£"
-  },
-  {
     "name": "Ukrainian Hryvnia",
     "currency_type": "fiat",
     "abbr": "UAH",
