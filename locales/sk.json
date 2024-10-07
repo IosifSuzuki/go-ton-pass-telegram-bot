@@ -4,8 +4,8 @@
   "pay": "Pay",
   "cancel": "Cancel",
   "back_to_main_menu": "\uD83C\uDFE0 Hlavné menu",
-  "bot_description": "🌟 Vitajte v TonPass Bote! 🌟\n\nSme radi, že ste tu! 😊\nTonPass poskytuje okamžité a bezpečné SMS aktivačné služby\npre všetky vaše potreby online overovania. 🌐\n\nPripravení začať? Stačí si vybrať jednu z možností nižšie a zažite\nhladké a spoľahlivé SMS overovanie.\n\n🔥 Rýchle, jednoduché a efektívne! 🔥",
-  "bot_markdown_description": "🌟 *Vitajte v TonPass Bote\\!* 🌟\n\nSme radi, že ste tu\\! 😊\nTonPass poskytuje *okamžité a bezpečné* SMS aktivačné služby\npre všetky vaše potreby online overovania\\. 🌐\n\nPripravení začať? Stačí si vybrať jednu z možností nižšie a zažite\nhladké a spoľahlivé SMS overovanie\\.\n\n🔥 *Rýchle, jednoduché a efektívne\\!* 🔥",
+  "bot_description": "🌟Vitajte v TonPass Bote!🌟\n\nSme radi, že ste tu! 😊\nTonPass poskytuje okamžité a bezpečné SMS aktivačné služby\npre všetky vaše potreby online overovania. 🌐\n\nPripravení začať? Stačí si vybrať jednu z možností nižšie a zažite\nhladké a spoľahlivé SMS overovanie.\n\n🔥 Rýchle, jednoduché a efektívne! 🔥",
+  "bot_markdown_description": "🌟*Vitajte v TonPass Bote\\!*🌟\n\nSme radi, že ste tu\\! 😊\nTonPass poskytuje *okamžité a bezpečné* SMS aktivačné služby\npre všetky vaše potreby online overovania\\. 🌐\n\nPripravení začať? Stačí si vybrať jednu z možností nižšie a zažite\nhladké a spoľahlivé SMS overovanie\\.\n\n🔥 *Rýchle, jednoduché a efektívne\\!* 🔥",
   "balance": "Zostatok",
   "buy_number": "Kúpiť číslo",
   "help": "Pomoc",
@@ -23,8 +23,8 @@
   "unknown_cmd_text": "Nepodporovaný príkaz\n\nĽutujeme, príkaz, ktorý ste zadali, nebol rozpoznaný. Uistite sa, že používate jeden z podporovaných príkazov. Zadajte /help na zobrazenie zoznamu dostupných príkazov a ich použitia.",
   "your_balance_is": {
     "description": "Váš zostatok je",
-    "one": "Váš zostatok je {{ .Balance }} {{ .Currency }}",
-    "other": "Váš zostatok je {{ .Balance }} {{ .Currency }}"
+    "one": "Váš zostatok je {{ .Balance }}",
+    "other": "Váš zostatok je {{ .Balance }}"
   },
   "choose_language": {
     "description": "Vyberte si možnosť nižšie",
@@ -37,7 +37,11 @@
   "top_up_balance": "Top up balance",
   "select_sms_service_with_country": "Select the country whose numbers you want to use:",
   "select_currency_to_pay": "Choose a currency for payment.",
-  "enter_amount_for_payment_in_currency": "Enter the amount for payment in the currency",
+  "enter_amount_for_payment_in_currency":{
+    "description": "Enter the amount for payment in currency",
+    "one": "Enter the amount for payment in {{ .Currency }}",
+    "other": "Enter the amount for payment in {{ .Currency }}"
+  },
   "enter_amount_for_payment_in_currency_error": "Please enter the amount in currency using the correct number format. Examples: 12.30, 12, 100, etc.",
   "crypto_bot_pay_title": "To make a payment, press the 'Pay' button.",
   "balance_updated": "Your account balance has been updated. Thank you for using our service!",

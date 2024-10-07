@@ -2,7 +2,6 @@ package telegram
 
 import (
 	"context"
-	"fmt"
 	"go-ton-pass-telegram-bot/internal/model/app"
 	"go-ton-pass-telegram-bot/internal/model/telegram"
 	"go-ton-pass-telegram-bot/internal/utils"
@@ -36,8 +35,7 @@ func (b *botController) balanceCallbackQueryCommandHandler(ctx context.Context, 
 		return err
 	}
 	balanceText := b.container.GetLocalizer(*langTag).LocalizedStringWithTemplateData("your_balance_is", map[string]any{
-		"Balance":  fmt.Sprintf("%.2f", *convertedBalance),
-		"Currency": currency.Symbol,
+		"Balance": utils.CurrencyAmountTextFormat(*convertedBalance, *currency),
 	})
 	answerCallbackQuery := telegram.AnswerCallbackQuery{
 		ID:        callbackQuery.ID,
@@ -65,13 +63,18 @@ func (b *botController) balanceCallbackQueryCommandHandler(ctx context.Context, 
 		[]telegram.InlineKeyboardButton{listPayCurrenciesKeyboardButton},
 		1,
 	)
-	editMessage := telegram.EditMessage{
+	photoMedia := telegram.InputPhotoMedia{
+		Type:    "photo",
+		Media:   avatarImageURL,
+		Caption: &balanceText,
+	}
+	editMessageMedia := telegram.EditMessageMedia{
 		ChatID:      &callbackQuery.Message.Chat.ID,
 		MessageID:   &callbackQuery.Message.ID,
-		Text:        balanceText,
+		Media:       photoMedia,
 		ReplyMarkup: replyKeyboardMarkup,
 	}
-	if err := b.telegramBotService.SendResponse(editMessage, app.EditMessageTextTelegramMethod); err != nil {
+	if err := b.telegramBotService.SendResponse(editMessageMedia, app.EditMessageMediaTelegramMethod); err != nil {
 		log.Error("fail to send a EditMessage to telegram servers", logger.FError(err))
 		return err
 	}
@@ -132,15 +135,20 @@ func (b *botController) languagesCallbackQueryCommandHandler(ctx context.Context
 		log.Error("fail to get a keyboardMarkup", logger.FError(err))
 		return err
 	}
-	editMessage := telegram.EditMessage{
-		ChatID:    &callbackQuery.Message.Chat.ID,
-		MessageID: &callbackQuery.Message.ID,
-		Text: b.container.GetLocalizer(*languageCode).LocalizedStringWithTemplateData("choose_language", map[string]any{
-			"Language": fmt.Sprintf("%s %s", selectedLanguage.FlagEmoji, selectedLanguage.NativeName),
-		}),
+	photoMedia := telegram.InputPhotoMedia{
+		Type:  "photo",
+		Media: selectPreferredLanguageImageURL,
+		Caption: utils.NewString(b.container.GetLocalizer(*languageCode).LocalizedStringWithTemplateData("choose_language", map[string]any{
+			"Language": utils.LanguageTextFormat(*selectedLanguage),
+		})),
+	}
+	editMessage := telegram.EditMessageMedia{
+		ChatID:      &callbackQuery.Message.Chat.ID,
+		MessageID:   &callbackQuery.Message.ID,
+		Media:       photoMedia,
 		ReplyMarkup: keyboardMarkup,
 	}
-	if err := b.telegramBotService.SendResponse(editMessage, app.EditMessageTextTelegramMethod); err != nil {
+	if err := b.telegramBotService.SendResponse(editMessage, app.EditMessageMediaTelegramMethod); err != nil {
 		log.Error("fail to send a EditMessage to telegram servers", logger.FError(err))
 		return err
 	}
@@ -168,18 +176,8 @@ func (b *botController) selectLanguageCallbackQueryCommandHandler(ctx context.Co
 		log.Error("fail to SetPreferredLanguage", logger.F("preferredLanguage", selectedLanguageCode))
 		return err
 	}
-	mainMenuInlineKeyboardMarkup, err := b.getMainMenuInlineKeyboardMarkup(ctx, callbackQuery.From)
-	if err != nil {
-		return err
-	}
-	editMessage := telegram.EditMessage{
-		ChatID:      &callbackQuery.Message.Chat.ID,
-		MessageID:   &callbackQuery.Message.ID,
-		Text:        b.container.GetLocalizer(selectedLanguageCode).LocalizedString("short_description"),
-		ReplyMarkup: mainMenuInlineKeyboardMarkup,
-	}
-	if err := b.telegramBotService.SendResponse(editMessage, app.EditMessageTextTelegramMethod); err != nil {
-		log.Error("fail to send a EditMessage to telegram servers", logger.FError(err))
+	if err := b.editMessageAndBackToMainMenu(ctx, callbackQuery); err != nil {
+		log.Error("fail to send message with main menu to telegram servers")
 		return err
 	}
 	return nil
@@ -192,6 +190,7 @@ func (b *botController) historyCallbackQueryCommandHandler(ctx context.Context, 
 		log.Error("fail to getLanguageCode", logger.FError(err))
 		return err
 	}
+	localizer := b.container.GetLocalizer(*langTag)
 	answerCallbackQuery := telegram.AnswerCallbackQuery{
 		ID:        callbackQuery.ID,
 		Text:      nil,
@@ -200,18 +199,23 @@ func (b *botController) historyCallbackQueryCommandHandler(ctx context.Context, 
 	if err := b.telegramBotService.SendResponse(answerCallbackQuery, app.AnswerCallbackQueryTelegramMethod); err != nil {
 		return err
 	}
+	photoMedia := telegram.InputPhotoMedia{
+		Type:    "photo",
+		Media:   historyImageURL,
+		Caption: utils.NewString(localizer.LocalizedString("empty_history")),
+	}
 	backToMenuInlineKeyboardMarkup, err := b.getMenuInlineKeyboardMarkup(*langTag)
 	if err != nil {
 		return err
 	}
-	editMessage := telegram.EditMessage{
+	editMessage := telegram.EditMessageMedia{
 		ChatID:      &callbackQuery.Message.Chat.ID,
 		MessageID:   &callbackQuery.Message.ID,
-		Text:        b.container.GetLocalizer(*langTag).LocalizedString("empty_history"),
+		Media:       photoMedia,
 		ReplyMarkup: backToMenuInlineKeyboardMarkup,
 	}
-	if err := b.telegramBotService.SendResponse(editMessage, app.EditMessageTextTelegramMethod); err != nil {
-		log.Error("fail to send a EditMessage to telegram servers", logger.FError(err))
+	if err := b.telegramBotService.SendResponse(editMessage, app.EditMessageMediaTelegramMethod); err != nil {
+		log.Error("fail to send message to telegram servers", logger.FError(err))
 		return err
 	}
 	return nil
@@ -224,6 +228,7 @@ func (b *botController) helpCallbackQueryCommandHandler(ctx context.Context, cal
 		log.Error("fail to getLanguageCode", logger.FError(err))
 		return err
 	}
+	localizer := b.container.GetLocalizer(*langTag)
 	answerCallbackQuery := telegram.AnswerCallbackQuery{
 		ID:        callbackQuery.ID,
 		Text:      nil,
@@ -236,20 +241,25 @@ func (b *botController) helpCallbackQueryCommandHandler(ctx context.Context, cal
 	if err != nil {
 		return err
 	}
-	editMessage := telegram.EditMessage{
+	photoMedia := telegram.InputPhotoMedia{
+		Type:    "photo",
+		Media:   helpImageURL,
+		Caption: utils.NewString(localizer.LocalizedString("help_cmd_text")),
+	}
+	editMessage := telegram.EditMessageMedia{
 		ChatID:      &callbackQuery.Message.Chat.ID,
 		MessageID:   &callbackQuery.Message.ID,
-		Text:        b.container.GetLocalizer(*langTag).LocalizedString("help_cmd_text"),
+		Media:       photoMedia,
 		ReplyMarkup: backToMenuInlineKeyboardMarkup,
 	}
-	if err := b.telegramBotService.SendResponse(editMessage, app.EditMessageTextTelegramMethod); err != nil {
+	if err := b.telegramBotService.SendResponse(editMessage, app.EditMessageMediaTelegramMethod); err != nil {
 		log.Error("fail to send a EditMessage to telegram servers", logger.FError(err))
 		return err
 	}
 	return nil
 }
 
-func (b *botController) unsupportedCallbackQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
+func (b *botController) developingCallbackQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
 	log := b.container.GetLogger()
 	langTag, err := b.getLanguageCode(ctx, callbackQuery.From)
 	if err != nil {
@@ -267,11 +277,6 @@ func (b *botController) unsupportedCallbackQueryCommandHandler(ctx context.Conte
 func (b *botController) mainMenuCallbackQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
 	log := b.container.GetLogger()
 	telegramID := callbackQuery.From.ID
-	langTag, err := b.getLanguageCode(ctx, callbackQuery.From)
-	if err != nil {
-		log.Error("fail to getLanguageCode", logger.FError(err))
-		return err
-	}
 	answerCallbackQuery := telegram.AnswerCallbackQuery{
 		ID:        callbackQuery.ID,
 		Text:      nil,
@@ -285,18 +290,8 @@ func (b *botController) mainMenuCallbackQueryCommandHandler(ctx context.Context,
 		log.Error("fail to clear bot state for user", logger.FError(err), logger.F("telegramID", telegramID))
 		return err
 	}
-	mainMenuInlineKeyboardMarkup, err := b.getMainMenuInlineKeyboardMarkup(ctx, callbackQuery.From)
-	if err != nil {
-		return err
-	}
-	editMessage := telegram.EditMessage{
-		ChatID:      &callbackQuery.Message.Chat.ID,
-		MessageID:   &callbackQuery.Message.ID,
-		Text:        b.container.GetLocalizer(*langTag).LocalizedString("short_description"),
-		ReplyMarkup: mainMenuInlineKeyboardMarkup,
-	}
-	if err := b.telegramBotService.SendResponse(editMessage, app.EditMessageTextTelegramMethod); err != nil {
-		log.Error("fail to send a EditMessage to telegram servers", logger.FError(err))
+	if err := b.editMessageAndBackToMainMenu(ctx, callbackQuery); err != nil {
+		log.Error("fail to send main menu to telegram servers", logger.FError(err))
 		return err
 	}
 	return nil
@@ -309,6 +304,7 @@ func (b *botController) servicesCallbackQueryCommandHandler(ctx context.Context,
 		log.Error("fail to getLanguageCode", logger.FError(err))
 		return err
 	}
+	localizer := b.container.GetLocalizer(*langTag)
 	answerCallbackQuery := telegram.AnswerCallbackQuery{
 		ID:        callbackQuery.ID,
 		Text:      nil,
@@ -326,13 +322,18 @@ func (b *botController) servicesCallbackQueryCommandHandler(ctx context.Context,
 	if err != nil {
 		return err
 	}
-	editMessage := telegram.EditMessage{
+	photoMedia := telegram.InputPhotoMedia{
+		Type:    "photo",
+		Media:   chooseServiceImageURL,
+		Caption: utils.NewString(localizer.LocalizedString("select_sms_service_with_country")),
+	}
+	editMessageMedia := telegram.EditMessageMedia{
 		ChatID:      &callbackQuery.Message.Chat.ID,
 		MessageID:   &callbackQuery.Message.ID,
-		Text:        b.container.GetLocalizer(*langTag).LocalizedString("select_sms_service_with_country"),
+		Media:       photoMedia,
 		ReplyMarkup: replyMarkup,
 	}
-	if err := b.telegramBotService.SendResponse(editMessage, app.EditMessageTextTelegramMethod); err != nil {
+	if err := b.telegramBotService.SendResponse(editMessageMedia, app.EditMessageMediaTelegramMethod); err != nil {
 		log.Error("fail to send a EditMessage to telegram servers", logger.FError(err))
 		return err
 	}
@@ -342,6 +343,7 @@ func (b *botController) servicesCallbackQueryCommandHandler(ctx context.Context,
 func (b *botController) selectServiceCallbackQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
 	log := b.container.GetLogger()
 	langTag, err := b.getLanguageCode(ctx, callbackQuery.From)
+	localizer := b.container.GetLocalizer(*langTag)
 	telegramCallbackData, err := utils.DecodeTelegramCallbackData(callbackQuery.Data)
 	if telegramCallbackData.Parameters == nil {
 		return err
@@ -372,13 +374,18 @@ func (b *botController) selectServiceCallbackQueryCommandHandler(ctx context.Con
 		log.Error("fail to getServicePricesInlineKeyboardMarkup", logger.FError(err))
 		return err
 	}
-	editMessage := telegram.EditMessage{
+	photoMedia := telegram.InputPhotoMedia{
+		Type:    "photo",
+		Media:   chooseCountryImageURL,
+		Caption: utils.NewString(localizer.LocalizedString("select_sms_service_with_country")),
+	}
+	editMediaMessage := telegram.EditMessageMedia{
 		ChatID:      &callbackQuery.Message.Chat.ID,
 		MessageID:   &callbackQuery.Message.ID,
-		Text:        b.container.GetLocalizer(*langTag).LocalizedString("select_sms_service_with_country"),
+		Media:       photoMedia,
 		ReplyMarkup: replyMarkup,
 	}
-	if err := b.telegramBotService.SendResponse(editMessage, app.EditMessageTextTelegramMethod); err != nil {
+	if err := b.telegramBotService.SendResponse(editMediaMessage, app.EditMessageMediaTelegramMethod); err != nil {
 		log.Error("fail to send a EditMessage to telegram servers", logger.FError(err))
 		return err
 	}
@@ -419,15 +426,20 @@ func (b *botController) preferredCurrenciesQueryCommandHandler(ctx context.Conte
 		log.Error("fail to create a currencies keyboard markup", logger.FError(err))
 		return err
 	}
-	editMessage := telegram.EditMessage{
-		ChatID:    &callbackQuery.Message.Chat.ID,
-		MessageID: &callbackQuery.Message.ID,
-		Text: localizer.LocalizedStringWithTemplateData("choose_preferred_currency", map[string]any{
+	photoMedia := telegram.InputPhotoMedia{
+		Type:  "photo",
+		Media: selectPreferredLanguageImageURL,
+		Caption: utils.NewString(localizer.LocalizedStringWithTemplateData("choose_preferred_currency", map[string]any{
 			"Currency": currency.ABBR,
-		}),
+		})),
+	}
+	editMessage := telegram.EditMessageMedia{
+		ChatID:      &callbackQuery.Message.Chat.ID,
+		MessageID:   &callbackQuery.Message.ID,
+		Media:       photoMedia,
 		ReplyMarkup: inlineKeyboardMarkup,
 	}
-	if err := b.telegramBotService.SendResponse(editMessage, app.EditMessageTextTelegramMethod); err != nil {
+	if err := b.telegramBotService.SendResponse(editMessage, app.EditMessageMediaTelegramMethod); err != nil {
 		log.Error("fail to send a EditMessage to telegram servers", logger.FError(err))
 		return err
 	}
@@ -437,12 +449,6 @@ func (b *botController) preferredCurrenciesQueryCommandHandler(ctx context.Conte
 func (b *botController) selectPreferredCurrencyQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
 	log := b.container.GetLogger()
 	telegramID := callbackQuery.From.ID
-	langTag, err := b.getLanguageCode(ctx, callbackQuery.From)
-	if err != nil {
-		log.Error("fail to get language code", logger.FError(err))
-		return err
-	}
-	localizer := b.container.GetLocalizer(*langTag)
 	answerCallbackQuery := telegram.AnswerCallbackQuery{
 		ID:        callbackQuery.ID,
 		Text:      nil,
@@ -462,18 +468,8 @@ func (b *botController) selectPreferredCurrencyQueryCommandHandler(ctx context.C
 		log.Error("fail to set preferred currency to profile", logger.FError(err))
 		return err
 	}
-	mainMenuInlineKeyboardMarkup, err := b.getMainMenuInlineKeyboardMarkup(ctx, callbackQuery.From)
-	if err != nil {
-		return err
-	}
-	editMessage := telegram.EditMessage{
-		ChatID:      &callbackQuery.Message.Chat.ID,
-		MessageID:   &callbackQuery.Message.ID,
-		Text:        localizer.LocalizedString("short_description"),
-		ReplyMarkup: mainMenuInlineKeyboardMarkup,
-	}
-	if err := b.telegramBotService.SendResponse(editMessage, app.EditMessageTextTelegramMethod); err != nil {
-		log.Error("fail to send a EditMessage to telegram servers", logger.FError(err))
+	if err := b.editMessageAndBackToMainMenu(ctx, callbackQuery); err != nil {
+		log.Error("fail to send main menu to telegram servers", logger.FError(err))
 		return err
 	}
 	return nil

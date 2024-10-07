@@ -10,4 +10,6 @@ const (
 	AnswerCallbackQueryTelegramMethod                = "answerCallbackQuery"
 	SendPhotoTelegramMethod                          = "sendPhoto"
 	EditMessageTextTelegramMethod                    = "editMessageText"
+	EditCaptionMessageTelegramMethod                 = "editMessageCaption"
+	EditMessageMediaTelegramMethod                   = "editMessageMedia"
 )

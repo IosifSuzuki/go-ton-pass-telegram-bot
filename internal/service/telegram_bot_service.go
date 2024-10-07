@@ -17,8 +17,6 @@ import (
 type TelegramBotService interface {
 	ParseTelegramCommand(update *telegram.Update) (app.TelegramCommand, error)
 	ParseTelegramCallbackData(callbackQuery *telegram.CallbackQuery) (*app.TelegramCallbackData, error)
-	GetLanguagesReplyKeyboardMarkup() *telegram.ReplyKeyboardMarkup
-	GetCurrenciesReplyKeyboardMarkup() *telegram.ReplyKeyboardMarkup
 	SendResponse(model any, method app.TelegramMethod) error
 
 	GetSetMyCommands() *telegram.SetMyCommands
@@ -57,30 +55,6 @@ func (t *telegramBotService) ParseTelegramCommand(update *telegram.Update) (app.
 	return parseTelegramCommand(text)
 }
 
-func (t *telegramBotService) GetLanguagesReplyKeyboardMarkup() *telegram.ReplyKeyboardMarkup {
-	log := t.container.GetLogger()
-	languages := t.container.GetConfig().AvailableLanguages()
-
-	log.Debug("AvailableLanguages from configuration", logger.F("AvailableLanguages", languages))
-
-	keyboardButtons := make([][]telegram.KeyboardButton, 0, len(languages))
-	for _, language := range languages {
-		buttonText := fmt.Sprintf("%s %s", language.FlagEmoji, language.NativeName)
-		keyboardButtons = append(keyboardButtons, []telegram.KeyboardButton{
-			{
-				Text: buttonText,
-			},
-		})
-	}
-	return &telegram.ReplyKeyboardMarkup{
-		Keyboard:                  keyboardButtons,
-		PersistentDisplayKeyboard: false,
-		ResizeKeyboard:            true,
-		OneTimeKeyboard:           true,
-		Placeholder:               nil,
-	}
-}
-
 func (t *telegramBotService) GetSetMyCommands() *telegram.SetMyCommands {
 	startBotCommand := telegram.BotCommand{
 		Command:     "start",
@@ -105,29 +79,6 @@ func (t *telegramBotService) GetSetMyDescription() *telegram.SetMyDescription {
 func (t *telegramBotService) GetSetMyName() *telegram.SetMyName {
 	return &telegram.SetMyName{
 		Name: t.container.GetLocalizer("en").LocalizedString("bot_name"),
-	}
-}
-
-func (t *telegramBotService) GetCurrenciesReplyKeyboardMarkup() *telegram.ReplyKeyboardMarkup {
-	log := t.container.GetLogger()
-	currencies := t.container.GetConfig().AvailablePreferredCurrencies()
-
-	log.Debug("AvailablePreferredCurrencies from configuration", logger.F("AvailablePreferredCurrencies", currencies))
-	keyboardButtons := make([][]telegram.KeyboardButton, 0, len(currencies))
-	for _, currency := range currencies {
-		buttonText := fmt.Sprintf("%s %s", currency.Symbol, currency.ABBR)
-		keyboardButtons = append(keyboardButtons, []telegram.KeyboardButton{
-			{
-				Text: buttonText,
-			},
-		})
-	}
-	return &telegram.ReplyKeyboardMarkup{
-		Keyboard:                  keyboardButtons,
-		PersistentDisplayKeyboard: false,
-		ResizeKeyboard:            true,
-		OneTimeKeyboard:           true,
-		Placeholder:               nil,
 	}
 }
 

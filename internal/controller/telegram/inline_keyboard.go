@@ -168,31 +168,31 @@ func (b *botController) getMainMenuInlineKeyboardMarkup(ctx context.Context, use
 	inlineKeyboardButtons := [][]telegram.InlineKeyboardButton{
 		{
 			telegram.InlineKeyboardButton{
-				Text: localizer.LocalizedString("balance"),
+				Text: utils.ButtonTitle(localizer.LocalizedString("balance"), "💰"),
 				Data: balanceData,
 			},
 			telegram.InlineKeyboardButton{
-				Text: localizer.LocalizedString("buy_number"),
+				Text: utils.ButtonTitle(localizer.LocalizedString("buy_number"), "🛒"),
 				Data: buyNumberData,
 			},
 		},
 		{
 			telegram.InlineKeyboardButton{
-				Text: localizer.LocalizedString("help"),
+				Text: utils.ButtonTitle(localizer.LocalizedString("help"), "❓"),
 				Data: helpData,
 			},
 			telegram.InlineKeyboardButton{
-				Text: localizer.LocalizedString("history"),
+				Text: utils.ButtonTitle(localizer.LocalizedString("history"), "📖"),
 				Data: historyData,
-			},
-			telegram.InlineKeyboardButton{
-				Text: localizer.LocalizedString("language"),
-				Data: languageData,
 			},
 		},
 		{
 			telegram.InlineKeyboardButton{
-				Text: localizer.LocalizedString("currency"),
+				Text: utils.ButtonTitle(localizer.LocalizedString("language"), "🗣️"),
+				Data: languageData,
+			},
+			telegram.InlineKeyboardButton{
+				Text: utils.ButtonTitle(localizer.LocalizedString("currency"), "💵"),
 				Data: preferredCurrenciesData,
 			},
 		},
@@ -308,9 +308,8 @@ func (b *botController) getPayCurrenciesInlineKeyboardMarkup(langTag string) (*t
 		if err != nil {
 			continue
 		}
-		representableText := fmt.Sprintf("%s %s", currency.ABBR, currency.Symbol)
 		keyboardButton := telegram.InlineKeyboardButton{
-			Text: representableText,
+			Text: utils.ShortCurrencyTextFormat(currency),
 			Data: data,
 		}
 		keyboardButtons = append(keyboardButtons, keyboardButton)
@@ -355,9 +354,8 @@ func (b *botController) getPreferredCurrenciesKeyboardMarkup(langTag string) (*t
 		if err != nil {
 			continue
 		}
-		representableText := fmt.Sprintf("%s %s", preferredCurrency.ABBR, preferredCurrency.Symbol)
 		keyboardButton := telegram.InlineKeyboardButton{
-			Text: representableText,
+			Text: utils.ShortCurrencyTextFormat(preferredCurrency),
 			Data: data,
 		}
 		keyboardButtons = append(keyboardButtons, keyboardButton)

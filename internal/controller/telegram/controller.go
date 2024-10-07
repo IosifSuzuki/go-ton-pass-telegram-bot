@@ -16,6 +16,19 @@ type BotController interface {
 	Serve(update *telegram.Update) error
 }
 
+const (
+	selectPreferredLanguageImageURL = "https://i.ibb.co/4g08xxg/language.png"
+	selectPreferredCurrencyImageURL = "https://i.ibb.co/NSfjN7Y/currency.png"
+	avatarImageURL                  = "https://i.ibb.co/rmqsKty/avatar.png"
+	welcomeImageURL                 = "https://i.imghippo.com/files/vi44s1726518102.png"
+	enterAmountImageURL             = "https://i.ibb.co/g97tpZj/amount.png"
+	topUpImageURL                   = "https://i.ibb.co/F0WKPfR/topup.png"
+	helpImageURL                    = "https://i.ibb.co/gyMDN5t/help.png"
+	historyImageURL                 = "https://i.ibb.co/Gf6QMCG/history.png"
+	chooseCountryImageURL           = "https://i.ibb.co/VSBbV14/country.png"
+	chooseServiceImageURL           = "https://i.ibb.co/m4KYq4n/service.png"
+)
+
 type botController struct {
 	container          container.Container
 	telegramBotService service.TelegramBotService
@@ -123,7 +136,7 @@ func (b *botController) Serve(update *telegram.Update) error {
 	case app.HistoryCallbackQueryCommand:
 		return b.historyCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.SelectSMSServiceWithPriceCallbackQueryCommand:
-		return b.unsupportedCallbackQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.developingCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.ListPayCurrenciesCallbackQueryCommand:
 		return b.listPayCurrenciesCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.SelectPayCurrencyCallbackQueryCommand:
@@ -133,7 +146,7 @@ func (b *botController) Serve(update *telegram.Update) error {
 	case app.SelectPreferredCurrencyCallbackQueryCommand:
 		return b.selectPreferredCurrencyQueryCommandHandler(ctx, update.CallbackQuery)
 	default:
-		return b.unsupportedCallbackQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.developingCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	}
 }
 

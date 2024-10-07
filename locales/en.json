@@ -4,8 +4,8 @@
   "pay": "Pay",
   "cancel": "Cancel",
   "back_to_main_menu": "\uD83C\uDFE0 Main Menu",
-  "bot_description": "🌟 Welcome to the TonPass Bot! 🌟\n\nWe're glad to have you here! 😊\nTonPass provides instant and secure SMS activation services\nfor all your online verification needs. 🌐\n\nReady to get started? Simply choose an option below and experience\nsmooth, reliable SMS verifications.\n\n🔥 Fast, simple, and efficient! 🔥",
-  "bot_markdown_description": "🌟 *Welcome to the TonPass Bot\\!* 🌟\n\nWe're glad to have you here\\! 😊\nTonPass provides *instant and secure* SMS activation services\nfor all your online verification needs\\. 🌐\n\nReady to get started? Simply choose an option below and experience\nsmooth, reliable SMS verifications\\.\n\n🔥 *Fast, simple, and efficient\\!* 🔥",
+  "bot_description": "🌟Welcome to the TonPass Bot!🌟\n\nWe're glad to have you here! 😊\nTonPass provides instant and secure SMS activation services\nfor all your online verification needs. 🌐\n\nReady to get started? Simply choose an option below and experience\nsmooth, reliable SMS verifications.\n\n🔥 Fast, simple, and efficient! 🔥",
+  "bot_markdown_description": "🌟*Welcome to the TonPass Bot\\!*🌟\n\nWe're glad to have you here\\! 😊\nTonPass provides *instant and secure* SMS activation services\nfor all your online verification needs\\. 🌐\n\nReady to get started? Simply choose an option below and experience\nsmooth, reliable SMS verifications\\.\n\n🔥 *Fast, simple, and efficient\\!* 🔥",
   "balance": "Balance",
   "buy_number": "Buy Number",
   "help": "Help",
@@ -23,8 +23,8 @@
   "unknown_cmd_text": "Unsupported command\n\nSorry, the command you entered is not recognized. Please ensure you are using one of the supported commands. Type /help to view the list of available commands and their usage.",
   "your_balance_is": {
     "description": "Your balance is",
-    "one": "Your balance is {{ .Balance }} {{ .Currency }}",
-    "other": "Your balance is {{ .Balance }} {{ .Currency }}"
+    "one": "Your balance is {{ .Balance }}",
+    "other": "Your balance is {{ .Balance }}"
   },
   "choose_language": {
     "description": "Choose an option below",
@@ -37,7 +37,11 @@
   "top_up_balance": "Top up balance",
   "select_sms_service_with_country": "Select the country whose numbers you want to use:",
   "select_currency_to_pay": "Choose a currency for payment.",
-  "enter_amount_for_payment_in_currency": "Enter the amount for payment in the currency",
+  "enter_amount_for_payment_in_currency":{
+    "description": "Enter the amount for payment in currency",
+    "one": "Enter the amount for payment in {{ .Currency }}",
+    "other": "Enter the amount for payment in {{ .Currency }}"
+  },
   "enter_amount_for_payment_in_currency_error": "Please enter the amount in currency using the correct number format. Examples: 12.30, 12, 100, etc.",
   "crypto_bot_pay_title": "To make a payment, press the 'Pay' button.",
   "balance_updated": "Your account balance has been updated. Thank you for using our service!",

@@ -2,7 +2,6 @@ package telegram
 
 import (
 	"context"
-	"fmt"
 	"go-ton-pass-telegram-bot/internal/model/app"
 	"go-ton-pass-telegram-bot/internal/model/crypto/bot"
 	"go-ton-pass-telegram-bot/internal/model/telegram"
@@ -21,7 +20,7 @@ func (b *botController) userSelectedLanguageBotStageHandler(ctx context.Context,
 
 	availableLanguages := b.container.GetConfig().AvailableLanguages()
 	filteredLanguages := utils.Filter(availableLanguages, func(language app.Language) bool {
-		presentableLanguageText := fmt.Sprintf("%s %s", language.FlagEmoji, language.NativeName)
+		presentableLanguageText := utils.LanguageTextFormat(language)
 		return presentableLanguageText == selectedLanguageNativeName
 	})
 	if len(filteredLanguages) == 0 {
@@ -47,7 +46,7 @@ func (b *botController) userSelectedPreferredCurrencyBotStageHandler(ctx context
 
 	availableCurrencies := b.container.GetConfig().AvailablePreferredCurrencies()
 	filteredCurrencies := utils.Filter(availableCurrencies, func(currency app.Currency) bool {
-		presentableCurrencyText := fmt.Sprintf("%s %s", currency.Symbol, currency.ABBR)
+		presentableCurrencyText := utils.ShortCurrencyTextFormat(currency)
 		return presentableCurrencyText == selectedCurrencyText
 	})
 	if len(filteredCurrencies) == 0 {
