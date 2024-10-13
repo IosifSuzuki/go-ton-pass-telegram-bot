@@ -8,6 +8,7 @@ import (
 	"go-ton-pass-telegram-bot/internal/model/telegram"
 	"go-ton-pass-telegram-bot/internal/utils"
 	"go-ton-pass-telegram-bot/pkg/logger"
+	"sort"
 )
 
 func (b *botController) getLanguagesInlineKeyboardMarkup(ctx context.Context, user telegram.User) (*telegram.InlineKeyboardMarkup, error) {
@@ -27,7 +28,7 @@ func (b *botController) getLanguagesInlineKeyboardMarkup(ctx context.Context, us
 		if err != nil {
 			continue
 		}
-		presentableLanguageText := fmt.Sprintf("%s %s", language.FlagEmoji, language.NativeName)
+		presentableLanguageText := utils.LanguageTextFormat(language)
 		languageKeyboardButton := telegram.InlineKeyboardButton{
 			Text: presentableLanguageText,
 			Data: data,
@@ -58,6 +59,18 @@ func (b *botController) getServicesInlineKeyboardMarkup(ctx context.Context, cal
 	if lengthSmsServices > 10 {
 		lengthSmsServices = 10
 	}
+	//sort.Slice(smsServices, func(i, j int) bool {
+	//	lhs := smsServices[i]
+	//	rhs := smsServices[j]
+	//	if lhs.Code == "ig" {
+	//		return true
+	//	}
+	//	if lhs.Code == "ig" {
+	//		return false
+	//	}
+	//
+	//	return lhs.Name < rhs.Name
+	//})
 	for _, smsService := range smsServices[:lengthSmsServices] {
 		parameters := []any{smsService.Code}
 		selectSMSServiceTelegramCallbackData := app.TelegramCallbackData{
@@ -91,24 +104,6 @@ func (b *botController) getServicesInlineKeyboardMarkup(ctx context.Context, cal
 	return &telegram.InlineKeyboardMarkup{
 		InlineKeyboard: gridInlineKeyboardButtons,
 	}, nil
-}
-
-func (b *botController) prepareGridInlineKeyboardButton(keyboardButtons []telegram.InlineKeyboardButton, columns int) [][]telegram.InlineKeyboardButton {
-	rows := len(keyboardButtons) / columns
-	if len(keyboardButtons)%columns > 0 {
-		rows += 1
-	}
-	gridInlineKeyboardButtons := make([][]telegram.InlineKeyboardButton, 0, rows)
-	for i := 0; i < rows; i++ {
-		start := i * columns
-		end := start + columns
-		endLimit := len(keyboardButtons)
-		if end > endLimit {
-			end = endLimit
-		}
-		gridInlineKeyboardButtons = append(gridInlineKeyboardButtons, keyboardButtons[start:end])
-	}
-	return gridInlineKeyboardButtons
 }
 
 func (b *botController) getMainMenuInlineKeyboardMarkup(ctx context.Context, user telegram.User) (*telegram.InlineKeyboardMarkup, error) {
@@ -250,15 +245,27 @@ func (b *botController) getMenuInlineKeyboardButton(langTag string) (*telegram.I
 	}, nil
 }
 
-func (b *botController) getServicePricesInlineKeyboardMarkup(langTag string, servicePrices []sms.ServicePrice, countries []sms.Country) (*telegram.InlineKeyboardMarkup, error) {
+func (b *botController) getServiceWithCountryInlineKeyboardMarkup(langTag string, servicePrices []sms.ServicePrice, countries []sms.Country) (*telegram.InlineKeyboardMarkup, error) {
 	keyboardButtons := make([]telegram.InlineKeyboardButton, 0, len(servicePrices))
 	lengthServicePrices := len(servicePrices)
 	if lengthServicePrices > 10 {
 		lengthServicePrices = 10
 	}
+	sort.Slice(servicePrices, func(i, j int) bool {
+		lhs := servicePrices[i]
+		rhs := servicePrices[j]
+		if lhs.CountryCode == 1 {
+			return true
+		}
+		if lhs.CountryCode == 1 {
+			return false
+		}
+
+		return lhs.Cost < rhs.Cost
+	})
 	for _, servicePrice := range servicePrices[:lengthServicePrices] {
 		filteredCountries := utils.Filter(countries, func(country sms.Country) bool {
-			return country.Id == servicePrice.CountryCode
+			return country.Id == int64(servicePrice.CountryCode)
 		})
 		if len(filteredCountries) == 0 {
 			continue
@@ -270,9 +277,9 @@ func (b *botController) getServicePricesInlineKeyboardMarkup(langTag string, ser
 			serviceCountry = fmt.Sprintf("%s %s", language.FlagEmoji, country.Title)
 		}
 		representableText := fmt.Sprintf("%s | %.2f ₽ | %d", serviceCountry, servicePrice.Cost, servicePrice.Count)
-		parameters := []any{servicePrice.Code}
+		parameters := []any{servicePrice.Code, country.Id, servicePrice.Cost}
 		telegramCallbackData := app.TelegramCallbackData{
-			Name:       app.SelectSMSServiceWithPriceCallbackQueryCmdText,
+			Name:       app.SelectSMSServiceWithCountryCallbackQueryCmdText,
 			Parameters: &parameters,
 		}
 		data, err := utils.EncodeTelegramCallbackData(telegramCallbackData)
@@ -365,4 +372,22 @@ func (b *botController) getPreferredCurrenciesKeyboardMarkup(langTag string) (*t
 	return &telegram.InlineKeyboardMarkup{
 		InlineKeyboard: gridKeyboardButtons,
 	}, nil
+}
+
+func (b *botController) prepareGridInlineKeyboardButton(keyboardButtons []telegram.InlineKeyboardButton, columns int) [][]telegram.InlineKeyboardButton {
+	rows := len(keyboardButtons) / columns
+	if len(keyboardButtons)%columns > 0 {
+		rows += 1
+	}
+	gridInlineKeyboardButtons := make([][]telegram.InlineKeyboardButton, 0, rows)
+	for i := 0; i < rows; i++ {
+		start := i * columns
+		end := start + columns
+		endLimit := len(keyboardButtons)
+		if end > endLimit {
+			end = endLimit
+		}
+		gridInlineKeyboardButtons = append(gridInlineKeyboardButtons, keyboardButtons[start:end])
+	}
+	return gridInlineKeyboardButtons
 }

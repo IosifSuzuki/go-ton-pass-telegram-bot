@@ -1,7 +1,7 @@
 package sms
 
 type Country struct {
-	Id           int    `json:"id"`
+	Id           int64  `json:"id"`
 	Title        string `json:"eng"`
 	Visible      int    `json:"visible"`
 	Retry        int    `json:"retry"`

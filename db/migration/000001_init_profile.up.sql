@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS profile (
     id SERIAL PRIMARY KEY,
     telegram_id INT UNIQUE,
+    telegram_chat_id INT,
     username TEXT,
     preferred_currency VARCHAR(127),
     preferred_language VARCHAR(127),

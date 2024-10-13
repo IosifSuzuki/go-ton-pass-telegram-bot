@@ -1,24 +1,24 @@
 package app
 
 const (
-	BalanceCallbackQueryCmdText                   = "balance"
-	BuyNumberCallbackQueryCmdText                 = "buy_number"
-	HistoryCallbackQueryCmdText                   = "history"
-	HelpCallbackQueryCmdText                      = "help"
-	LanguageCallbackQueryCmdText                  = "language"
-	MainMenuCallbackQueryCmdText                  = "main_menu"
-	SelectSMSServiceCallbackQueryCmdText          = "select_service"
-	SelectSMSServiceWithPriceCallbackQueryCmdText = "select_service_with_price"
-	SelectLanguageCallbackQueryCmdText            = "select_language"
-	ListPayCurrenciesCallbackQueryCmdText         = "list_pay_currencies"
-	SelectPayCurrencyCallbackQueryCmdText         = "select_pay_currency"
-	PreferredCurrenciesCallbackQueryCmdText       = "preferred_currencies"
-	SelectPreferredCurrencyCallbackQueryCmdText   = "select_preferred_currency"
+	BalanceCallbackQueryCmdText                     = "bal"
+	BuyNumberCallbackQueryCmdText                   = "buy_num"
+	HistoryCallbackQueryCmdText                     = "hist"
+	HelpCallbackQueryCmdText                        = "help"
+	LanguageCallbackQueryCmdText                    = "lang"
+	MainMenuCallbackQueryCmdText                    = "menu"
+	SelectSMSServiceCallbackQueryCmdText            = "s_serv"
+	SelectSMSServiceWithCountryCallbackQueryCmdText = "s_serv_count"
+	SelectLanguageCallbackQueryCmdText              = "s_lang"
+	ListPayCurrenciesCallbackQueryCmdText           = "l_pay_curr"
+	SelectPayCurrencyCallbackQueryCmdText           = "s_pay_curr"
+	PreferredCurrenciesCallbackQueryCmdText         = "pre_curr"
+	SelectPreferredCurrencyCallbackQueryCmdText     = "s_pref_curr"
 )
 
 type TelegramCallbackData struct {
-	Name       string
-	Parameters *[]any
+	Name       string `msgpack:"n"`
+	Parameters *[]any `msgpack:"p"`
 }
 
 func (t *TelegramCallbackData) CallbackQueryCommand() CallbackQueryCommand {
@@ -37,8 +37,8 @@ func (t *TelegramCallbackData) CallbackQueryCommand() CallbackQueryCommand {
 		return MainMenuCallbackQueryCommand
 	case SelectSMSServiceCallbackQueryCmdText:
 		return SelectSMSServiceCallbackQueryCommand
-	case SelectSMSServiceWithPriceCallbackQueryCmdText:
-		return SelectSMSServiceWithPriceCallbackQueryCommand
+	case SelectSMSServiceWithCountryCallbackQueryCmdText:
+		return SelectSMSServiceWithCountryCallbackQueryCommand
 	case SelectLanguageCallbackQueryCmdText:
 		return SelectLanguageCallbackQueryCommand
 	case ListPayCurrenciesCallbackQueryCmdText:

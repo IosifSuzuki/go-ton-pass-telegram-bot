@@ -49,5 +49,18 @@
     "description": "Choose an option below",
     "one": "Your selected preferred currency is {{ .Currency }}. Choose an option below",
     "other": "Your selected preferred currency is {{ .Currency }}. Choose an option below"
-  }
+  },
+  "success_received_sms_code": {
+    "description": "Your SMS activation code has been received!",
+    "one": "We've received your activation code: {{ .SMSCode }}",
+    "other": "We've received your activation code: {{ .SMSCode }}"
+  },
+  "start_registration_form_with_sms_code": {
+    "description": "Please enter phone number in registration form",
+    "one": "Please enter phone number \\+{{ .PhoneNumber }} in registration form\\. Then, wait for the SMS code\\. We’ll notify you as soon as it arrives\\.",
+    "other": "Please enter phone number \\+{{ .PhoneNumber }} in registration form\\. Then, wait for the SMS code\\. We’ll notify you as soon as it arrives\\."
+  },
+  "numbers_are_unavailable": "Sorry, it looks like the numbers are unavailable right now. Please try again",
+  "fail_to_order_sms_code": "There was an issue with order SMS code. Please try again.",
+  "internal_error": "An internal error occurred. Please try again later."
 }

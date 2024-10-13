@@ -6,9 +6,12 @@ import (
 	"go-ton-pass-telegram-bot/internal/model/app"
 	"go-ton-pass-telegram-bot/internal/model/sms"
 	"go-ton-pass-telegram-bot/pkg/logger"
+	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -19,7 +22,7 @@ type SMSService interface {
 	GetServices() ([]sms.Service, error)
 	GetCountries() ([]sms.Country, error)
 	GetPriceForService(code string) ([]sms.ServicePrice, error)
-	RequestNumber(serviceCode string) (*sms.RequestedNumber, error)
+	RequestNumber(serviceCode string, countryNumber int64, maxPrice float64) (*sms.RequestedNumber, error)
 }
 
 type smsService struct {
@@ -107,10 +110,14 @@ func (s *smsService) GetPriceForService(serviceCode string) ([]sms.ServicePrice,
 	return servicePrices, nil
 }
 
-func (s *smsService) RequestNumber(serviceCode string) (*sms.RequestedNumber, error) {
+func (s *smsService) RequestNumber(serviceCode string, countryNumber int64, maxPrice float64) (*sms.RequestedNumber, error) {
+	log := s.container.GetLogger()
 	urlValues := url.Values{}
 	urlValues.Set("service", serviceCode)
-	urlValues.Set("maxPrice", "0")
+	urlValues.Set("country", strconv.FormatInt(countryNumber, 10))
+	urlValues.Set("useCashBack", "true")
+	maxPriceInText := strconv.FormatFloat(maxPrice, 'f', 2, 64)
+	urlValues.Set("maxPrice", maxPriceInText)
 	req, err := s.prepareRequest(app.GetNumberSMSAction, urlValues)
 	if err != nil {
 		return nil, err
@@ -121,11 +128,25 @@ func (s *smsService) RequestNumber(serviceCode string) (*sms.RequestedNumber, er
 		return nil, err
 	}
 	defer resp.Body.Close()
-	requestedNumber := sms.RequestedNumber{}
-	if err := json.NewDecoder(resp.Body).Decode(&requestedNumber); err != nil {
-		//return nil, err
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
 	}
-	return &requestedNumber, nil
+	log.Debug("get response from RequestNumber endpoint", logger.F("response", string(body)))
+	requestedNumber := sms.RequestedNumber{}
+	err = json.Unmarshal(body, &requestedNumber)
+	if err == nil && requestedNumber.ActivationID != "" {
+		return &requestedNumber, nil
+	}
+	err, errInfo := s.HandleRequestNumberError(body)
+	if strings.EqualFold(err.Error(), sms.WrongMaxPriceErrorName) && errInfo != nil {
+		correctedPrice := errInfo["min"].(float64)
+		if math.Abs(correctedPrice-maxPrice) > 0.1 {
+			return s.RequestNumber(serviceCode, countryNumber, correctedPrice)
+		}
+		return nil, err
+	}
+	return nil, err
 }
 
 func (s *smsService) prepareRequest(smsAction app.SMSAction, queryParams url.Values) (*http.Request, error) {
@@ -138,11 +159,25 @@ func (s *smsService) prepareRequest(smsAction app.SMSAction, queryParams url.Val
 	queryParams.Set("api_key", apiKey)
 	queryParams.Set("action", string(smsAction))
 	urlPath.RawQuery = queryParams.Encode()
-	req, err := http.NewRequest("GET", urlPath.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, urlPath.String(), nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	log.Debug("prepare request", logger.F("url", req.URL))
 	return req, nil
+}
+
+func (s *smsService) HandleRequestNumberError(body []byte) (error, map[string]any) {
+	var errorResponse sms.ErrorResponse
+	if err := json.Unmarshal(body, &errorResponse); err != nil {
+		return err, nil
+	}
+	if err := sms.DecodeError(errorResponse.Message); err != nil {
+		return *err, errorResponse.Info
+	}
+	if err := sms.DecodeError(string(body)); err != nil {
+		return *err, nil
+	}
+	return app.UnknownError, errorResponse.Info
 }

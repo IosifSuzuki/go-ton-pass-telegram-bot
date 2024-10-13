@@ -3,9 +3,13 @@ package telegram
 import (
 	"context"
 	"go-ton-pass-telegram-bot/internal/model/app"
+	"go-ton-pass-telegram-bot/internal/model/domain"
+	"go-ton-pass-telegram-bot/internal/model/sms"
 	"go-ton-pass-telegram-bot/internal/model/telegram"
 	"go-ton-pass-telegram-bot/internal/utils"
 	"go-ton-pass-telegram-bot/pkg/logger"
+	"strconv"
+	"strings"
 )
 
 func (b *botController) balanceCallbackQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
@@ -369,9 +373,9 @@ func (b *botController) selectServiceCallbackQueryCommandHandler(ctx context.Con
 		log.Error("fail to GetCountries", logger.FError(err))
 		return err
 	}
-	replyMarkup, err := b.getServicePricesInlineKeyboardMarkup(*langTag, servicePrices, countries)
+	replyMarkup, err := b.getServiceWithCountryInlineKeyboardMarkup(*langTag, servicePrices, countries)
 	if err != nil {
-		log.Error("fail to getServicePricesInlineKeyboardMarkup", logger.FError(err))
+		log.Error("fail to getServiceWithCountryInlineKeyboardMarkup", logger.FError(err))
 		return err
 	}
 	photoMedia := telegram.InputPhotoMedia{
@@ -446,6 +450,68 @@ func (b *botController) preferredCurrenciesQueryCommandHandler(ctx context.Conte
 	return nil
 }
 
+func (b *botController) selectSMSServiceWithCountryQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
+	log := b.container.GetLogger()
+	telegramID := callbackQuery.From.ID
+	langTag, err := b.getLanguageCode(ctx, callbackQuery.From)
+	if err != nil {
+		log.Error("fail to get language code", logger.FError(err))
+		return err
+	}
+	localizer := b.container.GetLocalizer(*langTag)
+	telegramCallbackData, err := utils.DecodeTelegramCallbackData(callbackQuery.Data)
+	if err != nil {
+		return err
+	}
+	parameters := *telegramCallbackData.Parameters
+	serviceCode := parameters[0].(string)
+	countryID := utils.GetInt64(parameters[1])
+	maxPrice := utils.GetFloat64(parameters[2])
+	answerCallbackQuery := telegram.AnswerCallbackQuery{
+		ID:        callbackQuery.ID,
+		Text:      nil,
+		ShowAlert: false,
+	}
+	if err := b.telegramBotService.SendResponse(answerCallbackQuery, app.AnswerCallbackQueryTelegramMethod); err != nil {
+		log.Error("fail to send a AnswerCallbackQuery to telegram servers", logger.FError(err))
+		return err
+	}
+	domainProfile, err := b.profileRepository.FetchByTelegramID(ctx, telegramID)
+	if err != nil {
+		log.Error("fail to get profile", logger.FError(err))
+		return err
+	}
+	requestedNumber, err := b.smsService.RequestNumber(serviceCode, countryID, maxPrice)
+	smsError, ok := err.(sms.Error)
+	if ok && strings.EqualFold(smsError.Name, sms.NoNumbersErrorName) {
+		return b.EditMessageMedia(ctx, callbackQuery, localizer.LocalizedString("numbers_are_unavailable"), failReceivedCodeImageURL)
+	} else if ok {
+		return b.EditMessageMedia(ctx, callbackQuery, localizer.LocalizedString("fail_to_order_sms_code"), failReceivedCodeImageURL)
+	} else if err != nil {
+		log.Debug("unhandled error occurred", logger.FError(err))
+		return b.EditMessageMedia(ctx, callbackQuery, localizer.LocalizedString("internal_error"), failReceivedCodeImageURL)
+	}
+	activationID, err := strconv.ParseInt(requestedNumber.ActivationID, 10, 64)
+	if err != nil {
+		log.Error("parse response ActivationID to int64 has failed", logger.FError(err))
+		return err
+	}
+	domainSMSHistory := domain.SMSHistory{
+		ProfileID:    domainProfile.ID,
+		ActivationID: activationID,
+		ServiceCode:  serviceCode,
+		PhoneNumber:  requestedNumber.PhoneNumber,
+	}
+	if _, err := b.smsHistoryRepository.Create(ctx, &domainSMSHistory); err != nil {
+		log.Error("fail to create sms history", logger.FError(err))
+		return err
+	}
+	formattedText := localizer.LocalizedStringWithTemplateData("start_registration_form_with_sms_code", map[string]any{
+		"PhoneNumber": requestedNumber.PhoneNumber,
+	})
+	return b.EditMessageMedia(ctx, callbackQuery, formattedText, avatarImageURL)
+}
+
 func (b *botController) selectPreferredCurrencyQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
 	log := b.container.GetLogger()
 	telegramID := callbackQuery.From.ID
@@ -470,6 +536,29 @@ func (b *botController) selectPreferredCurrencyQueryCommandHandler(ctx context.C
 	}
 	if err := b.editMessageAndBackToMainMenu(ctx, callbackQuery); err != nil {
 		log.Error("fail to send main menu to telegram servers", logger.FError(err))
+		return err
+	}
+	return nil
+}
+
+func (b *botController) EditMessageMedia(ctx context.Context, callbackQuery *telegram.CallbackQuery, text string, photoURL string) error {
+	photoMedia := telegram.InputPhotoMedia{
+		Type:      "photo",
+		Media:     photoURL,
+		Caption:   utils.NewString(text),
+		ParseMode: utils.NewString("MarkdownV2"),
+	}
+	mainMenuInlineKeyboardMarkup, err := b.getMainMenuInlineKeyboardMarkup(ctx, callbackQuery.From)
+	if err != nil {
+		return err
+	}
+	editMessageMedia := telegram.EditMessageMedia{
+		ChatID:      &callbackQuery.Message.Chat.ID,
+		MessageID:   &callbackQuery.Message.ID,
+		Media:       photoMedia,
+		ReplyMarkup: mainMenuInlineKeyboardMarkup,
+	}
+	if err := b.telegramBotService.SendResponse(editMessageMedia, app.EditMessageMediaTelegramMethod); err != nil {
 		return err
 	}
 	return nil

@@ -5,6 +5,7 @@ import "time"
 type Profile struct {
 	ID                int64
 	TelegramID        int64
+	TelegramChatID    int64
 	Username          *string
 	PreferredCurrency *string
 	PreferredLanguage *string

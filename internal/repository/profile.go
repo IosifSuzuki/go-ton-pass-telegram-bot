@@ -27,12 +27,13 @@ func NewProfileRepository(conn *sql.DB) ProfileRepository {
 }
 
 func (p *profileRepository) Create(ctx context.Context, profile *domain.Profile) (*int64, error) {
-	query := "INSERT INTO profile (telegram_id, username, balance, created_at) VALUES ($1, $2, $3, $4) RETURNING id;"
+	query := "INSERT INTO profile (telegram_id, telegram_chat_id, username, balance, created_at) VALUES ($1, $2, $3, $4, $5) RETURNING id;"
 	var id int64
 	err := p.conn.QueryRowContext(
 		ctx,
 		query,
 		profile.TelegramID,
+		profile.TelegramChatID,
 		profile.Username,
 		profile.Balance,
 		time.Now(),
@@ -51,7 +52,7 @@ func (p *profileRepository) ExistsWithTelegramID(ctx context.Context, telegramID
 }
 
 func (p *profileRepository) FetchByTelegramID(ctx context.Context, telegramID int64) (*domain.Profile, error) {
-	query := "SELECT id, username, preferred_currency, preferred_language, balance, created_at, updated_at FROM profile WHERE telegram_id = $1"
+	query := "SELECT id, telegram_chat_id, username, preferred_currency, preferred_language, balance, created_at, updated_at FROM profile WHERE telegram_id = $1"
 	row := p.conn.QueryRowContext(ctx, query, telegramID)
 	profile := domain.Profile{
 		TelegramID: telegramID,
@@ -63,6 +64,7 @@ func (p *profileRepository) FetchByTelegramID(ctx context.Context, telegramID in
 
 	err := row.Scan(
 		&profile.ID,
+		&profile.TelegramChatID,
 		&profile.Username,
 		&preferredCurrency,
 		&preferredLanguage,
@@ -83,7 +85,7 @@ func (p *profileRepository) FetchByTelegramID(ctx context.Context, telegramID in
 }
 
 func (p *profileRepository) FetchByID(ctx context.Context, id int64) (*domain.Profile, error) {
-	query := "SELECT telegram_id, username, preferred_currency, preferred_language, balance, created_at, updated_at FROM profile WHERE id = $1"
+	query := "SELECT telegram_id, telegram_chat_id, username, preferred_currency, preferred_language, balance, created_at, updated_at FROM profile WHERE id = $1"
 	row := p.conn.QueryRowContext(ctx, query, id)
 	profile := domain.Profile{
 		ID:        id,
@@ -95,6 +97,7 @@ func (p *profileRepository) FetchByID(ctx context.Context, id int64) (*domain.Pr
 
 	err := row.Scan(
 		&profile.TelegramID,
+		&profile.TelegramChatID,
 		&profile.Username,
 		&preferredCurrency,
 		&preferredLanguage,

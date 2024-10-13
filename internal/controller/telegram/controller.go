@@ -27,17 +27,19 @@ const (
 	historyImageURL                 = "https://i.ibb.co/Gf6QMCG/history.png"
 	chooseCountryImageURL           = "https://i.ibb.co/VSBbV14/country.png"
 	chooseServiceImageURL           = "https://i.ibb.co/m4KYq4n/service.png"
+	failReceivedCodeImageURL        = "https://www.imghippo.com/i/D8eey1728514326.png"
 )
 
 type botController struct {
-	container          container.Container
-	telegramBotService service.TelegramBotService
-	cryptoPayBot       service.CryptoPayBot
-	sessionService     service.SessionService
-	cacheService       service.Cache
-	smsService         service.SMSService
-	profileRepository  repository.ProfileRepository
-	exchangeRateWorker worker.ExchangeRate
+	container            container.Container
+	telegramBotService   service.TelegramBotService
+	cryptoPayBot         service.CryptoPayBot
+	sessionService       service.SessionService
+	cacheService         service.Cache
+	smsService           service.SMSService
+	profileRepository    repository.ProfileRepository
+	smsHistoryRepository repository.SMSHistoryRepository
+	exchangeRateWorker   worker.ExchangeRate
 }
 
 func NewBotController(
@@ -46,18 +48,20 @@ func NewBotController(
 	cacheService service.Cache,
 	smsService service.SMSService,
 	profileRepository repository.ProfileRepository,
+	smsHistoryRepository repository.SMSHistoryRepository,
 ) BotController {
 	cryptoPayBot := service.NewCryptoPayBot(container)
 	exchangeRateWorker := worker.NewExchangeRate(container, cacheService, cryptoPayBot)
 	return &botController{
-		container:          container,
-		telegramBotService: service.NewTelegramBot(container),
-		cryptoPayBot:       cryptoPayBot,
-		sessionService:     sessionService,
-		cacheService:       cacheService,
-		smsService:         smsService,
-		profileRepository:  profileRepository,
-		exchangeRateWorker: exchangeRateWorker,
+		container:            container,
+		telegramBotService:   service.NewTelegramBot(container),
+		cryptoPayBot:         cryptoPayBot,
+		sessionService:       sessionService,
+		cacheService:         cacheService,
+		smsService:           smsService,
+		profileRepository:    profileRepository,
+		smsHistoryRepository: smsHistoryRepository,
+		exchangeRateWorker:   exchangeRateWorker,
 	}
 }
 
@@ -135,8 +139,8 @@ func (b *botController) Serve(update *telegram.Update) error {
 		return b.selectLanguageCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.HistoryCallbackQueryCommand:
 		return b.historyCallbackQueryCommandHandler(ctx, update.CallbackQuery)
-	case app.SelectSMSServiceWithPriceCallbackQueryCommand:
-		return b.developingCallbackQueryCommandHandler(ctx, update.CallbackQuery)
+	case app.SelectSMSServiceWithCountryCallbackQueryCommand:
+		return b.selectSMSServiceWithCountryQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.ListPayCurrenciesCallbackQueryCommand:
 		return b.listPayCurrenciesCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.SelectPayCurrencyCallbackQueryCommand:
@@ -168,8 +172,9 @@ func (b *botController) recordTelegramProfile(ctx context.Context, update *teleg
 	} else if !profileExist {
 		log.Debug("record profile to db", logger.F("telegramID", telegramID))
 		profile := &domain.Profile{
-			TelegramID: *telegramID,
-			Username:   username,
+			TelegramID:     *telegramID,
+			TelegramChatID: update.ID,
+			Username:       username,
 		}
 		_, err := b.profileRepository.Create(ctx, profile)
 		if err != nil {
