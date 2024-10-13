@@ -11,4 +11,5 @@ var (
 	NilError                         = errors.New("nil pointer")
 	EmptyValueError                  = errors.New("empty value")
 	UnknownError                     = errors.New("unknown error")
+	IndexOutOfRangeError             = errors.New("index out of range error")
 )

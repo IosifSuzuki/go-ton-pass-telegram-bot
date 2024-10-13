@@ -309,6 +309,12 @@ func (b *botController) servicesCallbackQueryCommandHandler(ctx context.Context,
 		return err
 	}
 	localizer := b.container.GetLocalizer(*langTag)
+	telegramCallbackData, err := utils.DecodeTelegramCallbackData(callbackQuery.Data)
+	if telegramCallbackData.Parameters == nil {
+		return err
+	}
+	parameters := *telegramCallbackData.Parameters
+	currentPage := utils.GetInt64(parameters[0])
 	answerCallbackQuery := telegram.AnswerCallbackQuery{
 		ID:        callbackQuery.ID,
 		Text:      nil,
@@ -322,14 +328,19 @@ func (b *botController) servicesCallbackQueryCommandHandler(ctx context.Context,
 	if err != nil {
 		return err
 	}
-	replyMarkup, err := b.getServicesInlineKeyboardMarkup(ctx, callbackQuery, smsServices)
+	pagination := app.Pagination[sms.Service]{
+		CurrentPage:  int(currentPage),
+		ItemsPerPage: MaxInlineKeyboardRows * MaxInlineKeyboardColumns,
+		DataSource:   smsServices,
+	}
+	replyMarkup, err := b.getServicesInlineKeyboardMarkup(ctx, callbackQuery, &pagination)
 	if err != nil {
 		return err
 	}
 	photoMedia := telegram.InputPhotoMedia{
 		Type:    "photo",
 		Media:   chooseServiceImageURL,
-		Caption: utils.NewString(localizer.LocalizedString("select_sms_service_with_country")),
+		Caption: utils.NewString(localizer.LocalizedString("select_sms_service")),
 	}
 	editMessageMedia := telegram.EditMessageMedia{
 		ChatID:      &callbackQuery.Message.Chat.ID,
@@ -354,6 +365,7 @@ func (b *botController) selectServiceCallbackQueryCommandHandler(ctx context.Con
 	}
 	parameters := *telegramCallbackData.Parameters
 	selectedService := parameters[0].(string)
+	currentPage := utils.GetInt64(parameters[1])
 	answerCallbackQuery := telegram.AnswerCallbackQuery{
 		ID:        callbackQuery.ID,
 		Text:      nil,
@@ -363,9 +375,9 @@ func (b *botController) selectServiceCallbackQueryCommandHandler(ctx context.Con
 		log.Error("fail to send a AnswerCallbackQuery to telegram servers", logger.FError(err))
 		return err
 	}
-	servicePrices, err := b.smsService.GetPriceForService(selectedService)
+	servicePrices, err := b.smsService.GetServicePrices(selectedService)
 	if err != nil {
-		log.Error("fail to GetPriceForService", logger.FError(err))
+		log.Error("fail to GetServicePrices", logger.FError(err))
 		return err
 	}
 	countries, err := b.smsService.GetCountries()
@@ -373,7 +385,12 @@ func (b *botController) selectServiceCallbackQueryCommandHandler(ctx context.Con
 		log.Error("fail to GetCountries", logger.FError(err))
 		return err
 	}
-	replyMarkup, err := b.getServiceWithCountryInlineKeyboardMarkup(*langTag, servicePrices, countries)
+	pagination := app.Pagination[sms.ServicePrice]{
+		CurrentPage:  int(currentPage),
+		ItemsPerPage: MaxInlineKeyboardRows,
+		DataSource:   servicePrices,
+	}
+	replyMarkup, err := b.getServiceWithCountryInlineKeyboardMarkup(*langTag, &pagination, countries)
 	if err != nil {
 		log.Error("fail to getServiceWithCountryInlineKeyboardMarkup", logger.FError(err))
 		return err
@@ -510,6 +527,20 @@ func (b *botController) selectSMSServiceWithCountryQueryCommandHandler(ctx conte
 		"PhoneNumber": requestedNumber.PhoneNumber,
 	})
 	return b.EditMessageMedia(ctx, callbackQuery, formattedText, avatarImageURL)
+}
+
+func (b *botController) emptyQueryCommandHandler(_ context.Context, callbackQuery *telegram.CallbackQuery) error {
+	log := b.container.GetLogger()
+	answerCallbackQuery := telegram.AnswerCallbackQuery{
+		ID:        callbackQuery.ID,
+		Text:      nil,
+		ShowAlert: false,
+	}
+	if err := b.telegramBotService.SendResponse(answerCallbackQuery, app.AnswerCallbackQueryTelegramMethod); err != nil {
+		log.Error("fail to send a AnswerCallbackQuery to telegram servers", logger.FError(err))
+		return err
+	}
+	return nil
 }
 
 func (b *botController) selectPreferredCurrencyQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {

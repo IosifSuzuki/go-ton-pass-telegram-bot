@@ -8,7 +8,11 @@ import (
 	"go-ton-pass-telegram-bot/internal/model/telegram"
 	"go-ton-pass-telegram-bot/internal/utils"
 	"go-ton-pass-telegram-bot/pkg/logger"
-	"sort"
+)
+
+const (
+	MaxInlineKeyboardRows    = 8
+	MaxInlineKeyboardColumns = 3
 )
 
 func (b *botController) getLanguagesInlineKeyboardMarkup(ctx context.Context, user telegram.User) (*telegram.InlineKeyboardMarkup, error) {
@@ -46,33 +50,25 @@ func (b *botController) getLanguagesInlineKeyboardMarkup(ctx context.Context, us
 	}, nil
 }
 
-func (b *botController) getServicesInlineKeyboardMarkup(ctx context.Context, callbackQuery *telegram.CallbackQuery, smsServices []sms.Service) (*telegram.InlineKeyboardMarkup, error) {
+func (b *botController) getServicesInlineKeyboardMarkup(ctx context.Context, callbackQuery *telegram.CallbackQuery, pagination *app.Pagination[sms.Service]) (*telegram.InlineKeyboardMarkup, error) {
 	log := b.container.GetLogger()
 	langTag, err := b.getLanguageCode(ctx, callbackQuery.From)
 	if err != nil {
 		log.Error("fail to getLanguageCode", logger.FError(err))
 		return nil, err
 	}
-	localizer := b.container.GetLocalizer(*langTag)
-	inlineKeyboardButtons := make([]telegram.InlineKeyboardButton, 0, len(smsServices))
-	lengthSmsServices := len(smsServices)
-	if lengthSmsServices > 10 {
-		lengthSmsServices = 10
+	inlineKeyboardButtons := make([]telegram.InlineKeyboardButton, 0, pagination.ItemsPerPage)
+	startIndex := pagination.CurrentPage * pagination.ItemsPerPage
+	if startIndex > pagination.Len() {
+		return nil, app.IndexOutOfRangeError
 	}
-	//sort.Slice(smsServices, func(i, j int) bool {
-	//	lhs := smsServices[i]
-	//	rhs := smsServices[j]
-	//	if lhs.Code == "ig" {
-	//		return true
-	//	}
-	//	if lhs.Code == "ig" {
-	//		return false
-	//	}
-	//
-	//	return lhs.Name < rhs.Name
-	//})
-	for _, smsService := range smsServices[:lengthSmsServices] {
-		parameters := []any{smsService.Code}
+	endIndex := startIndex + pagination.ItemsPerPage
+	if endIndex > pagination.Len() {
+		endIndex = pagination.Len()
+	}
+	dataSourceSlice := pagination.DataSource[startIndex:endIndex]
+	for _, smsService := range dataSourceSlice {
+		parameters := []any{smsService.Code, 0}
 		selectSMSServiceTelegramCallbackData := app.TelegramCallbackData{
 			Name:       app.SelectSMSServiceCallbackQueryCmdText,
 			Parameters: &parameters,
@@ -83,24 +79,23 @@ func (b *botController) getServicesInlineKeyboardMarkup(ctx context.Context, cal
 			continue
 		}
 		inlineKeyboardButtons = append(inlineKeyboardButtons, telegram.InlineKeyboardButton{
-			Text: smsService.Name,
+			Text: utils.ButtonTitle(smsService.Name, "🌐"),
 			Data: data,
 		})
 	}
-	backToMenuTelegramCallbackData := app.TelegramCallbackData{
-		Name:       app.MainMenuCallbackQueryCmdText,
-		Parameters: nil,
-	}
-	backToMainData, err := utils.EncodeTelegramCallbackData(backToMenuTelegramCallbackData)
+	mainMenuInlineKeyboardButton, err := b.getMenuInlineKeyboardButton(*langTag)
 	if err != nil {
-		log.Error("fail to encode telegram callback data", logger.FError(err))
 		return nil, err
 	}
-	inlineKeyboardButtons = append(inlineKeyboardButtons, telegram.InlineKeyboardButton{
-		Text: localizer.LocalizedString("back_to_main_menu"),
-		Data: backToMainData,
+	pageControlsButtons, err := getPageControlInlineKeyboardButtons(pagination, app.BuyNumberCallbackQueryCmdText, []any{})
+	if err != nil {
+		return nil, err
+	}
+	gridInlineKeyboardButtons := b.prepareGridInlineKeyboardButton(inlineKeyboardButtons, MaxInlineKeyboardColumns)
+	gridInlineKeyboardButtons = append(gridInlineKeyboardButtons, pageControlsButtons)
+	gridInlineKeyboardButtons = append(gridInlineKeyboardButtons, []telegram.InlineKeyboardButton{
+		*mainMenuInlineKeyboardButton,
 	})
-	gridInlineKeyboardButtons := b.prepareGridInlineKeyboardButton(inlineKeyboardButtons, 2)
 	return &telegram.InlineKeyboardMarkup{
 		InlineKeyboard: gridInlineKeyboardButtons,
 	}, nil
@@ -111,6 +106,7 @@ func (b *botController) getMainMenuInlineKeyboardMarkup(ctx context.Context, use
 	if err != nil {
 		return nil, err
 	}
+	buyNumberParameters := []any{0}
 	localizer := b.container.GetLocalizer(*langTag)
 	balanceTelegramCallbackData := app.TelegramCallbackData{
 		Name:       app.BalanceCallbackQueryCmdText,
@@ -118,7 +114,7 @@ func (b *botController) getMainMenuInlineKeyboardMarkup(ctx context.Context, use
 	}
 	buyNumberTelegramCallbackData := app.TelegramCallbackData{
 		Name:       app.BuyNumberCallbackQueryCmdText,
-		Parameters: nil,
+		Parameters: &buyNumberParameters,
 	}
 	helpTelegramCallbackData := app.TelegramCallbackData{
 		Name:       app.HelpCallbackQueryCmdText,
@@ -245,25 +241,24 @@ func (b *botController) getMenuInlineKeyboardButton(langTag string) (*telegram.I
 	}, nil
 }
 
-func (b *botController) getServiceWithCountryInlineKeyboardMarkup(langTag string, servicePrices []sms.ServicePrice, countries []sms.Country) (*telegram.InlineKeyboardMarkup, error) {
-	keyboardButtons := make([]telegram.InlineKeyboardButton, 0, len(servicePrices))
-	lengthServicePrices := len(servicePrices)
-	if lengthServicePrices > 10 {
-		lengthServicePrices = 10
+func (b *botController) getServiceWithCountryInlineKeyboardMarkup(langTag string, pagination *app.Pagination[sms.ServicePrice], countries []sms.Country) (*telegram.InlineKeyboardMarkup, error) {
+	inlineKeyboardButtons := make([]telegram.InlineKeyboardButton, 0, pagination.Len())
+	startIndex := pagination.CurrentPage * pagination.ItemsPerPage
+	if startIndex > pagination.Len() {
+		return nil, app.IndexOutOfRangeError
 	}
-	sort.Slice(servicePrices, func(i, j int) bool {
-		lhs := servicePrices[i]
-		rhs := servicePrices[j]
-		if lhs.CountryCode == 1 {
-			return true
-		}
-		if lhs.CountryCode == 1 {
-			return false
-		}
-
-		return lhs.Cost < rhs.Cost
-	})
-	for _, servicePrice := range servicePrices[:lengthServicePrices] {
+	endIndex := startIndex + pagination.ItemsPerPage
+	if endIndex > pagination.Len() {
+		endIndex = pagination.Len()
+	}
+	dataSourceSlice := pagination.DataSource[startIndex:endIndex]
+	var serviceCode string
+	if len(dataSourceSlice) > 0 {
+		serviceCode = dataSourceSlice[0].Code
+	} else {
+		return nil, app.NilError
+	}
+	for _, servicePrice := range dataSourceSlice {
 		filteredCountries := utils.Filter(countries, func(country sms.Country) bool {
 			return country.Id == int64(servicePrice.CountryCode)
 		})
@@ -286,19 +281,30 @@ func (b *botController) getServiceWithCountryInlineKeyboardMarkup(langTag string
 		if err != nil {
 			continue
 		}
-		keyboardButtons = append(keyboardButtons, telegram.InlineKeyboardButton{
+		inlineKeyboardButtons = append(inlineKeyboardButtons, telegram.InlineKeyboardButton{
 			Text: representableText,
 			Data: data,
 		})
 	}
-	menuKeyboardButton, err := b.getMenuInlineKeyboardButton(langTag)
+	mainMenuInlineKeyboardButton, err := b.getMenuInlineKeyboardButton(langTag)
 	if err != nil {
 		return nil, err
 	}
-	keyboardButtons = append(keyboardButtons, *menuKeyboardButton)
-	gridKeyboardButtons := b.prepareGridInlineKeyboardButton(keyboardButtons, 1)
+	gridInlineKeyboardButtons := b.prepareGridInlineKeyboardButton(inlineKeyboardButtons, 1)
+	pageControlsButtons, err := getPageControlInlineKeyboardButtons(
+		pagination,
+		app.SelectSMSServiceCallbackQueryCmdText,
+		[]any{serviceCode},
+	)
+	if err != nil {
+		return nil, err
+	}
+	gridInlineKeyboardButtons = append(gridInlineKeyboardButtons, pageControlsButtons)
+	gridInlineKeyboardButtons = append(gridInlineKeyboardButtons, []telegram.InlineKeyboardButton{
+		*mainMenuInlineKeyboardButton,
+	})
 	return &telegram.InlineKeyboardMarkup{
-		InlineKeyboard: gridKeyboardButtons,
+		InlineKeyboard: gridInlineKeyboardButtons,
 	}, nil
 }
 
@@ -390,4 +396,61 @@ func (b *botController) prepareGridInlineKeyboardButton(keyboardButtons []telegr
 		gridInlineKeyboardButtons = append(gridInlineKeyboardButtons, keyboardButtons[start:end])
 	}
 	return gridInlineKeyboardButtons
+}
+
+func getPageControlInlineKeyboardButtons[T any](pagination *app.Pagination[T], queryCmdText string, parameters []any) ([]telegram.InlineKeyboardButton, error) {
+	previousPage := pagination.CurrentPage - 1
+	if previousPage < 0 {
+		previousPage = pagination.Pages() - 1
+	}
+	nextPage := pagination.CurrentPage + 1
+	if nextPage > pagination.Pages()-1 {
+		nextPage = 0
+	}
+	previousPageParameters := make([]any, len(parameters))
+	copy(previousPageParameters, parameters)
+	previousPageParameters = append(previousPageParameters, previousPage)
+	previousTelegramCallbackData := app.TelegramCallbackData{
+		Name:       queryCmdText,
+		Parameters: &previousPageParameters,
+	}
+	infoPageCallbackData := app.TelegramCallbackData{
+		Name: app.EmptyCallbackQueryCmdText,
+	}
+	nextPageParameters := make([]any, len(parameters))
+	copy(nextPageParameters, parameters)
+	nextPageParameters = append(nextPageParameters, nextPage)
+	nextTelegramCallbackData := app.TelegramCallbackData{
+		Name:       queryCmdText,
+		Parameters: &nextPageParameters,
+	}
+
+	previousData, err := utils.EncodeTelegramCallbackData(previousTelegramCallbackData)
+	if err != nil {
+		return nil, err
+	}
+	infoData, err := utils.EncodeTelegramCallbackData(infoPageCallbackData)
+	if err != nil {
+		return nil, err
+	}
+	nextData, err := utils.EncodeTelegramCallbackData(nextTelegramCallbackData)
+	if err != nil {
+		return nil, err
+	}
+
+	inlineKeyboardButtons := []telegram.InlineKeyboardButton{
+		{
+			Text: pagination.Previous(),
+			Data: previousData,
+		},
+		{
+			Text: pagination.MidTitle(),
+			Data: infoData,
+		},
+		{
+			Text: pagination.NextTitle(),
+			Data: nextData,
+		},
+	}
+	return inlineKeyboardButtons, nil
 }

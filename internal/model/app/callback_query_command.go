@@ -17,4 +17,5 @@ const (
 	SelectPayCurrencyCallbackQueryCommand
 	PreferredCurrenciesCallbackQueryCommand
 	SelectPreferredCurrencyCallbackQueryCommand
+	EmptyCallbackQueryCommand
 )

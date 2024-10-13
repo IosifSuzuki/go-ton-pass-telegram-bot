@@ -149,6 +149,8 @@ func (b *botController) Serve(update *telegram.Update) error {
 		return b.preferredCurrenciesQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.SelectPreferredCurrencyCallbackQueryCommand:
 		return b.selectPreferredCurrencyQueryCommandHandler(ctx, update.CallbackQuery)
+	case app.EmptyCallbackQueryCommand:
+		return b.emptyQueryCommandHandler(ctx, update.CallbackQuery)
 	default:
 		return b.developingCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	}

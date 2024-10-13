@@ -21,17 +21,19 @@ const (
 type SMSService interface {
 	GetServices() ([]sms.Service, error)
 	GetCountries() ([]sms.Country, error)
-	GetPriceForService(code string) ([]sms.ServicePrice, error)
+	GetServicePrices(code string) ([]sms.ServicePrice, error)
 	RequestNumber(serviceCode string, countryNumber int64, maxPrice float64) (*sms.RequestedNumber, error)
 }
 
 type smsService struct {
-	container container.Container
+	container     container.Container
+	servicePrices map[string][]sms.ServicePrice
 }
 
 func NewSMSService(container container.Container) SMSService {
 	return &smsService{
-		container: container,
+		container:     container,
+		servicePrices: make(map[string][]sms.ServicePrice),
 	}
 }
 
@@ -79,7 +81,13 @@ func (s *smsService) GetCountries() ([]sms.Country, error) {
 	return allCountries, nil
 }
 
-func (s *smsService) GetPriceForService(serviceCode string) ([]sms.ServicePrice, error) {
+func (s *smsService) GetServicePrices(serviceCode string) ([]sms.ServicePrice, error) {
+	servicePrice, err := s.getServicePricesFromCache(serviceCode)
+	if err != nil && err != app.NilError {
+		return nil, err
+	} else if err == nil && servicePrice != nil {
+		return servicePrice, nil
+	}
 	urlValues := url.Values{}
 	urlValues.Set("service", serviceCode)
 	req, err := s.prepareRequest(app.GetPricesSMSAction, urlValues)
@@ -107,6 +115,7 @@ func (s *smsService) GetPriceForService(serviceCode string) ([]sms.ServicePrice,
 		servicePrice.CountryCode = countryCodeInt
 		servicePrices = append(servicePrices, servicePrice)
 	}
+	s.servicePrices[serviceCode] = servicePrices
 	return servicePrices, nil
 }
 
@@ -138,7 +147,7 @@ func (s *smsService) RequestNumber(serviceCode string, countryNumber int64, maxP
 	if err == nil && requestedNumber.ActivationID != "" {
 		return &requestedNumber, nil
 	}
-	err, errInfo := s.HandleRequestNumberError(body)
+	err, errInfo := s.handleRequestNumberError(body)
 	if strings.EqualFold(err.Error(), sms.WrongMaxPriceErrorName) && errInfo != nil {
 		correctedPrice := errInfo["min"].(float64)
 		if math.Abs(correctedPrice-maxPrice) > 0.1 {
@@ -168,7 +177,7 @@ func (s *smsService) prepareRequest(smsAction app.SMSAction, queryParams url.Val
 	return req, nil
 }
 
-func (s *smsService) HandleRequestNumberError(body []byte) (error, map[string]any) {
+func (s *smsService) handleRequestNumberError(body []byte) (error, map[string]any) {
 	var errorResponse sms.ErrorResponse
 	if err := json.Unmarshal(body, &errorResponse); err != nil {
 		return err, nil
@@ -180,4 +189,12 @@ func (s *smsService) HandleRequestNumberError(body []byte) (error, map[string]an
 		return *err, nil
 	}
 	return app.UnknownError, errorResponse.Info
+}
+
+func (s *smsService) getServicePricesFromCache(code string) ([]sms.ServicePrice, error) {
+	priceServices, ok := s.servicePrices[code]
+	if ok {
+		return priceServices, nil
+	}
+	return nil, app.NilError
 }
