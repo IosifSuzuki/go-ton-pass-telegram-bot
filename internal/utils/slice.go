@@ -17,3 +17,12 @@ func Contains[T any](ss []T, test func(T) bool) (ret bool) {
 	}
 	return false
 }
+
+func FirstIndexOf[T comparable](ss []T, value T) int {
+	for idx, item := range ss {
+		if item == value {
+			return idx
+		}
+	}
+	return -1
+}

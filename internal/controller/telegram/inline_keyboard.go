@@ -91,7 +91,7 @@ func (b *botController) getServicesInlineKeyboardMarkup(ctx context.Context, cal
 	if err != nil {
 		return nil, err
 	}
-	gridInlineKeyboardButtons := b.prepareGridInlineKeyboardButton(inlineKeyboardButtons, MaxInlineKeyboardColumns)
+	gridInlineKeyboardButtons := b.prepareGridInlineKeyboardButton(inlineKeyboardButtons, 2)
 	gridInlineKeyboardButtons = append(gridInlineKeyboardButtons, pageControlsButtons)
 	gridInlineKeyboardButtons = append(gridInlineKeyboardButtons, []telegram.InlineKeyboardButton{
 		*mainMenuInlineKeyboardButton,
@@ -241,7 +241,12 @@ func (b *botController) getMenuInlineKeyboardButton(langTag string) (*telegram.I
 	}, nil
 }
 
-func (b *botController) getServiceWithCountryInlineKeyboardMarkup(langTag string, pagination *app.Pagination[sms.ServicePrice], countries []sms.Country) (*telegram.InlineKeyboardMarkup, error) {
+func (b *botController) getServiceWithCountryInlineKeyboardMarkup(
+	langTag string,
+	serviceCode string,
+	pagination *app.Pagination[sms.PriceForService],
+	countries []sms.Country,
+) (*telegram.InlineKeyboardMarkup, error) {
 	inlineKeyboardButtons := make([]telegram.InlineKeyboardButton, 0, pagination.Len())
 	startIndex := pagination.CurrentPage * pagination.ItemsPerPage
 	if startIndex > pagination.Len() {
@@ -252,15 +257,9 @@ func (b *botController) getServiceWithCountryInlineKeyboardMarkup(langTag string
 		endIndex = pagination.Len()
 	}
 	dataSourceSlice := pagination.DataSource[startIndex:endIndex]
-	var serviceCode string
-	if len(dataSourceSlice) > 0 {
-		serviceCode = dataSourceSlice[0].Code
-	} else {
-		return nil, app.NilError
-	}
 	for _, servicePrice := range dataSourceSlice {
 		filteredCountries := utils.Filter(countries, func(country sms.Country) bool {
-			return country.Id == int64(servicePrice.CountryCode)
+			return country.ID == servicePrice.CountryCode
 		})
 		if len(filteredCountries) == 0 {
 			continue
@@ -271,8 +270,8 @@ func (b *botController) getServiceWithCountryInlineKeyboardMarkup(langTag string
 		if language != nil {
 			serviceCountry = fmt.Sprintf("%s %s", language.FlagEmoji, country.Title)
 		}
-		representableText := fmt.Sprintf("%s | %.2f ₽ | %d", serviceCountry, servicePrice.Cost, servicePrice.Count)
-		parameters := []any{servicePrice.Code, country.Id, servicePrice.Cost}
+		representableText := fmt.Sprintf("%s | %.2f ₽ | %d", serviceCountry, servicePrice.MinPrice, servicePrice.Count)
+		parameters := []any{serviceCode, country.ID, servicePrice.MinPrice}
 		telegramCallbackData := app.TelegramCallbackData{
 			Name:       app.SelectSMSServiceWithCountryCallbackQueryCmdText,
 			Parameters: &parameters,

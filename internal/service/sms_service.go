@@ -21,19 +21,18 @@ const (
 type SMSService interface {
 	GetServices() ([]sms.Service, error)
 	GetCountries() ([]sms.Country, error)
-	GetServicePrices(code string) ([]sms.ServicePrice, error)
+	GetServicePrices(code string) ([]sms.PriceForService, error)
+	GetPopularServiceCodeList() ([]string, error)
 	RequestNumber(serviceCode string, countryNumber int64, maxPrice float64) (*sms.RequestedNumber, error)
 }
 
 type smsService struct {
-	container     container.Container
-	servicePrices map[string][]sms.ServicePrice
+	container container.Container
 }
 
 func NewSMSService(container container.Container) SMSService {
 	return &smsService{
-		container:     container,
-		servicePrices: make(map[string][]sms.ServicePrice),
+		container: container,
 	}
 }
 
@@ -81,16 +80,38 @@ func (s *smsService) GetCountries() ([]sms.Country, error) {
 	return allCountries, nil
 }
 
-func (s *smsService) GetServicePrices(serviceCode string) ([]sms.ServicePrice, error) {
-	servicePrice, err := s.getServicePricesFromCache(serviceCode)
-	if err != nil && err != app.NilError {
+func (s *smsService) GetPopularServiceCodeList() ([]string, error) {
+	var response map[string]any
+	urlValues := url.Values{}
+	req, err := s.prepareRequest(app.GetTopCountriesByServiceAction, urlValues)
+	if err != nil {
 		return nil, err
-	} else if err == nil && servicePrice != nil {
-		return servicePrice, nil
 	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	popularServices := make([]string, 0, len(response))
+	decoder := json.NewDecoder(resp.Body)
+	for decoder.More() {
+		t, err := decoder.Token()
+		if err != nil {
+			return nil, err
+		}
+		key, ok := t.(string)
+		if ok {
+			popularServices = append(popularServices, key)
+		}
+	}
+	return popularServices, nil
+}
+
+func (s *smsService) GetServicePrices(serviceCode string) ([]sms.PriceForService, error) {
 	urlValues := url.Values{}
 	urlValues.Set("service", serviceCode)
-	req, err := s.prepareRequest(app.GetPricesSMSAction, urlValues)
+	urlValues.Set("freePrice", "true")
+	req, err := s.prepareRequest(app.GetTopCountriesByServiceAction, urlValues)
 	if err != nil {
 		return nil, err
 	}
@@ -100,23 +121,15 @@ func (s *smsService) GetServicePrices(serviceCode string) ([]sms.ServicePrice, e
 		return nil, err
 	}
 	defer resp.Body.Close()
-	var result map[string]map[string]sms.ServicePrice
+	var result map[string]sms.PriceForService
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, err
 	}
-	servicePrices := make([]sms.ServicePrice, 0)
-	for countryCode, part := range result {
-		servicePrice := part[serviceCode]
-		servicePrice.Code = serviceCode
-		countryCodeInt, err := strconv.Atoi(countryCode)
-		if err != nil {
-			continue
-		}
-		servicePrice.CountryCode = countryCodeInt
-		servicePrices = append(servicePrices, servicePrice)
+	priceForServices := make([]sms.PriceForService, 0)
+	for _, priceForService := range result {
+		priceForServices = append(priceForServices, priceForService)
 	}
-	s.servicePrices[serviceCode] = servicePrices
-	return servicePrices, nil
+	return priceForServices, nil
 }
 
 func (s *smsService) RequestNumber(serviceCode string, countryNumber int64, maxPrice float64) (*sms.RequestedNumber, error) {
@@ -189,12 +202,4 @@ func (s *smsService) handleRequestNumberError(body []byte) (error, map[string]an
 		return *err, nil
 	}
 	return app.UnknownError, errorResponse.Info
-}
-
-func (s *smsService) getServicePricesFromCache(code string) ([]sms.ServicePrice, error) {
-	priceServices, ok := s.servicePrices[code]
-	if ok {
-		return priceServices, nil
-	}
-	return nil, app.NilError
 }

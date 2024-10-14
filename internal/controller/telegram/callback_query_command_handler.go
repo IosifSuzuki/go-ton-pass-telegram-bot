@@ -324,13 +324,13 @@ func (b *botController) servicesCallbackQueryCommandHandler(ctx context.Context,
 		log.Error("fail to send a AnswerCallbackQuery to telegram servers", logger.FError(err))
 		return err
 	}
-	smsServices, err := b.smsService.GetServices()
+	smsServices, err := b.smsActivateWorker.GetOrderedServices()
 	if err != nil {
 		return err
 	}
 	pagination := app.Pagination[sms.Service]{
 		CurrentPage:  int(currentPage),
-		ItemsPerPage: MaxInlineKeyboardRows * MaxInlineKeyboardColumns,
+		ItemsPerPage: MaxInlineKeyboardRows * 2,
 		DataSource:   smsServices,
 	}
 	replyMarkup, err := b.getServicesInlineKeyboardMarkup(ctx, callbackQuery, &pagination)
@@ -375,9 +375,9 @@ func (b *botController) selectServiceCallbackQueryCommandHandler(ctx context.Con
 		log.Error("fail to send a AnswerCallbackQuery to telegram servers", logger.FError(err))
 		return err
 	}
-	servicePrices, err := b.smsService.GetServicePrices(selectedService)
+	servicePrices, err := b.smsActivateWorker.GetPriceForService(selectedService)
 	if err != nil {
-		log.Error("fail to GetServicePrices", logger.FError(err))
+		log.Error("fail to GetPriceForService", logger.FError(err))
 		return err
 	}
 	countries, err := b.smsService.GetCountries()
@@ -385,12 +385,12 @@ func (b *botController) selectServiceCallbackQueryCommandHandler(ctx context.Con
 		log.Error("fail to GetCountries", logger.FError(err))
 		return err
 	}
-	pagination := app.Pagination[sms.ServicePrice]{
+	pagination := app.Pagination[sms.PriceForService]{
 		CurrentPage:  int(currentPage),
 		ItemsPerPage: MaxInlineKeyboardRows,
 		DataSource:   servicePrices,
 	}
-	replyMarkup, err := b.getServiceWithCountryInlineKeyboardMarkup(*langTag, &pagination, countries)
+	replyMarkup, err := b.getServiceWithCountryInlineKeyboardMarkup(*langTag, selectedService, &pagination, countries)
 	if err != nil {
 		log.Error("fail to getServiceWithCountryInlineKeyboardMarkup", logger.FError(err))
 		return err
