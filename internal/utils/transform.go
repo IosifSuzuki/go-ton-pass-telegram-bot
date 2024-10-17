@@ -47,3 +47,23 @@ func DecodeCryptoBotInvoicePayload(text string) (*bot.InvoicePayload, error) {
 	}
 	return &invoicePayload, nil
 }
+
+func EncodePayload(payload any) (*string, error) {
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	text := base64.StdEncoding.EncodeToString(data)
+	return &text, nil
+}
+
+func DecodePayload(text string, payload any) error {
+	data, err := base64.StdEncoding.DecodeString(text)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(data, payload); err != nil {
+		return err
+	}
+	return nil
+}

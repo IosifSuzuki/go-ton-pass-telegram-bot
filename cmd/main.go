@@ -33,6 +33,9 @@ func main() {
 	bundle := loadBundle()
 	l := logger.NewLogger(logger.DEV, logger.LevelDebug)
 	box := container.NewContainer(l, conf, bundle)
+	if err := box.PreloadData(); err != nil {
+		log.Fatalln(err)
+	}
 	redisClient := configureAndConnectToRedisClient(conf)
 	sessionService := service.NewSessionService(box, redisClient)
 	cacheService := service.NewCache(box, redisClient)

@@ -205,7 +205,7 @@ func ParseDBConfig() DB {
 
 func fetchAllLanguages() ([]app.Language, error) {
 	var allLanguages = make([]app.Language, 0)
-	if err := utils.MarshalFromFile("/jsons/languages.json", &allLanguages); err != nil {
+	if err := utils.UnmarshalFromFile("/jsons/languages.json", &allLanguages); err != nil {
 		return nil, err
 	}
 	return allLanguages, nil
@@ -213,7 +213,7 @@ func fetchAllLanguages() ([]app.Language, error) {
 
 func fetchAllCurrencies() ([]app.Currency, error) {
 	var allCurrencies = make([]app.Currency, 0)
-	if err := utils.MarshalFromFile("/jsons/currencies.json", &allCurrencies); err != nil {
+	if err := utils.UnmarshalFromFile("/jsons/currencies.json", &allCurrencies); err != nil {
 		return nil, err
 	}
 	return allCurrencies, nil

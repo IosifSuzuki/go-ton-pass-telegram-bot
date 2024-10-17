@@ -18,6 +18,8 @@ type ExchangeRate interface {
 	UpToDateExchangeRate(ctx context.Context) error
 	ConvertFromUSD(amount float64, targetCurrencyCode string) (*float64, error)
 	ConvertToUSD(amount float64, sourceCurrencyCode string) (*float64, error)
+	ConvertFromRUB(amount float64, targetCurrencyCode string) (*float64, error)
+	PriceForService(amount float64) float64
 }
 
 type exchangeRate struct {
@@ -61,6 +63,19 @@ func (e *exchangeRate) ConvertFromUSD(amount float64, targetCurrencyCode string)
 	return &convertedAmount, nil
 }
 
+func (e *exchangeRate) ConvertFromRUB(amount float64, targetCurrencyCode string) (*float64, error) {
+	rubExchangeRate, err := e.findExchangeRateByCode("RUB")
+	if err != nil {
+		return nil, err
+	}
+	usdValue := amount * rubExchangeRate.Rate
+	return e.ConvertFromUSD(usdValue, targetCurrencyCode)
+}
+
+func (e *exchangeRate) PriceForService(amount float64) float64 {
+	return 1.1 * amount
+}
+
 func (e *exchangeRate) ConvertToUSD(amount float64, sourceCurrencyCode string) (*float64, error) {
 	exchangeRate, err := e.findExchangeRateByCode(sourceCurrencyCode)
 	if err != nil {
@@ -100,15 +115,20 @@ func (e *exchangeRate) findExchangeRateByCode(currencyCode string) (*app.Exchang
 }
 
 func (e *exchangeRate) UpToDateExchangeRate(ctx context.Context) error {
+	log := e.container.GetLogger()
 	response, err := e.cache.GetExchangeRate(ctx)
-	if err != nil {
-		return nil
+	var timeFetched time.Time
+	if response != nil {
+		timeFetched = response.TimeFetched
+	} else {
+		timeFetched = time.Now()
 	}
-	if response.TimeFetched.Add(24*time.Hour).Compare(time.Now()) <= 0 {
+	if timeFetched.Add(24*time.Hour).Compare(time.Now()) <= 0 {
 		return nil
 	}
 	networkExchangeRates, err := e.cryptoBot.FetchExchangeRate()
 	if err != nil {
+		log.Debug("fail to fetch exchange rate", logger.FError(err))
 		return err
 	}
 	exchangeRates := e.filterAndConvert(networkExchangeRates)

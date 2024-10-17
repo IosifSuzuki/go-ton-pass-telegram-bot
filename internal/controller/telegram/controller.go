@@ -41,6 +41,7 @@ type botController struct {
 	smsHistoryRepository repository.SMSHistoryRepository
 	exchangeRateWorker   worker.ExchangeRate
 	smsActivateWorker    worker.SMSActivate
+	formatterWorker      worker.Formatter
 }
 
 func NewBotController(
@@ -54,6 +55,7 @@ func NewBotController(
 	cryptoPayBot := service.NewCryptoPayBot(container)
 	exchangeRateWorker := worker.NewExchangeRate(container, cacheService, cryptoPayBot)
 	smsActivateWorker := worker.NewSMSActivate(container, smsService, cacheService)
+	formatterWorker := worker.NewFormatter(container)
 	return &botController{
 		container:            container,
 		telegramBotService:   service.NewTelegramBot(container),
@@ -65,6 +67,7 @@ func NewBotController(
 		smsHistoryRepository: smsHistoryRepository,
 		exchangeRateWorker:   exchangeRateWorker,
 		smsActivateWorker:    smsActivateWorker,
+		formatterWorker:      formatterWorker,
 	}
 }
 

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-func MarshalFromFile(filePath string, value any) error {
+func UnmarshalFromFile(filePath string, value any) error {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return err

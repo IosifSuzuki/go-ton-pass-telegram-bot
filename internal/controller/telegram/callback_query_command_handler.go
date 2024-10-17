@@ -357,6 +357,7 @@ func (b *botController) servicesCallbackQueryCommandHandler(ctx context.Context,
 
 func (b *botController) selectServiceCallbackQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
 	log := b.container.GetLogger()
+	telegramID := callbackQuery.From.ID
 	langTag, err := b.getLanguageCode(ctx, callbackQuery.From)
 	localizer := b.container.GetLocalizer(*langTag)
 	telegramCallbackData, err := utils.DecodeTelegramCallbackData(callbackQuery.Data)
@@ -375,6 +376,11 @@ func (b *botController) selectServiceCallbackQueryCommandHandler(ctx context.Con
 		log.Error("fail to send a AnswerCallbackQuery to telegram servers", logger.FError(err))
 		return err
 	}
+	profile, err := b.profileRepository.FetchByTelegramID(ctx, telegramID)
+	if err != nil {
+		log.Error("fail to fetch profile by telegram id", logger.F("telegram_id", profile.TelegramID))
+		return err
+	}
 	servicePrices, err := b.smsActivateWorker.GetPriceForService(selectedService)
 	if err != nil {
 		log.Error("fail to GetPriceForService", logger.FError(err))
@@ -390,7 +396,8 @@ func (b *botController) selectServiceCallbackQueryCommandHandler(ctx context.Con
 		ItemsPerPage: MaxInlineKeyboardRows,
 		DataSource:   servicePrices,
 	}
-	replyMarkup, err := b.getServiceWithCountryInlineKeyboardMarkup(*langTag, selectedService, &pagination, countries)
+
+	replyMarkup, err := b.getServiceWithCountryInlineKeyboardMarkup(*langTag, *profile.PreferredCurrency, selectedService, &pagination, countries)
 	if err != nil {
 		log.Error("fail to getServiceWithCountryInlineKeyboardMarkup", logger.FError(err))
 		return err

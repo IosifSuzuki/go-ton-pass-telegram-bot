@@ -7,6 +7,7 @@ import (
 	"go-ton-pass-telegram-bot/internal/model/sms"
 	"go-ton-pass-telegram-bot/internal/model/telegram"
 	"go-ton-pass-telegram-bot/internal/utils"
+	"go-ton-pass-telegram-bot/internal/worker"
 	"go-ton-pass-telegram-bot/pkg/logger"
 )
 
@@ -79,7 +80,7 @@ func (b *botController) getServicesInlineKeyboardMarkup(ctx context.Context, cal
 			continue
 		}
 		inlineKeyboardButtons = append(inlineKeyboardButtons, telegram.InlineKeyboardButton{
-			Text: utils.ButtonTitle(smsService.Name, "🌐"),
+			Text: b.formatterWorker.Service(&smsService, worker.DefaultFormatterType),
 			Data: data,
 		})
 	}
@@ -243,6 +244,7 @@ func (b *botController) getMenuInlineKeyboardButton(langTag string) (*telegram.I
 
 func (b *botController) getServiceWithCountryInlineKeyboardMarkup(
 	langTag string,
+	preferredCurrency string,
 	serviceCode string,
 	pagination *app.Pagination[sms.PriceForService],
 	countries []sms.Country,
@@ -265,13 +267,16 @@ func (b *botController) getServiceWithCountryInlineKeyboardMarkup(
 			continue
 		}
 		country := filteredCountries[0]
-		language := b.container.GetConfig().LanguageByName(country.Title)
-		serviceCountry := country.Title
-		if language != nil {
-			serviceCountry = fmt.Sprintf("%s %s", language.FlagEmoji, country.Title)
-		}
-		representableText := fmt.Sprintf("%s | %.2f ₽ | %d", serviceCountry, servicePrice.MinPrice, servicePrice.Count)
-		parameters := []any{serviceCode, country.ID, servicePrice.MinPrice}
+		priceInRUB := servicePrice.RetailPrice
+		serviceCountry := b.formatterWorker.Country(&country, worker.DefaultFormatterType)
+		priceInPreferredCurrency, err := b.exchangeRateWorker.ConvertFromRUB(priceInRUB, preferredCurrency)
+		priceWithFee := b.exchangeRateWorker.PriceForService(*priceInPreferredCurrency)
+		currency := b.container.GetConfig().CurrencyByAbbr(preferredCurrency)
+		representableText := fmt.Sprintf("%s | %s",
+			serviceCountry,
+			utils.CurrencyAmountTextFormat(priceWithFee, *currency),
+		)
+		parameters := []any{serviceCode, country.ID, priceWithFee}
 		telegramCallbackData := app.TelegramCallbackData{
 			Name:       app.SelectSMSServiceWithCountryCallbackQueryCmdText,
 			Parameters: &parameters,
@@ -290,15 +295,17 @@ func (b *botController) getServiceWithCountryInlineKeyboardMarkup(
 		return nil, err
 	}
 	gridInlineKeyboardButtons := b.prepareGridInlineKeyboardButton(inlineKeyboardButtons, 1)
-	pageControlsButtons, err := getPageControlInlineKeyboardButtons(
-		pagination,
-		app.SelectSMSServiceCallbackQueryCmdText,
-		[]any{serviceCode},
-	)
-	if err != nil {
-		return nil, err
+	if pagination.Len() > 0 {
+		pageControlsButtons, err := getPageControlInlineKeyboardButtons(
+			pagination,
+			app.SelectSMSServiceCallbackQueryCmdText,
+			[]any{serviceCode},
+		)
+		if err != nil {
+			return nil, err
+		}
+		gridInlineKeyboardButtons = append(gridInlineKeyboardButtons, pageControlsButtons)
 	}
-	gridInlineKeyboardButtons = append(gridInlineKeyboardButtons, pageControlsButtons)
 	gridInlineKeyboardButtons = append(gridInlineKeyboardButtons, []telegram.InlineKeyboardButton{
 		*mainMenuInlineKeyboardButton,
 	})
