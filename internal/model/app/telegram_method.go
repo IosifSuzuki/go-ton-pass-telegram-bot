@@ -4,12 +4,13 @@ type TelegramMethod string
 
 const (
 	SendMessageTelegramMethod         TelegramMethod = "sendMessage"
-	SetMyCommandsTelegramMethod                      = "setMyCommands"
-	SetMyDescriptionTelegramMethod                   = "setMyDescription"
-	SetMyNameTelegramMethod                          = "setMyName"
-	AnswerCallbackQueryTelegramMethod                = "answerCallbackQuery"
-	SendPhotoTelegramMethod                          = "sendPhoto"
-	EditMessageTextTelegramMethod                    = "editMessageText"
-	EditCaptionMessageTelegramMethod                 = "editMessageCaption"
-	EditMessageMediaTelegramMethod                   = "editMessageMedia"
+	SetMyCommandsTelegramMethod       TelegramMethod = "setMyCommands"
+	SetMyDescriptionTelegramMethod    TelegramMethod = "setMyDescription"
+	SetMyNameTelegramMethod           TelegramMethod = "setMyName"
+	AnswerCallbackQueryTelegramMethod TelegramMethod = "answerCallbackQuery"
+	SendPhotoTelegramMethod           TelegramMethod = "sendPhoto"
+	EditMessageTextTelegramMethod     TelegramMethod = "editMessageText"
+	EditCaptionMessageTelegramMethod  TelegramMethod = "editMessageCaption"
+	EditMessageMediaTelegramMethod    TelegramMethod = "editMessageMedia"
+	GetChatMemberTelegramMethod       TelegramMethod = "getChatMember"
 )

@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"go-ton-pass-telegram-bot/internal/container"
 	telegramController "go-ton-pass-telegram-bot/internal/controller/telegram"
+	"go-ton-pass-telegram-bot/internal/model/app"
 	"go-ton-pass-telegram-bot/internal/model/telegram"
+	"go-ton-pass-telegram-bot/internal/utils"
 	"go-ton-pass-telegram-bot/pkg/logger"
 	"net/http"
 )
@@ -33,6 +35,13 @@ func (t *TelegramRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err := t.controller.Serve(&update)
+	ignoreErrors := []error{
+		app.EmptyUpdateError,
+	}
+	if utils.ContainsValue(ignoreErrors, err) {
+		log.Debug("trash request from telegram server has ignored")
+		return
+	}
 	if err != nil {
 		log.Fatal("fail to processing message from bot", logger.FError(err))
 		w.WriteHeader(http.StatusInternalServerError)

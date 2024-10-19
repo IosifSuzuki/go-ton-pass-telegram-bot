@@ -68,5 +68,10 @@
     "one": "Unfortunately, we did not receive *the sms code* for *{{ .PhoneNumber }}*\\. As a result, we have refunded *the full amount*\\. *Please try again*, and if the issue persists, feel free to contact our support team\\. We apologize for the inconvenience\\.",
     "other": "Unfortunately, we did not receive *the sms code* for *{{ .PhoneNumber }}*\\. As a result, we have refunded *the full amount*\\. *Please try again*, and if the issue persists, feel free to contact our support team\\. We apologize for the inconvenience\\."
   },
-  "insufficient_funds_markdown": "Insufficient funds for SMS activation"
+  "insufficient_funds_markdown": "Insufficient funds for SMS activation",
+  "subscribe_to_channel_markdown": {
+    "description": "Tap the link below to subscribe to our Telegram channel",
+    "one": "Want to keep using the bot? Subscribe to our *{{ .Channel }}* Telegram channel for instant updates and important announcements\\! Subscribe Now",
+    "other": "Want to keep using the bot? Subscribe to our *{{ .Channel }}* Telegram channel for instant updates and important announcements\\! Subscribe Now"
+  }
 }

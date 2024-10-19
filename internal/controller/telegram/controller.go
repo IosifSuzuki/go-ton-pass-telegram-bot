@@ -93,7 +93,14 @@ func (b *botController) Serve(update *telegram.Update) error {
 		log.Error("recordTelegramProfile has failed", logger.FError(err))
 		return err
 	}
-
+	isChatMember, err := b.CheckUserIsChatMember(update)
+	if err != nil {
+		log.Error("fail CheckUserIsChatMember", logger.FError(err))
+		return err
+	}
+	if !isChatMember {
+		return nil
+	}
 	telegramCmd, err := b.telegramBotService.ParseTelegramCommand(update)
 	switch telegramCmd {
 	case app.StartTelegramCommand:
@@ -234,6 +241,22 @@ func (b *botController) EditMessageMedia(callbackQuery *telegram.CallbackQuery, 
 	return nil
 }
 
+func (b *botController) SendTextWithPhotoMedia(update *telegram.Update, text string, photoURL string, replyMarkup any) error {
+	log := b.container.GetLogger()
+	resp := telegram.SendPhoto{
+		ChatID:      update.Message.Chat.ID,
+		Caption:     text,
+		Photo:       photoURL,
+		ParseMode:   utils.NewString("MarkdownV2"),
+		ReplyMarkup: replyMarkup,
+	}
+	if err := b.telegramBotService.SendResponse(resp, app.SendPhotoTelegramMethod); err != nil {
+		log.Debug("fail to send message with photo media", logger.FError(err))
+		return err
+	}
+	return nil
+}
+
 func (b *botController) AnswerCallbackQuery(callbackQuery *telegram.CallbackQuery) error {
 	log := b.container.GetLogger()
 	answerCallbackQuery := telegram.AnswerCallbackQuery{
@@ -246,6 +269,48 @@ func (b *botController) AnswerCallbackQuery(callbackQuery *telegram.CallbackQuer
 		return err
 	}
 	return nil
+}
+
+func (b *botController) CheckUserIsChatMember(update *telegram.Update) (bool, error) {
+	cxt := context.Background()
+	log := b.container.GetLogger()
+	channelLink := "@tonpassnews"
+	user, err := getTelegramUser(update)
+	if err != nil {
+		log.Error("fail retrieve telegram user", logger.FError(err))
+		return false, err
+	}
+	isChatMember, err := b.telegramBotService.UserIsChatMember(channelLink, user.ID)
+	if isChatMember {
+		return isChatMember, nil
+	}
+	langCode, err := b.getLanguageCode(cxt, *user)
+	if err != nil {
+		log.Debug("fail to get language code from user", logger.F("langCode", langCode))
+	}
+	localizer := b.container.GetLocalizer(langCode)
+	if err != nil {
+		log.Debug("fail to check is chat member", logger.FError(err))
+		return false, err
+	}
+	text := localizer.LocalizedStringWithTemplateData("subscribe_to_channel_markdown", map[string]any{
+		"Channel": channelLink,
+	})
+	replyKeyboard, err := b.getMainMenuInlineKeyboardMarkup(cxt, *user)
+	if err != nil {
+		log.Debug("fail to get menuInline keyboard", logger.FError(err))
+		return false, err
+	}
+	if !isChatMember && update.Message != nil {
+		replyKeyboard := telegram.ReplyKeyboardRemove{
+			RemoveKeyboard: true,
+		}
+		return false, b.SendTextWithPhotoMedia(update, text, avatarImageURL, replyKeyboard)
+	}
+	if !isChatMember && update.CallbackQuery != nil {
+		return false, b.AnswerCallbackQueryWithEditMessageMedia(update.CallbackQuery, text, avatarImageURL, replyKeyboard)
+	}
+	return false, nil
 }
 
 func (b *botController) AnswerCallbackQueryWithEditMessageMedia(
@@ -264,6 +329,15 @@ func (b *botController) AnswerCallbackQueryWithEditMessageMedia(
 		return err
 	}
 	return nil
+}
+
+func getTelegramUser(update *telegram.Update) (*telegram.User, error) {
+	if update.Message != nil {
+		return update.Message.From, nil
+	} else if update.CallbackQuery != nil {
+		return update.CallbackQuery.Message.From, nil
+	}
+	return nil, app.NilError
 }
 
 func getTelegramID(update *telegram.Update) (*int64, error) {
