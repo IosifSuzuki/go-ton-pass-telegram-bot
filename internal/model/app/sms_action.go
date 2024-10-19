@@ -8,4 +8,6 @@ const (
 	GetNumberSMSAction                       = "getNumberV2"
 	GetPricesSMSAction                       = "getPrices"
 	GetTopCountriesByServiceAction           = "getTopCountriesByService"
+	GetActivationStatus                      = "getStatus"
+	SetActivationStatus                      = "setStatus"
 )

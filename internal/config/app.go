@@ -16,6 +16,7 @@ type Config interface {
 	SMSKey() string
 	Redis() Redis
 	DB() DB
+	Temporal() Temporal
 	AvailablePreferredCurrencies() []app.Currency
 	AvailablePayCurrencies() []app.Currency
 	CurrencyByAbbr(abbr string) *app.Currency
@@ -41,8 +42,17 @@ type DB struct {
 	Mode     string
 }
 
+type Temporal struct {
+	Host string
+	Port string
+}
+
 func (r *Redis) Address() string {
 	return net.JoinHostPort(r.Host, r.Port)
+}
+
+func (t Temporal) Address() string {
+	return net.JoinHostPort(t.Host, t.Port)
 }
 
 type config struct {
@@ -56,6 +66,7 @@ type config struct {
 	allCurrencies         []app.Currency
 	redis                 Redis
 	db                    DB
+	temporal              Temporal
 }
 
 func (c *config) Address() string {
@@ -151,6 +162,10 @@ func (c *config) DB() DB {
 	return c.db
 }
 
+func (c *config) Temporal() Temporal {
+	return c.temporal
+}
+
 func ParseConfig() (Config, error) {
 	config := config{
 		serverAddr:       os.Getenv("SERVER_HOST"),
@@ -177,6 +192,7 @@ func ParseConfig() (Config, error) {
 	config.allCurrencies = allCurrencies
 	config.redis = ParseRedisConfig()
 	config.db = ParseDBConfig()
+	config.temporal = ParseTemporalConfig()
 
 	return &config, nil
 }
@@ -190,6 +206,14 @@ func ParseRedisConfig() Redis {
 	dataBase, _ := strconv.Atoi(os.Getenv("REDIS_DATABASE"))
 	redis.DataBase = dataBase
 	return redis
+}
+
+func ParseTemporalConfig() Temporal {
+	temporal := Temporal{
+		Host: os.Getenv("TEMPORAL_HOST"),
+		Port: os.Getenv("TEMPORAL_PORT"),
+	}
+	return temporal
 }
 
 func ParseDBConfig() DB {

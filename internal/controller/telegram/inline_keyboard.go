@@ -40,7 +40,7 @@ func (b *botController) getLanguagesInlineKeyboardMarkup(ctx context.Context, us
 		}
 		keyboardButtons = append(keyboardButtons, languageKeyboardButton)
 	}
-	backToMainMenuKeyboardButton, err := b.getMenuInlineKeyboardButton(*langTag)
+	backToMainMenuKeyboardButton, err := b.getMenuInlineKeyboardButton(langTag)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (b *botController) getServicesInlineKeyboardMarkup(ctx context.Context, cal
 			Data: data,
 		})
 	}
-	mainMenuInlineKeyboardButton, err := b.getMenuInlineKeyboardButton(*langTag)
+	mainMenuInlineKeyboardButton, err := b.getMenuInlineKeyboardButton(langTag)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func (b *botController) getMainMenuInlineKeyboardMarkup(ctx context.Context, use
 		return nil, err
 	}
 	buyNumberParameters := []any{0}
-	localizer := b.container.GetLocalizer(*langTag)
+	localizer := b.container.GetLocalizer(langTag)
 	balanceTelegramCallbackData := app.TelegramCallbackData{
 		Name:       app.BalanceCallbackQueryCmdText,
 		Parameters: nil,
@@ -270,15 +270,15 @@ func (b *botController) getServiceWithCountryInlineKeyboardMarkup(
 		priceInRUB := servicePrice.RetailPrice
 		serviceCountry := b.formatterWorker.Country(&country, worker.DefaultFormatterType)
 		priceInPreferredCurrency, err := b.exchangeRateWorker.ConvertFromRUB(priceInRUB, preferredCurrency)
-		priceWithFee := b.exchangeRateWorker.PriceForService(*priceInPreferredCurrency)
+		priceWithFee := b.exchangeRateWorker.PriceWithFee(*priceInPreferredCurrency)
 		currency := b.container.GetConfig().CurrencyByAbbr(preferredCurrency)
 		representableText := fmt.Sprintf("%s | %s",
 			serviceCountry,
 			utils.CurrencyAmountTextFormat(priceWithFee, *currency),
 		)
-		parameters := []any{serviceCode, country.ID, priceWithFee}
+		parameters := []any{serviceCode, country.ID, *priceInPreferredCurrency}
 		telegramCallbackData := app.TelegramCallbackData{
-			Name:       app.SelectSMSServiceWithCountryCallbackQueryCmdText,
+			Name:       app.PayServiceCallbackQueryCmdText,
 			Parameters: &parameters,
 		}
 		data, err := utils.EncodeTelegramCallbackData(telegramCallbackData)

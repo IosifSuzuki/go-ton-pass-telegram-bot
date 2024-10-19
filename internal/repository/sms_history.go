@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"go-ton-pass-telegram-bot/internal/model/app"
 	"go-ton-pass-telegram-bot/internal/model/domain"
 	"time"
 )
@@ -10,6 +11,7 @@ import (
 type SMSHistoryRepository interface {
 	Create(ctx context.Context, smsHistory *domain.SMSHistory) (*int64, error)
 	GetByActivationID(ctx context.Context, activationID int64) (*domain.SMSHistory, error)
+	ChangeActivationStatus(ctx context.Context, activationID int64, activationStatus string) error
 	ReceiveSMSCode(ctx context.Context, smsHistory *domain.SMSHistory) error
 }
 
@@ -24,7 +26,7 @@ func NewSMSHistoryRepository(conn *sql.DB) SMSHistoryRepository {
 }
 
 func (s *smsHistoryRepository) Create(ctx context.Context, smsHistory *domain.SMSHistory) (*int64, error) {
-	query := "INSERT INTO sms_history (profile_id, activation_id, service_code, phone_number, created_at) VALUES ($1, $2, $3, $4, $5) RETURNING id;"
+	query := "INSERT INTO sms_history (profile_id, activation_id, service_code, phone_number, status, created_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;"
 	var id int64
 	err := s.conn.QueryRowContext(
 		ctx,
@@ -33,6 +35,7 @@ func (s *smsHistoryRepository) Create(ctx context.Context, smsHistory *domain.SM
 		smsHistory.ActivationID,
 		smsHistory.ServiceCode,
 		smsHistory.PhoneNumber,
+		smsHistory.Status,
 		time.Now(),
 	).Scan(&id)
 	if err != nil {
@@ -42,13 +45,13 @@ func (s *smsHistoryRepository) Create(ctx context.Context, smsHistory *domain.SM
 }
 
 func (s *smsHistoryRepository) ReceiveSMSCode(ctx context.Context, smsHistory *domain.SMSHistory) error {
-	query := "UPDATE sms_history SET sms_text = $1, sms_code = $2, received_at = $3, updated_at = $4 WHERE profile_id = $5"
-	_, err := s.conn.ExecContext(ctx, query, smsHistory.SMSText, smsHistory.SMSCode, smsHistory.ReceivedAt, time.Now(), smsHistory.ProfileID)
+	query := "UPDATE sms_history SET sms_text = $1, sms_code = $2, status = $3, received_at = $4, updated_at = $5 WHERE profile_id = $6"
+	_, err := s.conn.ExecContext(ctx, query, smsHistory.SMSText, smsHistory.SMSCode, app.DoneSMSActivateState, smsHistory.ReceivedAt, time.Now(), smsHistory.ProfileID)
 	return err
 }
 
 func (s *smsHistoryRepository) GetByActivationID(ctx context.Context, activationID int64) (*domain.SMSHistory, error) {
-	query := "SELECT id, profile_id, service_code, phone_number, sms_text, sms_code, received_at, " +
+	query := "SELECT id, profile_id, service_code, phone_number, status, sms_text, sms_code, received_at, " +
 		"created_at, updated_at, deleted_at FROM sms_history WHERE activation_id = $1"
 	row := s.conn.QueryRowContext(ctx, query, activationID)
 	smsHistory := domain.SMSHistory{
@@ -66,6 +69,7 @@ func (s *smsHistoryRepository) GetByActivationID(ctx context.Context, activation
 		&smsHistory.ProfileID,
 		&smsHistory.ServiceCode,
 		&smsHistory.PhoneNumber,
+		&smsHistory.Status,
 		&smsText,
 		&smsCode,
 		&receivedAt,
@@ -92,4 +96,10 @@ func (s *smsHistoryRepository) GetByActivationID(ctx context.Context, activation
 		smsHistory.DeletedAt = &deletedAt.Time
 	}
 	return &smsHistory, err
+}
+
+func (s *smsHistoryRepository) ChangeActivationStatus(ctx context.Context, activationID int64, activationStatus string) error {
+	query := "UPDATE sms_history SET status = $1, updated_at = $2 WHERE activation_id = $3"
+	_, err := s.conn.ExecContext(ctx, query, activationStatus, time.Now(), activationID)
+	return err
 }

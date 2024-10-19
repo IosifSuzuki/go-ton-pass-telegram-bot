@@ -15,6 +15,8 @@ type ProfileRepository interface {
 	SetPreferredCurrency(ctx context.Context, telegramID int64, preferredCurrency string) error
 	SetPreferredLanguage(ctx context.Context, telegramID int64, preferredLanguage string) error
 	TopUpBalance(ctx context.Context, telegramID int64, amount float64) error
+	Debit(ctx context.Context, telegramID int64, amount float64) error
+	HasSufficientFunds(ctx context.Context, telegramID int64, amount float64) (bool, error)
 }
 type profileRepository struct {
 	conn *sql.DB
@@ -130,7 +132,22 @@ func (p *profileRepository) SetPreferredLanguage(ctx context.Context, telegramID
 }
 
 func (p *profileRepository) TopUpBalance(ctx context.Context, telegramID int64, amount float64) error {
-	query := "UPDATE profile SET balance = balance + $1, updated_at = $2 WHERE telegram_id = $3"
+	query := "UPDATE profile SET balance = balance - $1, updated_at = $2 WHERE telegram_id = $3"
 	_, err := p.conn.ExecContext(ctx, query, amount, time.Now(), telegramID)
 	return err
+}
+
+func (p *profileRepository) Debit(ctx context.Context, telegramID int64, amount float64) error {
+	query := "UPDATE profile SET balance = balance - $1, updated_at = $2 WHERE telegram_id = $3"
+	_, err := p.conn.ExecContext(ctx, query, amount, time.Now(), telegramID)
+	return err
+}
+
+func (p *profileRepository) HasSufficientFunds(ctx context.Context, telegramID int64, amount float64) (bool, error) {
+	query := "SELECT balance >= $1 FROM profile WHERE telegram_id = $2"
+	var satisfiesCondition bool
+	if err := p.conn.QueryRowContext(ctx, query, amount, telegramID).Scan(&satisfiesCondition); err != nil {
+		return false, err
+	}
+	return satisfiesCondition, nil
 }

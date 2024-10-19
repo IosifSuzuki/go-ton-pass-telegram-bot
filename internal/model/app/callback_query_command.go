@@ -11,7 +11,7 @@ const (
 	LanguageCallbackQueryCommand
 	MainMenuCallbackQueryCommand
 	SelectSMSServiceCallbackQueryCommand
-	SelectSMSServiceWithCountryCallbackQueryCommand
+	PayServiceCallbackQueryCommand
 	SelectLanguageCallbackQueryCommand
 	ListPayCurrenciesCallbackQueryCommand
 	SelectPayCurrencyCallbackQueryCommand

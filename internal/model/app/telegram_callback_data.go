@@ -1,20 +1,20 @@
 package app
 
 const (
-	BalanceCallbackQueryCmdText                     = "bal"
-	BuyNumberCallbackQueryCmdText                   = "buy_num"
-	HistoryCallbackQueryCmdText                     = "hist"
-	HelpCallbackQueryCmdText                        = "help"
-	LanguageCallbackQueryCmdText                    = "lang"
-	MainMenuCallbackQueryCmdText                    = "menu"
-	SelectSMSServiceCallbackQueryCmdText            = "s_serv"
-	SelectSMSServiceWithCountryCallbackQueryCmdText = "s_serv_count"
-	SelectLanguageCallbackQueryCmdText              = "s_lang"
-	ListPayCurrenciesCallbackQueryCmdText           = "l_pay_curr"
-	SelectPayCurrencyCallbackQueryCmdText           = "s_pay_curr"
-	PreferredCurrenciesCallbackQueryCmdText         = "pre_curr"
-	SelectPreferredCurrencyCallbackQueryCmdText     = "s_pref_curr"
-	EmptyCallbackQueryCmdText                       = "empty"
+	BalanceCallbackQueryCmdText                 = "bal"
+	BuyNumberCallbackQueryCmdText               = "buy_num"
+	HistoryCallbackQueryCmdText                 = "hist"
+	HelpCallbackQueryCmdText                    = "help"
+	LanguageCallbackQueryCmdText                = "lang"
+	MainMenuCallbackQueryCmdText                = "menu"
+	SelectSMSServiceCallbackQueryCmdText        = "s_serv"
+	PayServiceCallbackQueryCmdText              = "s_serv_count"
+	SelectLanguageCallbackQueryCmdText          = "s_lang"
+	ListPayCurrenciesCallbackQueryCmdText       = "l_pay_curr"
+	SelectPayCurrencyCallbackQueryCmdText       = "s_pay_curr"
+	PreferredCurrenciesCallbackQueryCmdText     = "pre_curr"
+	SelectPreferredCurrencyCallbackQueryCmdText = "s_pref_curr"
+	EmptyCallbackQueryCmdText                   = "empty"
 )
 
 type TelegramCallbackData struct {
@@ -38,8 +38,8 @@ func (t *TelegramCallbackData) CallbackQueryCommand() CallbackQueryCommand {
 		return MainMenuCallbackQueryCommand
 	case SelectSMSServiceCallbackQueryCmdText:
 		return SelectSMSServiceCallbackQueryCommand
-	case SelectSMSServiceWithCountryCallbackQueryCmdText:
-		return SelectSMSServiceWithCountryCallbackQueryCommand
+	case PayServiceCallbackQueryCmdText:
+		return PayServiceCallbackQueryCommand
 	case SelectLanguageCallbackQueryCmdText:
 		return SelectLanguageCallbackQueryCommand
 	case ListPayCurrenciesCallbackQueryCmdText:

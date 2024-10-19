@@ -86,7 +86,7 @@ func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Contex
 		log.Error("getLanguageCode has failed", logger.FError(err))
 		return err
 	}
-	localizer := b.container.GetLocalizer(*langTag)
+	localizer := b.container.GetLocalizer(langTag)
 	telegramID, err := getTelegramID(update)
 	if err != nil {
 		log.Error("telegram id is missing", logger.FError(err))
@@ -120,7 +120,7 @@ func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Contex
 		log.Error("fail to create a invoice", logger.FError(err))
 		return err
 	}
-	replyMarkup, err := b.getCryptoPayBotKeyboardMarkup(*langTag, invoice.BotInvoiceURL)
+	replyMarkup, err := b.getCryptoPayBotKeyboardMarkup(langTag, invoice.BotInvoiceURL)
 	if err != nil {
 		log.Error("fail to get cryptoPayBotKeyboardMarkup", logger.FError(err))
 		return err

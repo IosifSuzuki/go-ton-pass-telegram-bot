@@ -34,3 +34,18 @@ func ButtonTitle(title string, emojiIcon string) string {
 func Equal(lhs string, rhs string) bool {
 	return strings.EqualFold(lhs, rhs)
 }
+
+func PhoneNumberTitle(number string) string {
+	return fmt.Sprintf("+%s", number)
+}
+
+func EscapeMarkdownText(text string) string {
+	escapedText := text
+	specialChars := []string{"\\", "*", "_", "{", "}", "[", "]", "(", ")", "#", "+", "-", ".", "!"}
+
+	for _, char := range specialChars {
+		escapedText = strings.ReplaceAll(escapedText, char, "\\"+char)
+	}
+
+	return escapedText
+}

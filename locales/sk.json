@@ -50,17 +50,23 @@
     "one": "Your selected preferred currency is {{ .Currency }}. Choose an option below",
     "other": "Your selected preferred currency is {{ .Currency }}. Choose an option below"
   },
-  "success_received_sms_code": {
+  "success_received_sms_code_markdown": {
     "description": "Your SMS activation code has been received!",
-    "one": "We've received your activation code: {{ .SMSCode }}",
-    "other": "We've received your activation code: {{ .SMSCode }}"
+    "one": "We've received your activation code: *{{ .SMSCode }}*",
+    "other": "We've received your activation code: *{{ .SMSCode }}*"
   },
-  "start_registration_form_with_sms_code": {
+  "start_registration_form_with_sms_code_markdown": {
     "description": "Please enter phone number in registration form",
-    "one": "Please enter phone number \\+{{ .PhoneNumber }} in registration form\\. Then, wait for the SMS code\\. We’ll notify you as soon as it arrives\\.",
-    "other": "Please enter phone number \\+{{ .PhoneNumber }} in registration form\\. Then, wait for the SMS code\\. We’ll notify you as soon as it arrives\\."
+    "one": "Please enter phone number *\\{{ .PhoneNumber }}* in registration form\\. Then, wait for the *SMS code*\\. We’ll notify you as soon as it arrives\\.\n\nIf for some reason the code does not arrive within *20 minutes*, the money will automatically be returned to your balance\\.",
+    "other": "Please enter phone number *\\{{ .PhoneNumber }}* in registration form\\. Then, wait for the *SMS code*\\. We’ll notify you as soon as it arrives\\.If for some reason the code does not arrive within *20 minutes*, the money will automatically be returned to your balance\\."
   },
-  "numbers_are_unavailable": "Sorry, it looks like the numbers are unavailable right now. Please try again",
-  "fail_to_order_sms_code": "There was an issue with order SMS code. Please try again.",
-  "internal_error": "An internal error occurred. Please try again later."
+  "numbers_are_unavailable_markdown": "Sorry, it looks like the numbers are unavailable right now\\. Please try again",
+  "fail_to_order_sms_code_markdown": "There was an issue with order SMS code. Please try again\\.",
+  "internal_error_markdown": "An internal error occurred\\. Please try again later\\.",
+  "not_receive_sms_code_markdown": {
+    "description": "Unfortunately, we did not receive *the sms code*\\. As a result, we have refunded *the full amount*\\. *Please try again*, and if the issue persists, feel free to contact our support team\\. We apologize for the inconvenience\\.",
+    "one": "Unfortunately, we did not receive *the sms code* for *{{ .PhoneNumber }}*\\. As a result, we have refunded *the full amount*\\. *Please try again*, and if the issue persists, feel free to contact our support team\\. We apologize for the inconvenience\\.",
+    "other": "Unfortunately, we did not receive *the sms code* for *{{ .PhoneNumber }}*\\. As a result, we have refunded *the full amount*\\. *Please try again*, and if the issue persists, feel free to contact our support team\\. We apologize for the inconvenience\\."
+  },
+  "insufficient_funds_markdown": "Insufficient funds for SMS activation"
 }

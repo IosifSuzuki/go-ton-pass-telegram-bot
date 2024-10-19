@@ -6,6 +6,7 @@ type SMSHistory struct {
 	ID           int64
 	ProfileID    int64
 	ActivationID int64
+	Status       string
 	ServiceCode  string
 	PhoneNumber  string
 	SMSText      *string

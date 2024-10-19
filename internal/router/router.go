@@ -8,6 +8,7 @@ import (
 	telegramController "go-ton-pass-telegram-bot/internal/controller/telegram"
 	"go-ton-pass-telegram-bot/internal/repository"
 	"go-ton-pass-telegram-bot/internal/service"
+	"go-ton-pass-telegram-bot/internal/service/postpone"
 	"net/http"
 )
 
@@ -16,6 +17,7 @@ func PrepareAndConfigureRouter(
 	sessionService service.SessionService,
 	cacheService service.Cache,
 	smsService service.SMSService,
+	postponeService postpone.Postpone,
 	profileRepository repository.ProfileRepository,
 	smsHistoryRepository repository.SMSHistoryRepository,
 ) http.Handler {
@@ -25,6 +27,7 @@ func PrepareAndConfigureRouter(
 		sessionService,
 		cacheService,
 		smsService,
+		postponeService,
 		profileRepository,
 		smsHistoryRepository,
 	)

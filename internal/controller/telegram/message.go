@@ -17,7 +17,7 @@ func (b *botController) messageToSelectLanguage(ctx context.Context, update *tel
 	if err != nil {
 		return err
 	}
-	localizer := b.container.GetLocalizer(*langTag)
+	localizer := b.container.GetLocalizer(langTag)
 	textResp := telegram.SendPhoto{
 		ChatID:      update.Message.Chat.ID,
 		Photo:       selectPreferredLanguageImageURL,
@@ -41,7 +41,7 @@ func (b *botController) messageToSelectPreferredCurrency(ctx context.Context, up
 	if err != nil {
 		return err
 	}
-	localizer := b.container.GetLocalizer(*langTag)
+	localizer := b.container.GetLocalizer(langTag)
 	resp := telegram.SendPhoto{
 		ChatID:      update.Message.Chat.ID,
 		Photo:       selectPreferredCurrencyImageURL,
@@ -63,7 +63,7 @@ func (b *botController) messageWelcome(ctx context.Context, update *telegram.Upd
 	sendPhotoResp := telegram.SendPhoto{
 		ChatID:    update.Message.Chat.ID,
 		Photo:     welcomeImageURL,
-		Caption:   b.container.GetLocalizer(*langTag).LocalizedString("bot_markdown_description"),
+		Caption:   b.container.GetLocalizer(langTag).LocalizedString("bot_markdown_description"),
 		ParseMode: utils.NewString("MarkdownV2"),
 	}
 	return b.telegramBotService.SendResponse(sendPhotoResp, app.SendPhotoTelegramMethod)
@@ -80,7 +80,7 @@ func (b *botController) messageMainMenu(ctx context.Context, update *telegram.Up
 	}
 	resp := telegram.SendPhoto{
 		ChatID:      update.Message.Chat.ID,
-		Caption:     b.container.GetLocalizer(*langTag).LocalizedString("short_description"),
+		Caption:     b.container.GetLocalizer(langTag).LocalizedString("short_description"),
 		Photo:       avatarImageURL,
 		ReplyMarkup: mainMenuInlineKeyboardMarkup,
 	}
@@ -92,7 +92,7 @@ func (b *botController) editMessageAndBackToMainMenu(ctx context.Context, callba
 	if err != nil {
 		return err
 	}
-	localizer := b.container.GetLocalizer(*langTag)
+	localizer := b.container.GetLocalizer(langTag)
 	mainMenuInlineKeyboardMarkup, err := b.getMainMenuInlineKeyboardMarkup(ctx, callbackQuery.From)
 	if err != nil {
 		return err
@@ -120,7 +120,7 @@ func (b *botController) messageListPayCurrencies(ctx context.Context, callbackQu
 	if err != nil {
 		return err
 	}
-	localizer := b.container.GetLocalizer(*langTag)
+	localizer := b.container.GetLocalizer(langTag)
 	answerCallbackQuery := telegram.AnswerCallbackQuery{
 		ID:        callbackQuery.ID,
 		Text:      nil,
@@ -130,7 +130,7 @@ func (b *botController) messageListPayCurrencies(ctx context.Context, callbackQu
 		log.Error("fail to send a AnswerCallbackQuery to telegram servers", logger.FError(err))
 		return err
 	}
-	payCurrenciesInlineKeyboardMarkup, err := b.getPayCurrenciesInlineKeyboardMarkup(*langTag)
+	payCurrenciesInlineKeyboardMarkup, err := b.getPayCurrenciesInlineKeyboardMarkup(langTag)
 	if err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func (b *botController) messageEnterAmountCurrency(ctx context.Context, callback
 	if err != nil {
 		return err
 	}
-	localizer := b.container.GetLocalizer(*langTag)
+	localizer := b.container.GetLocalizer(langTag)
 	answerCallbackQuery := telegram.AnswerCallbackQuery{
 		ID:        callbackQuery.ID,
 		Text:      nil,

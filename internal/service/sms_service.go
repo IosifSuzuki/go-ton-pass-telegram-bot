@@ -5,6 +5,7 @@ import (
 	"go-ton-pass-telegram-bot/internal/container"
 	"go-ton-pass-telegram-bot/internal/model/app"
 	"go-ton-pass-telegram-bot/internal/model/sms"
+	"go-ton-pass-telegram-bot/internal/utils"
 	"go-ton-pass-telegram-bot/pkg/logger"
 	"io"
 	"math"
@@ -24,6 +25,8 @@ type SMSService interface {
 	GetServicePrices(code string) ([]sms.PriceForService, error)
 	GetPopularServiceCodeList() ([]string, error)
 	RequestNumber(serviceCode string, countryNumber int64, maxPrice float64) (*sms.RequestedNumber, error)
+	GetStatus(activationID int64) (app.SMSActivationState, error)
+	CancelActivation(activationID int64) error
 }
 
 type smsService struct {
@@ -171,6 +174,52 @@ func (s *smsService) RequestNumber(serviceCode string, countryNumber int64, maxP
 	return nil, err
 }
 
+func (s *smsService) GetStatus(activationID int64) (app.SMSActivationState, error) {
+	log := s.container.GetLogger()
+	urlValues := url.Values{}
+	urlValues.Set("id", strconv.Itoa(int(activationID)))
+	req, err := s.prepareRequest(app.GetActivationStatus, urlValues)
+	if err != nil {
+		return app.UnknownSMSActivateState, err
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return app.UnknownSMSActivateState, err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	text := string(body)
+	log.Debug("receive from sms activate response", logger.F("text", text))
+	if utils.Equal(text, string(app.CancelSMSActivateState)) {
+		return app.CancelSMSActivateState, nil
+	} else if utils.Equal(text, string(app.DoneSMSActivateState)) {
+		return app.DoneSMSActivateState, nil
+	}
+	return app.PendingSMSActivateState, nil
+}
+
+func (s *smsService) CancelActivation(activationID int64) error {
+	log := s.container.GetLogger()
+	urlValues := url.Values{}
+	urlValues.Set("id", strconv.Itoa(int(activationID)))
+	urlValues.Set("status", "8")
+	req, err := s.prepareRequest(app.SetActivationStatus, urlValues)
+	if err != nil {
+		return err
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	text := string(body)
+	log.Debug("cancel activation", logger.F("response", text))
+	return nil
+}
+
 func (s *smsService) prepareRequest(smsAction app.SMSAction, queryParams url.Values) (*http.Request, error) {
 	log := s.container.GetLogger()
 	apiKey := s.container.GetConfig().SMSKey()
@@ -192,11 +241,10 @@ func (s *smsService) prepareRequest(smsAction app.SMSAction, queryParams url.Val
 
 func (s *smsService) handleRequestNumberError(body []byte) (error, map[string]any) {
 	var errorResponse sms.ErrorResponse
-	if err := json.Unmarshal(body, &errorResponse); err != nil {
-		return err, nil
-	}
-	if err := sms.DecodeError(errorResponse.Message); err != nil {
-		return *err, errorResponse.Info
+	if err := json.Unmarshal(body, &errorResponse); err == nil {
+		if err := sms.DecodeError(errorResponse.Message); err != nil {
+			return *err, errorResponse.Info
+		}
 	}
 	if err := sms.DecodeError(string(body)); err != nil {
 		return *err, nil

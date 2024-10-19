@@ -14,7 +14,9 @@ import (
 	"go-ton-pass-telegram-bot/internal/repository"
 	"go-ton-pass-telegram-bot/internal/router"
 	"go-ton-pass-telegram-bot/internal/service"
+	"go-ton-pass-telegram-bot/internal/service/postpone"
 	"go-ton-pass-telegram-bot/pkg/logger"
+	"go.temporal.io/sdk/client"
 	"golang.org/x/text/language"
 	"log"
 	"net/http"
@@ -27,6 +29,7 @@ func main() {
 		log.Fatalln(err)
 	}
 	db, err := openConnectionToDB(conf.DB())
+	defer db.Close()
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -37,20 +40,29 @@ func main() {
 		log.Fatalln(err)
 	}
 	redisClient := configureAndConnectToRedisClient(conf)
+	defer redisClient.Close()
 	sessionService := service.NewSessionService(box, redisClient)
 	cacheService := service.NewCache(box, redisClient)
+	temporalClient, err := client.Dial(client.Options{
+		HostPort:  conf.Temporal().Address(),
+		Namespace: "default",
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer temporalClient.Close()
 	//updateTelegramBotProfile(box)
-	RunServer(box, db, sessionService, cacheService)
+	RunServer(box, db, sessionService, temporalClient, cacheService)
 }
 
 func configureAndConnectToRedisClient(conf config.Config) *redis.Client {
 	redisConfig := conf.Redis()
-	client := redis.NewClient(&redis.Options{
+	c := redis.NewClient(&redis.Options{
 		Addr:     redisConfig.Address(),
 		Password: redisConfig.Password,
 		DB:       redisConfig.DataBase,
 	})
-	status, err := client.Ping(context.Background()).Result()
+	status, err := c.Ping(context.Background()).Result()
 	if err != nil {
 		log.Fatalf(
 			"ping to redis failed with status: %s; error: %v; connection addr: %s",
@@ -60,14 +72,18 @@ func configureAndConnectToRedisClient(conf config.Config) *redis.Client {
 		)
 		return nil
 	}
-	return client
+	return c
 }
 
-func RunServer(box container.Container, conn *sql.DB, sessionService service.SessionService, cacheService service.Cache) {
+func RunServer(box container.Container, conn *sql.DB, sessionService service.SessionService, temporalClient client.Client, cacheService service.Cache) {
 	profileRepository := repository.NewProfileRepository(conn)
 	smsHistoryRepository := repository.NewSMSHistoryRepository(conn)
 	smsService := service.NewSMSService(box)
-	r := router.PrepareAndConfigureRouter(box, sessionService, cacheService, smsService, profileRepository, smsHistoryRepository)
+	postponeService := postpone.NewPostpone(box, temporalClient, profileRepository, smsHistoryRepository)
+	if err := postponeService.Prepare(); err != nil {
+		log.Fatalln("fail to prepare postpone service", logger.FError(err))
+	}
+	r := router.PrepareAndConfigureRouter(box, sessionService, cacheService, smsService, postponeService, profileRepository, smsHistoryRepository)
 	server := &http.Server{
 		Handler:      r,
 		Addr:         box.GetConfig().Address(),

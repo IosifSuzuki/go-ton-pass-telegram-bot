@@ -8,6 +8,8 @@ import (
 	"go-ton-pass-telegram-bot/internal/model/telegram"
 	"go-ton-pass-telegram-bot/internal/repository"
 	"go-ton-pass-telegram-bot/internal/service"
+	"go-ton-pass-telegram-bot/internal/service/postpone"
+	"go-ton-pass-telegram-bot/internal/utils"
 	"go-ton-pass-telegram-bot/internal/worker"
 	"go-ton-pass-telegram-bot/pkg/logger"
 )
@@ -37,6 +39,7 @@ type botController struct {
 	sessionService       service.SessionService
 	cacheService         service.Cache
 	smsService           service.SMSService
+	postponeService      postpone.Postpone
 	profileRepository    repository.ProfileRepository
 	smsHistoryRepository repository.SMSHistoryRepository
 	exchangeRateWorker   worker.ExchangeRate
@@ -49,6 +52,7 @@ func NewBotController(
 	sessionService service.SessionService,
 	cacheService service.Cache,
 	smsService service.SMSService,
+	postponeService postpone.Postpone,
 	profileRepository repository.ProfileRepository,
 	smsHistoryRepository repository.SMSHistoryRepository,
 ) BotController {
@@ -63,6 +67,7 @@ func NewBotController(
 		sessionService:       sessionService,
 		cacheService:         cacheService,
 		smsService:           smsService,
+		postponeService:      postponeService,
 		profileRepository:    profileRepository,
 		smsHistoryRepository: smsHistoryRepository,
 		exchangeRateWorker:   exchangeRateWorker,
@@ -145,8 +150,8 @@ func (b *botController) Serve(update *telegram.Update) error {
 		return b.selectLanguageCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.HistoryCallbackQueryCommand:
 		return b.historyCallbackQueryCommandHandler(ctx, update.CallbackQuery)
-	case app.SelectSMSServiceWithCountryCallbackQueryCommand:
-		return b.selectSMSServiceWithCountryQueryCommandHandler(ctx, update.CallbackQuery)
+	case app.PayServiceCallbackQueryCommand:
+		return b.payServiceQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.ListPayCurrenciesCallbackQueryCommand:
 		return b.listPayCurrenciesCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.SelectPayCurrencyCallbackQueryCommand:
@@ -181,7 +186,7 @@ func (b *botController) recordTelegramProfile(ctx context.Context, update *teleg
 		log.Debug("record profile to db", logger.F("telegramID", telegramID))
 		profile := &domain.Profile{
 			TelegramID:     *telegramID,
-			TelegramChatID: update.ID,
+			TelegramChatID: update.Message.Chat.ID,
 			Username:       username,
 		}
 		_, err := b.profileRepository.Create(ctx, profile)
@@ -193,15 +198,72 @@ func (b *botController) recordTelegramProfile(ctx context.Context, update *teleg
 	return nil
 }
 
-func (b *botController) getLanguageCode(ctx context.Context, user telegram.User) (*string, error) {
+func (b *botController) getLanguageCode(ctx context.Context, user telegram.User) (string, error) {
 	profile, err := b.profileRepository.FetchByTelegramID(ctx, user.ID)
+	defaultLang := "en"
 	if err != nil {
-		return nil, err
+		return defaultLang, err
 	}
 	if preferredLanguage := profile.PreferredLanguage; preferredLanguage != nil {
-		return preferredLanguage, nil
+		return *preferredLanguage, nil
 	}
-	return user.LanguageCode, nil
+	if user.LanguageCode != nil {
+		return *user.LanguageCode, nil
+	}
+	return defaultLang, nil
+}
+
+func (b *botController) EditMessageMedia(callbackQuery *telegram.CallbackQuery, text string, photoURL string, replyMarkup any) error {
+	log := b.container.GetLogger()
+	photoMedia := telegram.InputPhotoMedia{
+		Type:      "photo",
+		Media:     photoURL,
+		Caption:   utils.NewString(text),
+		ParseMode: utils.NewString("MarkdownV2"),
+	}
+	editMessageMedia := telegram.EditMessageMedia{
+		ChatID:      &callbackQuery.Message.Chat.ID,
+		MessageID:   &callbackQuery.Message.ID,
+		Media:       photoMedia,
+		ReplyMarkup: replyMarkup,
+	}
+	if err := b.telegramBotService.SendResponse(editMessageMedia, app.EditMessageMediaTelegramMethod); err != nil {
+		log.Error("fail to edit message media", logger.FError(err))
+		return err
+	}
+	return nil
+}
+
+func (b *botController) AnswerCallbackQuery(callbackQuery *telegram.CallbackQuery) error {
+	log := b.container.GetLogger()
+	answerCallbackQuery := telegram.AnswerCallbackQuery{
+		ID:        callbackQuery.ID,
+		Text:      nil,
+		ShowAlert: false,
+	}
+	if err := b.telegramBotService.SendResponse(answerCallbackQuery, app.AnswerCallbackQueryTelegramMethod); err != nil {
+		log.Debug("fail to send a AnswerCallbackQuery to telegram servers", logger.FError(err))
+		return err
+	}
+	return nil
+}
+
+func (b *botController) AnswerCallbackQueryWithEditMessageMedia(
+	callbackQuery *telegram.CallbackQuery,
+	text string,
+	photoURL string,
+	replyMarkup any,
+) error {
+	log := b.container.GetLogger()
+	if err := b.AnswerCallbackQuery(callbackQuery); err != nil {
+		log.Debug("fail to answer callback query", logger.FError(err))
+		return err
+	}
+	if err := b.EditMessageMedia(callbackQuery, text, photoURL, replyMarkup); err != nil {
+		log.Debug("fail to perform EditMessageMedia", logger.FError(err))
+		return err
+	}
+	return nil
 }
 
 func getTelegramID(update *telegram.Update) (*int64, error) {

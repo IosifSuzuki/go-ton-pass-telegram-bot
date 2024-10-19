@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS sms_history
     activation_id BIGINT,
     service_code VARCHAR(64),
     phone_number VARCHAR(64),
+    status  VARCHAR(64),
     sms_text TEXT,
     sms_code VARCHAR(64),
     received_at TIMESTAMP,

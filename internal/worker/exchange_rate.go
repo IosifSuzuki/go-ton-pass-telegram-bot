@@ -19,7 +19,7 @@ type ExchangeRate interface {
 	ConvertFromUSD(amount float64, targetCurrencyCode string) (*float64, error)
 	ConvertToUSD(amount float64, sourceCurrencyCode string) (*float64, error)
 	ConvertFromRUB(amount float64, targetCurrencyCode string) (*float64, error)
-	PriceForService(amount float64) float64
+	PriceWithFee(amount float64) float64
 }
 
 type exchangeRate struct {
@@ -72,7 +72,7 @@ func (e *exchangeRate) ConvertFromRUB(amount float64, targetCurrencyCode string)
 	return e.ConvertFromUSD(usdValue, targetCurrencyCode)
 }
 
-func (e *exchangeRate) PriceForService(amount float64) float64 {
+func (e *exchangeRate) PriceWithFee(amount float64) float64 {
 	return 1.1 * amount
 }
 
