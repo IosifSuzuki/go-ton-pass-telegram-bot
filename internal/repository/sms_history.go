@@ -13,6 +13,8 @@ type SMSHistoryRepository interface {
 	GetByActivationID(ctx context.Context, activationID int64) (*domain.SMSHistory, error)
 	ChangeActivationStatus(ctx context.Context, activationID int64, activationStatus string) error
 	ReceiveSMSCode(ctx context.Context, smsHistory *domain.SMSHistory) error
+	GetNumberOfRows(ctx context.Context, profileID int64) (*int64, error)
+	FetchList(ctx context.Context, profileID int64, offset int, limit int) ([]domain.SMSHistory, error)
 }
 
 type smsHistoryRepository struct {
@@ -102,4 +104,71 @@ func (s *smsHistoryRepository) ChangeActivationStatus(ctx context.Context, activ
 	query := "UPDATE sms_history SET status = $1, updated_at = $2 WHERE activation_id = $3"
 	_, err := s.conn.ExecContext(ctx, query, activationStatus, time.Now(), activationID)
 	return err
+}
+
+func (s *smsHistoryRepository) GetNumberOfRows(ctx context.Context, profileID int64) (*int64, error) {
+	var numberOfRows int64
+	query := "SELECT COUNT(*) FROM sms_history WHERE profile_id = $1"
+	err := s.conn.QueryRowContext(ctx, query, profileID).Scan(&numberOfRows)
+	if err != nil {
+		return nil, err
+	}
+	return &numberOfRows, nil
+}
+
+func (s *smsHistoryRepository) FetchList(ctx context.Context, profileID int64, offset int, limit int) ([]domain.SMSHistory, error) {
+	query := "SELECT id, profile_id, activation_id, service_code, phone_number, status, sms_text, sms_code, received_at, created_at, updated_at, deleted_at " +
+		"FROM sms_history WHERE profile_id = $1  ORDER BY created_at DESC LIMIT $2 OFFSET $3"
+	rows, err := s.conn.QueryContext(ctx, query, profileID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	list := make([]domain.SMSHistory, 0, limit)
+	for rows.Next() {
+		smsHistory := domain.SMSHistory{}
+		var smsText sql.NullString
+		var smsCode sql.NullString
+		var receivedAt sql.NullTime
+		var createdAt sql.NullTime
+		var updatedAt sql.NullTime
+		var deletedAt sql.NullTime
+		err := rows.Scan(
+			&smsHistory.ID,
+			&smsHistory.ProfileID,
+			&smsHistory.ActivationID,
+			&smsHistory.ServiceCode,
+			&smsHistory.PhoneNumber,
+			&smsHistory.Status,
+			&smsText,
+			&smsCode,
+			&receivedAt,
+			&createdAt,
+			&updatedAt,
+			&deletedAt,
+		)
+		if err != nil {
+			continue
+		}
+		if smsText.Valid {
+			smsHistory.SMSText = &smsText.String
+		}
+		if smsCode.Valid {
+			smsHistory.SMSCode = &smsCode.String
+		}
+		if receivedAt.Valid {
+			smsHistory.ReceivedAt = &receivedAt.Time
+		}
+		if createdAt.Valid {
+			smsHistory.CreatedAt = &createdAt.Time
+		}
+		if updatedAt.Valid {
+			smsHistory.UpdatedAt = &updatedAt.Time
+		}
+		if deletedAt.Valid {
+			smsHistory.DeletedAt = &deletedAt.Time
+		}
+		list = append(list, smsHistory)
+	}
+	return list, nil
 }

@@ -3,6 +3,8 @@
   "back": "Back",
   "pay": "Pay",
   "cancel": "Cancel",
+  "next": "Next",
+  "previous": "Previous",
   "back_to_main_menu": "\uD83C\uDFE0 Main Menu",
   "bot_description": "🌟Welcome to the TonPass Bot!🌟\n\nWe're glad to have you here! 😊\nTonPass provides instant and secure SMS activation services\nfor all your online verification needs. 🌐\n\nReady to get started? Simply choose an option below and experience\nsmooth, reliable SMS verifications.\n\n🔥 Fast, simple, and efficient! 🔥",
   "bot_markdown_description": "🌟*Welcome to the TonPass Bot\\!*🌟\n\nWe're glad to have you here\\! 😊\nTonPass provides *instant and secure* SMS activation services\nfor all your online verification needs\\. 🌐\n\nReady to get started? Simply choose an option below and experience\nsmooth, reliable SMS verifications\\.\n\n🔥 *Fast, simple, and efficient\\!* 🔥",
@@ -31,7 +33,6 @@
     "one": "Your selected language is {{ .Language }}. Choose an option below",
     "other": "Your selected language is {{ .Language }}. Choose an option below"
   },
-  "empty_history": "No recent activity found",
   "development_process": "\uD83D\uDEA7 Feature Under Development \uD83D\uDEA7",
   "select_sms_service": "Please choose the online service you want to activate via SMS",
   "top_up_balance": "Top up balance",
@@ -73,5 +74,32 @@
     "description": "Tap the link below to subscribe to our Telegram channel",
     "one": "Want to keep using the bot? Subscribe to our *{{ .Channel }}* Telegram channel for instant updates and important announcements\\! Subscribe Now",
     "other": "Want to keep using the bot? Subscribe to our *{{ .Channel }}* Telegram channel for instant updates and important announcements\\! Subscribe Now"
+  },
+  "empty_history_markdown": "*No recent activity found*",
+  "sms_history_title_markdown": "📩 *SMS History* 📩",
+  "sms_history_sms_code_markdown": {
+    "description": "**SMS Code**",
+    "one": "📩 **SMS Code**: {{ .SMSCode }}",
+    "other": "📩 **SMS Code**: {{ .SMSCode }}"
+  },
+  "sms_history_received_at_markdown": {
+    "description": "**Received On**",
+    "one": "📅 **Received On**: `{{ .ReceivedDate }}",
+    "other": "📅 **Received On**: {{ .ReceivedDate }}"
+  },
+  "sms_history_start_at_markdown": {
+    "description": "**Start On**",
+    "one": "📅 **Start On**: `{{ .StartDate }}",
+    "other": "📅 **Start On**: {{ .StartDate }}"
+  },
+  "sms_history_status_markdown": {
+    "description": "**Received On**",
+    "one": "📋 **State**: `{{ .State }}",
+    "other": "📋 **State**: {{ .State }}"
+  },
+  "sms_history_phoneNumber_markdown": {
+    "description": "**Phone Number**",
+    "one": "📞 **Phone Number**: `{{ .PhoneNumber }}",
+    "other": "📞 **Phone Number**: {{ .PhoneNumber }}"
   }
 }

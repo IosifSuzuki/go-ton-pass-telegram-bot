@@ -31,7 +31,7 @@
     "one": "Вибрана мова {{ .Language }}. Виберіть опцію нижче",
     "other": "Вибрана мова {{ .Language }}. Виберіть опцію нижче"
   },
-  "empty_history": "Жодної нещодавньої активності не знайдено",
+  "empty_history_markdown": "*No recent activity found*",
   "development_process": "\uD83D\uDEA7 Функція в розробці \uD83D\uDEA7",
   "select_sms_service": "Будь ласка, виберіть онлайн-сервіс, який ви хочете активувати через SMS",
   "top_up_balance": "Top up balance",

@@ -31,7 +31,7 @@
     "one": "Váš vybraný jazyk je {{ .Language }}. Vyberte si možnosť nižšie",
     "other": "Váš vybraný jazyk je {{ .Language }}. Vyberte si možnosť nižšie"
   },
-  "empty_history": "Nenašli sa žiadne nedávne aktivity",
+  "empty_history_markdown": "*No recent activity found*",
   "development_process": "\uD83D\uDEA7 Funkcia vo vývoji \uD83D\uDEA7",
   "select_sms_service": "Vyberte si online službu, ktorú chcete aktivovať cez SMS",
   "top_up_balance": "Top up balance",

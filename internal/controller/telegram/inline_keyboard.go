@@ -108,6 +108,7 @@ func (b *botController) getMainMenuInlineKeyboardMarkup(ctx context.Context, use
 		return nil, err
 	}
 	buyNumberParameters := []any{0}
+	historyParameters := []any{0, 3}
 	localizer := b.container.GetLocalizer(langTag)
 	balanceTelegramCallbackData := app.TelegramCallbackData{
 		Name:       app.BalanceCallbackQueryCmdText,
@@ -123,7 +124,7 @@ func (b *botController) getMainMenuInlineKeyboardMarkup(ctx context.Context, use
 	}
 	historyTelegramCallbackData := app.TelegramCallbackData{
 		Name:       app.HistoryCallbackQueryCmdText,
-		Parameters: nil,
+		Parameters: &historyParameters,
 	}
 	languageTelegramCallbackData := app.TelegramCallbackData{
 		Name:       app.LanguageCallbackQueryCmdText,

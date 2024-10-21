@@ -14,7 +14,8 @@ type ProfileRepository interface {
 	FetchByID(ctx context.Context, id int64) (*domain.Profile, error)
 	SetPreferredCurrency(ctx context.Context, telegramID int64, preferredCurrency string) error
 	SetPreferredLanguage(ctx context.Context, telegramID int64, preferredLanguage string) error
-	TopUpBalance(ctx context.Context, telegramID int64, amount float64) error
+	TopUpBalanceByTelegramID(ctx context.Context, telegramID int64, amount float64) error
+	TopUpBalanceByProfileID(ctx context.Context, profileID int64, amount float64) error
 	Debit(ctx context.Context, telegramID int64, amount float64) error
 	HasSufficientFunds(ctx context.Context, telegramID int64, amount float64) (bool, error)
 }
@@ -131,9 +132,15 @@ func (p *profileRepository) SetPreferredLanguage(ctx context.Context, telegramID
 	return err
 }
 
-func (p *profileRepository) TopUpBalance(ctx context.Context, telegramID int64, amount float64) error {
-	query := "UPDATE profile SET balance = balance - $1, updated_at = $2 WHERE telegram_id = $3"
+func (p *profileRepository) TopUpBalanceByTelegramID(ctx context.Context, telegramID int64, amount float64) error {
+	query := "UPDATE profile SET balance = balance + $1, updated_at = $2 WHERE telegram_id = $3"
 	_, err := p.conn.ExecContext(ctx, query, amount, time.Now(), telegramID)
+	return err
+}
+
+func (p *profileRepository) TopUpBalanceByProfileID(ctx context.Context, profileID int64, amount float64) error {
+	query := "UPDATE profile SET balance = balance + $1, updated_at = $2 WHERE id = $3"
+	_, err := p.conn.ExecContext(ctx, query, amount, time.Now(), profileID)
 	return err
 }
 

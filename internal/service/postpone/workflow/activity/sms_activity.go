@@ -62,7 +62,11 @@ func (s *SMSActivity) SaveStatusInDB(ctx context.Context, activationID int64, ac
 
 func (s *SMSActivity) RefundAmount(ctx context.Context, profileID int64, amount float64) (string, error) {
 	log := s.container.GetLogger()
-	if err := s.profileRepository.TopUpBalance(ctx, profileID, amount); err != nil {
+	log.Debug("will refund amount",
+		logger.F("profile_id", profileID),
+		logger.F("amount", amount),
+	)
+	if err := s.profileRepository.TopUpBalanceByProfileID(ctx, profileID, amount); err != nil {
 		log.Debug("fail to top up balance", logger.F("profile_id", profileID), logger.F("amount", amount))
 		return "", err
 	}
@@ -83,7 +87,7 @@ func (s *SMSActivity) RefundMessage(ctx context.Context, chatID int64, profileID
 	}
 	localizer := s.container.GetLocalizer(*profile.PreferredLanguage)
 	text := localizer.LocalizedStringWithTemplateData("not_receive_sms_code_markdown", map[string]any{
-		"PhoneNumber": utils.EscapeMarkdownText(utils.PhoneNumberTitle(smsHistory.PhoneNumber)),
+		"PhoneNumber": utils.EscapeMarkdownText(smsHistory.PhoneNumber),
 	})
 	replyKeyboardRemove := telegram.ReplyKeyboardRemove{RemoveKeyboard: true}
 	sendPhoto := telegram.SendPhoto{

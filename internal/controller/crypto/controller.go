@@ -75,7 +75,7 @@ func (c *cryptoController) Serve(update *bot.WebhookUpdates) error {
 	}
 	amountInUSD := amount * paidUsdRate
 	log.Debug("will top up balance", logger.F("amountInUSD", amountInUSD))
-	if err := c.profileRepository.TopUpBalance(ctx, payloadInvoice.TelegramID, amountInUSD); err != nil {
+	if err := c.profileRepository.TopUpBalanceByTelegramID(ctx, payloadInvoice.TelegramID, amountInUSD); err != nil {
 		return err
 	}
 	resp := telegram.SendResponse{

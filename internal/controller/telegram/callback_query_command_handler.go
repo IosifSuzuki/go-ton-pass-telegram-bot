@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"context"
+	"fmt"
 	"go-ton-pass-telegram-bot/internal/model/app"
 	"go-ton-pass-telegram-bot/internal/model/domain"
 	"go-ton-pass-telegram-bot/internal/model/sms"
@@ -185,35 +186,158 @@ func (b *botController) selectLanguageCallbackQueryCommandHandler(ctx context.Co
 func (b *botController) historyCallbackQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
 	log := b.container.GetLogger()
 	langTag, err := b.getLanguageCode(ctx, callbackQuery.From)
+	telegramID := callbackQuery.From.ID
 	if err != nil {
-		log.Error("fail to getLanguageCode", logger.FError(err))
-		return err
+		log.Debug("fail to getLanguageCode", logger.F("langTag", langTag), logger.FError(err))
 	}
 	localizer := b.container.GetLocalizer(langTag)
-	backToMenuInlineKeyboardMarkup, err := b.getMenuInlineKeyboardMarkup(langTag)
+	replyMarkup, err := b.getMenuInlineKeyboardMarkup(langTag)
 	if err != nil {
+		log.Error("fail to get main menu inline keyboard", logger.FError(err))
 		return err
 	}
-	if err := b.AnswerCallbackQuery(callbackQuery); err != nil {
-		log.Error("fail to answer callback query", logger.FError(err))
-		return err
+	telegramCallbackQueryData, err := utils.DecodeTelegramCallbackData(callbackQuery.Data)
+	if err != nil {
+		log.Debug("fail to decode telegram callback data", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
 	}
-	photoMedia := telegram.InputPhotoMedia{
-		Type:    "photo",
-		Media:   historyImageURL,
-		Caption: utils.NewString(localizer.LocalizedString("empty_history")),
+	if telegramCallbackQueryData.Parameters == nil {
+		log.Debug("parameters must contains parameters")
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
 	}
-	editMessage := telegram.EditMessageMedia{
-		ChatID:      &callbackQuery.Message.Chat.ID,
-		MessageID:   &callbackQuery.Message.ID,
-		Media:       photoMedia,
-		ReplyMarkup: backToMenuInlineKeyboardMarkup,
+	parameters := *telegramCallbackQueryData.Parameters
+	currentPage := utils.GetInt64(parameters[0])
+	limit := utils.GetInt64(parameters[1])
+	profile, err := b.profileRepository.FetchByTelegramID(ctx, telegramID)
+	if err != nil {
+		log.Debug("fail to fetch profile by telegram id", logger.F("telegram_id", telegramID), logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
 	}
-	if err := b.telegramBotService.SendResponse(editMessage, app.EditMessageMediaTelegramMethod); err != nil {
-		log.Error("fail to send message to telegram servers", logger.FError(err))
-		return err
+	historySMSCount, err := b.smsHistoryRepository.GetNumberOfRows(ctx, profile.ID)
+	if err != nil {
+		log.Debug("fail to get number of rows of smsHistory by prifile id", logger.F("profile_id", profile.ID), logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
 	}
-	return nil
+	if *historySMSCount == 0 {
+		text := localizer.LocalizedString("empty_history_markdown")
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			text,
+			historyImageURL,
+			replyMarkup,
+		)
+	}
+	offset := currentPage * limit
+	smsHistories, err := b.smsHistoryRepository.FetchList(ctx, profile.ID, int(offset), int(limit))
+	if err != nil {
+		log.Debug("fail to get list of sms history",
+			logger.F("profile_id", profile.ID),
+			logger.F("offset", offset),
+			logger.F("limit", limit),
+			logger.FError(err),
+		)
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	availablePages := *historySMSCount / limit
+	if *historySMSCount%limit > 0 {
+		availablePages++
+	}
+	previousPage := currentPage - 1
+	if previousPage < 0 {
+		previousPage = 0
+	}
+	nextPage := currentPage + 1
+	if nextPage > availablePages-1 {
+		nextPage = availablePages - 1
+	}
+	previousParameters := []any{previousPage, limit}
+	nextPageParameters := []any{nextPage, limit}
+	previousTelegramCallbackData := app.TelegramCallbackData{
+		Name:       app.HistoryCallbackQueryCmdText,
+		Parameters: &previousParameters,
+	}
+	nextTelegramCallbackData := app.TelegramCallbackData{
+		Name:       app.HistoryCallbackQueryCmdText,
+		Parameters: &nextPageParameters,
+	}
+	previousEncodedTelegramCallbackData, err := utils.EncodeTelegramCallbackData(previousTelegramCallbackData)
+	if err != nil {
+		log.Debug("fail to create telegram callback data", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	nextEncodedTelegramCallbackData, err := utils.EncodeTelegramCallbackData(nextTelegramCallbackData)
+	if err != nil {
+		log.Debug("fail to create telegram callback data", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	nextTelegramInlineButton := telegram.InlineKeyboardButton{
+		Text: fmt.Sprintf("%s %s", localizer.LocalizedString("Next"), "▶️"),
+		Data: nextEncodedTelegramCallbackData,
+	}
+	previousTelegramInlineButton := telegram.InlineKeyboardButton{
+		Text: fmt.Sprintf("%s %s", "◀️", localizer.LocalizedString("Previous")),
+		Data: previousEncodedTelegramCallbackData,
+	}
+	mainTelegramInlineButton, err := b.getMenuInlineKeyboardButton(langTag)
+	if err != nil {
+		log.Debug("fail to create menu inline keyboard button", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	gridKeyboardButtons := b.prepareGridInlineKeyboardButton([]telegram.InlineKeyboardButton{
+		previousTelegramInlineButton,
+		nextTelegramInlineButton,
+		*mainTelegramInlineButton,
+	}, 2)
+	replyMarkup = &telegram.InlineKeyboardMarkup{
+		InlineKeyboard: gridKeyboardButtons,
+	}
+	responseText := b.formatterWorker.SHSHistories(langTag, smsHistories)
+	return b.AnswerCallbackQueryWithEditMessageMedia(
+		callbackQuery,
+		responseText,
+		historyImageURL,
+		replyMarkup,
+	)
 }
 
 func (b *botController) helpCallbackQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
@@ -573,7 +697,7 @@ func (b *botController) payServiceQueryCommandHandler(ctx context.Context, callb
 		ActivationID: activationID,
 		Status:       string(app.PendingSMSActivateState),
 		ServiceCode:  serviceCode,
-		PhoneNumber:  requestedNumber.PhoneNumber,
+		PhoneNumber:  utils.PhoneNumberTitle(requestedNumber.PhoneNumber),
 	}
 	if _, err := b.smsHistoryRepository.Create(ctx, &domainSMSHistory); err != nil {
 		log.Debug("fail to create sms history", logger.FError(err))
