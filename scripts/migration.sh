@@ -4,7 +4,7 @@ source .env
 
 CMD=$1
 
-export HOST=127.0.0.1
+export HOST=$POSTGRES_HOST
 function main {
   source .env
 	if [ "$CMD" == "migrate_up" ]; then

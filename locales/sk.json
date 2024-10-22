@@ -1,8 +1,8 @@
 {
   "bot_name": "TonPass",
   "back": "Späť",
-  "pay": "Pay",
-  "cancel": "Cancel",
+  "pay": "Zaplať",
+  "cancel": "Zrušiť",
   "back_to_main_menu": "\uD83C\uDFE0 Hlavné menu",
   "bot_description": "🌟Vitajte v TonPass Bote!🌟\n\nSme radi, že ste tu! 😊\nTonPass poskytuje okamžité a bezpečné SMS aktivačné služby\npre všetky vaše potreby online overovania. 🌐\n\nPripravení začať? Stačí si vybrať jednu z možností nižšie a zažite\nhladké a spoľahlivé SMS overovanie.\n\n🔥 Rýchle, jednoduché a efektívne! 🔥",
   "bot_markdown_description": "🌟*Vitajte v TonPass Bote\\!*🌟\n\nSme radi, že ste tu\\! 😊\nTonPass poskytuje *okamžité a bezpečné* SMS aktivačné služby\npre všetky vaše potreby online overovania\\. 🌐\n\nPripravení začať? Stačí si vybrať jednu z možností nižšie a zažite\nhladké a spoľahlivé SMS overovanie\\.\n\n🔥 *Rýchle, jednoduché a efektívne\\!* 🔥",
@@ -11,7 +11,7 @@
   "help": "Pomoc",
   "history": "História",
   "language": "Jazyk",
-  "currency": "Currency",
+  "currency": "Mena",
   "start_cmd_short_description_cmd": "Začať interakciu s botom",
   "help_cmd_short_description_cmd": "Poskytuje pokyny na interakciu s botom",
   "short_description": "Jednoducho získajte SMS aktivačné kódy pre rôzne online služby. Stačí požiadať o kód pre služby ako Google, Instagram alebo Facebook a rýchlo a efektívne obdržíte svoje overovacie SMS.",
@@ -31,47 +31,73 @@
     "one": "Váš vybraný jazyk je {{ .Language }}. Vyberte si možnosť nižšie",
     "other": "Váš vybraný jazyk je {{ .Language }}. Vyberte si možnosť nižšie"
   },
-  "empty_history_markdown": "*No recent activity found*",
   "development_process": "\uD83D\uDEA7 Funkcia vo vývoji \uD83D\uDEA7",
   "select_sms_service": "Vyberte si online službu, ktorú chcete aktivovať cez SMS",
-  "top_up_balance": "Top up balance",
-  "select_sms_service_with_country": "Select the country whose numbers you want to use:",
-  "select_currency_to_pay": "Choose a currency for payment.",
-  "enter_amount_for_payment_in_currency":{
-    "description": "Enter the amount for payment in currency",
-    "one": "Enter the amount for payment in {{ .Currency }}",
-    "other": "Enter the amount for payment in {{ .Currency }}"
+  "top_up_balance": "Dobiť zostatok",
+  "select_sms_service_with_country": "Vyberte krajinu, ktorej čísla chcete použiť:",
+  "select_currency_to_pay": "Vyberte menu na platbu.",
+  "enter_amount_for_payment_in_currency": {
+    "description": "Zadajte sumu na platbu v mene",
+    "one": "Zadajte sumu na platbu v {{ .Currency }}",
+    "other": "Zadajte sumu na platbu v {{ .Currency }}"
   },
-  "enter_amount_for_payment_in_currency_error": "Please enter the amount in currency using the correct number format. Examples: 12.30, 12, 100, etc.",
-  "crypto_bot_pay_title": "To make a payment, press the 'Pay' button.",
-  "balance_updated": "Your account balance has been updated. Thank you for using our service!",
+  "enter_amount_for_payment_in_currency_error": "Zadajte sumu v mene pomocou správneho formátu čísla\\. Príklady: 12\\.30, 12, 100, atď\\.",
+  "crypto_bot_pay_title_markdown": "Na vykonanie platby stlačte tlačidlo 'Zaplať'\\.",
+  "balance_updated_markdown": "Váš zostatok na účte bol aktualizovaný\\. Ďakujeme, že používate naše služ\\!",
   "choose_preferred_currency": {
-    "description": "Choose an option below",
-    "one": "Your selected preferred currency is {{ .Currency }}. Choose an option below",
-    "other": "Your selected preferred currency is {{ .Currency }}. Choose an option below"
+    "description": "Vyberte si možnosť nižšie",
+    "one": "Vaša preferovaná mena je {{ .Currency }}. Vyberte si možnosť nižšie",
+    "other": "Vaša preferovaná mena je {{ .Currency }}. Vyberte si možnosť nižšie"
   },
   "success_received_sms_code_markdown": {
-    "description": "Your SMS activation code has been received!",
-    "one": "We've received your activation code: *{{ .SMSCode }}*",
-    "other": "We've received your activation code: *{{ .SMSCode }}*"
+    "description": "Váš SMS aktivačný kód bol prijatý!",
+    "one": "Obdržali sme váš aktivačný kód: *{{ .SMSCode }}*",
+    "other": "Obdržali sme váš aktivačný kód: *{{ .SMSCode }}*"
   },
   "start_registration_form_with_sms_code_markdown": {
-    "description": "Please enter phone number in registration form",
-    "one": "Please enter phone number *\\{{ .PhoneNumber }}* in registration form\\. Then, wait for the *SMS code*\\. We’ll notify you as soon as it arrives\\.\n\nIf for some reason the code does not arrive within *20 minutes*, the money will automatically be returned to your balance\\.",
-    "other": "Please enter phone number *\\{{ .PhoneNumber }}* in registration form\\. Then, wait for the *SMS code*\\. We’ll notify you as soon as it arrives\\.If for some reason the code does not arrive within *20 minutes*, the money will automatically be returned to your balance\\."
+    "description": "Zadajte telefónne číslo do registračného formulára",
+    "one": "Zadajte telefónne číslo *\\{{ .PhoneNumber }}* do registračného formulára\\. Potom počkajte na *SMS kód*\\. Oznámime vám to hneď, ako kód dorazí\\.\n\nAk z nejakého dôvodu kód nedorazí do *20 minút*, peniaze sa automaticky vrátia na váš zostatok\\.",
+    "other": "Zadajte telefónne číslo *\\{{ .PhoneNumber }}* do registračného formulára\\. Potom počkajte na *SMS kód*\\. Oznámime vám to hneď, ako kód dorazí\\. Ak z nejakého dôvodu kód nedorazí do *20 minút*, peniaze sa automaticky vrátia na váš zostatok\\."
   },
-  "numbers_are_unavailable_markdown": "Sorry, it looks like the numbers are unavailable right now\\. Please try again",
-  "fail_to_order_sms_code_markdown": "There was an issue with order SMS code. Please try again\\.",
-  "internal_error_markdown": "An internal error occurred\\. Please try again later\\.",
+  "numbers_are_unavailable_markdown": "Ospravedlňujeme sa, momentálne nie sú dostupné žiadne čísla. Skúste to znova neskôr.",
+  "fail_to_order_sms_code_markdown": "Nastala chyba pri objednávaní SMS kódu. Skúste to znova.",
+  "internal_error_markdown": "Došlo k internej chybe. Skúste to neskôr.",
   "not_receive_sms_code_markdown": {
-    "description": "Unfortunately, we did not receive *the sms code*\\. As a result, we have refunded *the full amount*\\. *Please try again*, and if the issue persists, feel free to contact our support team\\. We apologize for the inconvenience\\.",
-    "one": "Unfortunately, we did not receive *the sms code* for *{{ .PhoneNumber }}*\\. As a result, we have refunded *the full amount*\\. *Please try again*, and if the issue persists, feel free to contact our support team\\. We apologize for the inconvenience\\.",
-    "other": "Unfortunately, we did not receive *the sms code* for *{{ .PhoneNumber }}*\\. As a result, we have refunded *the full amount*\\. *Please try again*, and if the issue persists, feel free to contact our support team\\. We apologize for the inconvenience\\."
+    "description": "Žiaľ, nedostali sme *SMS kód*. Preto sme vrátili *celú sumu* späť na váš zostatok. *Skúste to znova* a ak problém pretrváva, kontaktujte náš podporný tím. Ospravedlňujeme sa za nepríjemnosti.",
+    "one": "Žiaľ, nedostali sme *SMS kód* pre *{{ .PhoneNumber }}*. Preto sme vrátili *celú sumu* späť na váš zostatok. *Skúste to znova* a ak problém pretrváva, kontaktujte náš podporný tím. Ospravedlňujeme sa za nepríjemnosti.",
+    "other": "Žiaľ, nedostali sme *SMS kód* pre *{{ .PhoneNumber }}*. Preto sme vrátili *celú sumu* späť na váš zostatok. *Skúste to znova* a ak problém pretrváva, kontaktujte náš podporný tím. Ospravedlňujeme sa za nepríjemnosti."
   },
-  "insufficient_funds_markdown": "Insufficient funds for SMS activation",
+  "insufficient_funds_markdown": "Nedostatok finančných prostriedkov na SMS aktiváciu",
   "subscribe_to_channel_markdown": {
-    "description": "Tap the link below to subscribe to our Telegram channel",
-    "one": "Want to keep using the bot? Subscribe to our *{{ .Channel }}* Telegram channel for instant updates and important announcements\\! Subscribe Now",
-    "other": "Want to keep using the bot? Subscribe to our *{{ .Channel }}* Telegram channel for instant updates and important announcements\\! Subscribe Now"
+    "description": "Kliknite na odkaz nižšie a prihláste sa na odber nášho Telegram kanála",
+    "one": "Chcete pokračovať v používaní bota? Prihláste sa na odber nášho *{{ .Channel }}* Telegram kanála pre okamžité aktualizácie a dôležité oznámenia\\! Prihlásiť sa teraz",
+    "other": "Chcete pokračovať v používaní bota? Prihláste sa na odber nášho *{{ .Channel }}* Telegram kanála pre okamžité aktualizácie a dôležité oznámenia\\! Prihlásiť sa teraz"
+  },
+  "empty_history_markdown": "*Žiadna nedávna aktivita nebola nájdená*",
+  "sms_history_title_markdown": "📩 *História SMS* 📩",
+  "sms_history_sms_code_markdown": {
+    "description": "**SMS Kód**",
+    "one": "📩 **SMS Kód**: {{ .SMSCode }}",
+    "other": "📩 **SMS Kód**: {{ .SMSCode }}"
+  },
+  "sms_history_received_at_markdown": {
+    "description": "**Prijaté dňa**",
+    "one": "📅 **Prijaté dňa**: `{{ .ReceivedDate }}`",
+    "other": "📅 **Prijaté dňa**: {{ .ReceivedDate }}"
+  },
+  "sms_history_start_at_markdown": {
+    "description": "**Začiatok dňa**",
+    "one": "📅 **Začiatok dňa**: `{{ .StartDate }}`",
+    "other": "📅 **Začiatok dňa**: {{ .StartDate }}"
+  },
+  "sms_history_status_markdown": {
+    "description": "**Stav**",
+    "one": "📋 **Stav**: `{{ .State }}`",
+    "other": "📋 **Stav**: {{ .State }}"
+  },
+  "sms_history_phoneNumber_markdown": {
+    "description": "**Telefónne číslo**",
+    "one": "📞 **Telefónne číslo**: `{{ .PhoneNumber }}`",
+    "other": "📞 **Telefónne číslo**: {{ .PhoneNumber }}"
   }
 }

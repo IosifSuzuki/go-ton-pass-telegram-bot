@@ -16,6 +16,7 @@ import (
 type ExchangeRate interface {
 	GetExchangeRate(ctx context.Context) ([]app.ExchangeRate, error)
 	UpToDateExchangeRate(ctx context.Context) error
+	Convert(amount float64, sourceCurrencyCode, targetCurrencyCode string) (*float64, error)
 	ConvertFromUSD(amount float64, targetCurrencyCode string) (*float64, error)
 	ConvertToUSD(amount float64, sourceCurrencyCode string) (*float64, error)
 	ConvertFromRUB(amount float64, targetCurrencyCode string) (*float64, error)
@@ -41,6 +42,7 @@ func (e *exchangeRate) GetExchangeRate(ctx context.Context) ([]app.ExchangeRate,
 		ctx := context.Background()
 		_ = e.UpToDateExchangeRate(ctx)
 	}()
+
 	log := e.container.GetLogger()
 	response, err := e.cache.GetExchangeRate(ctx)
 	if err == nil {
@@ -51,41 +53,60 @@ func (e *exchangeRate) GetExchangeRate(ctx context.Context) ([]app.ExchangeRate,
 		log.Error("fail to fetch exchange rate", logger.FError(err))
 		return nil, err
 	}
-	return e.filterAndConvert(networkExchangeRates), nil
+	return e.mapNetworkResponse(networkExchangeRates), nil
 }
 
 func (e *exchangeRate) ConvertFromUSD(amount float64, targetCurrencyCode string) (*float64, error) {
-	exchangeRate, err := e.findExchangeRateByCode(targetCurrencyCode)
-	if err != nil {
-		return nil, err
-	}
-	convertedAmount := amount / exchangeRate.Rate
-	return &convertedAmount, nil
+	return e.Convert(amount, "USD", targetCurrencyCode)
 }
 
 func (e *exchangeRate) ConvertFromRUB(amount float64, targetCurrencyCode string) (*float64, error) {
-	rubExchangeRate, err := e.findExchangeRateByCode("RUB")
-	if err != nil {
-		return nil, err
-	}
-	usdValue := amount * rubExchangeRate.Rate
-	return e.ConvertFromUSD(usdValue, targetCurrencyCode)
+	return e.Convert(amount, "RUB", targetCurrencyCode)
 }
 
 func (e *exchangeRate) PriceWithFee(amount float64) float64 {
-	return 1.1 * amount
+	return 1.15 * amount
 }
 
 func (e *exchangeRate) ConvertToUSD(amount float64, sourceCurrencyCode string) (*float64, error) {
-	exchangeRate, err := e.findExchangeRateByCode(sourceCurrencyCode)
-	if err != nil {
-		return nil, err
-	}
-	convertedAmount := exchangeRate.Rate * amount
-	return &convertedAmount, nil
+	return e.Convert(amount, sourceCurrencyCode, "USD")
 }
 
-func (e *exchangeRate) findExchangeRateByCode(currencyCode string) (*app.ExchangeRate, error) {
+func (e *exchangeRate) Convert(amount float64, sourceCurrencyCode, targetCurrencyCode string) (*float64, error) {
+	log := e.container.GetLogger()
+	rate, err := e.GetRate(sourceCurrencyCode, targetCurrencyCode)
+	if err != nil {
+		log.Debug("fail to get rate", logger.FError(err))
+		return nil, err
+	}
+	targetAmount := amount * (*rate)
+	log.Debug("get rate",
+		logger.F("source_currency_code", sourceCurrencyCode),
+		logger.F("target_currency_code", targetCurrencyCode),
+		logger.F("rate", rate),
+		logger.F("source_amount", amount),
+		logger.F("target_amount", targetAmount),
+	)
+	return &targetAmount, nil
+}
+
+func (e *exchangeRate) GetRate(sourceCurrencyCode, targetCurrencyCode string) (*float64, error) {
+	log := e.container.GetLogger()
+	exchangeRate, err := e.findExchangeRate(sourceCurrencyCode, targetCurrencyCode)
+	if err != nil {
+		log.Debug("fail to find exchange rate", logger.FError(err))
+		return nil, err
+	}
+	var rate float64
+	if strings.EqualFold(exchangeRate.SourceCurrency, sourceCurrencyCode) {
+		rate = exchangeRate.Rate
+	} else {
+		rate = 1 / exchangeRate.Rate
+	}
+	return &rate, nil
+}
+
+func (e *exchangeRate) findExchangeRate(currencyCode1, currencyCode2 string) (*app.ExchangeRate, error) {
 	log := e.container.GetLogger()
 	ctx := context.Background()
 	exchangeRates, err := e.GetExchangeRate(ctx)
@@ -93,25 +114,21 @@ func (e *exchangeRate) findExchangeRateByCode(currencyCode string) (*app.Exchang
 		log.Error("fail to get exchange rate", logger.FError(err))
 		return nil, err
 	}
-	var targetExchangeRate *app.ExchangeRate
+	var foundExchangeRate *app.ExchangeRate
 	for _, exchangeRate := range exchangeRates {
-		if strings.EqualFold(exchangeRate.Currency, currencyCode) {
+		conditionVariant1 := strings.EqualFold(exchangeRate.SourceCurrency, currencyCode1) && strings.EqualFold(exchangeRate.TargetCurrency, currencyCode2)
+		conditionVariant2 := strings.EqualFold(exchangeRate.TargetCurrency, currencyCode1) && strings.EqualFold(exchangeRate.SourceCurrency, currencyCode2)
+		if conditionVariant1 || conditionVariant2 {
 			var exchangeRate = exchangeRate
-			log.Debug("found currency", logger.F("targetCurrencyCode", currencyCode))
-			targetExchangeRate = &exchangeRate
+			log.Debug("found exchange rate", logger.F("exchange_rate", exchangeRate))
+			foundExchangeRate = &exchangeRate
 		}
 	}
-	if strings.EqualFold("USD", currencyCode) {
-		targetExchangeRate = &app.ExchangeRate{
-			Currency: currencyCode,
-			Rate:     1,
-		}
-	}
-	if targetExchangeRate == nil {
+	if foundExchangeRate == nil {
+		log.Debug("fail to find exchange rate")
 		return nil, app.NilError
 	}
-	log.Debug("found exchangeRate", logger.F("targetExchangeRate", targetExchangeRate))
-	return targetExchangeRate, nil
+	return foundExchangeRate, nil
 }
 
 func (e *exchangeRate) UpToDateExchangeRate(ctx context.Context) error {
@@ -123,7 +140,7 @@ func (e *exchangeRate) UpToDateExchangeRate(ctx context.Context) error {
 	} else {
 		timeFetched = time.Now()
 	}
-	if timeFetched.Add(24*time.Hour).Compare(time.Now()) <= 0 {
+	if timeFetched.Add(24*time.Hour).Compare(time.Now()) >= 0 {
 		return nil
 	}
 	networkExchangeRates, err := e.cryptoBot.FetchExchangeRate()
@@ -131,16 +148,13 @@ func (e *exchangeRate) UpToDateExchangeRate(ctx context.Context) error {
 		log.Debug("fail to fetch exchange rate", logger.FError(err))
 		return err
 	}
-	exchangeRates := e.filterAndConvert(networkExchangeRates)
+	exchangeRates := e.mapNetworkResponse(networkExchangeRates)
 	return e.cache.SaveExchangeRate(ctx, exchangeRates)
 }
 
-func (e *exchangeRate) filterAndConvert(networkExchangeRates []bot.ExchangeRate) []app.ExchangeRate {
+func (e *exchangeRate) mapNetworkResponse(networkExchangeRates []bot.ExchangeRate) []app.ExchangeRate {
 	filteredNetworkExchangeRates := utils.Filter(networkExchangeRates, func(exchangeRate bot.ExchangeRate) bool {
-		if !exchangeRate.IsValid {
-			return false
-		}
-		return strings.EqualFold(exchangeRate.Target, "USD")
+		return exchangeRate.IsValid
 	})
 	exchangeRates := make([]app.ExchangeRate, 0, len(filteredNetworkExchangeRates))
 	for _, networkExchangeRate := range filteredNetworkExchangeRates {
@@ -149,9 +163,15 @@ func (e *exchangeRate) filterAndConvert(networkExchangeRates []bot.ExchangeRate)
 			continue
 		}
 		exchangeRates = append(exchangeRates, app.ExchangeRate{
-			Currency: networkExchangeRate.Source,
-			Rate:     rate,
+			SourceCurrency: networkExchangeRate.Source,
+			TargetCurrency: networkExchangeRate.Target,
+			Rate:           rate,
 		})
 	}
+	exchangeRates = append(exchangeRates, app.ExchangeRate{
+		SourceCurrency: "USD",
+		TargetCurrency: "USD",
+		Rate:           1,
+	})
 	return exchangeRates
 }

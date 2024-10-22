@@ -36,6 +36,7 @@ func PrepareAndConfigureRouter(
 		sessionService,
 		profileRepository,
 	)
+	router.HandleFunc("/ping", PingServe)
 	smsActivateController := sms.NewSMSActivateController(container, profileRepository, smsHistoryRepository)
 	telegramRouter := NewTelegramRouter(container, telegramBotController)
 	router.Handle("/telegram/handler/webhook", telegramRouter)
@@ -45,4 +46,9 @@ func PrepareAndConfigureRouter(
 	router.Handle("/sms_activate/webhook", smsActivateRouter)
 
 	return router
+}
+
+func PingServe(w http.ResponseWriter, _ *http.Request) {
+	_, _ = w.Write([]byte("OK"))
+	w.WriteHeader(http.StatusOK)
 }

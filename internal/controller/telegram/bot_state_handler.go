@@ -83,52 +83,138 @@ func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Contex
 	log := b.container.GetLogger()
 	langTag, err := b.getLanguageCode(ctx, *update.Message.From)
 	if err != nil {
-		log.Error("getLanguageCode has failed", logger.FError(err))
-		return err
+		log.Debug("fail to retrieve language code", logger.F("langTag", langTag))
 	}
 	localizer := b.container.GetLocalizer(langTag)
-	telegramID, err := getTelegramID(update)
+	telegramUser, err := getTelegramUser(update)
 	if err != nil {
-		log.Error("telegram id is missing", logger.FError(err))
+		log.Error("fail to get telegram user from update", logger.FError(err))
 		return err
 	}
+	mainMenuReplyMarkup, err := b.getMainMenuInlineKeyboardMarkup(ctx, *telegramUser)
+	if err != nil {
+		log.Debug("fail to get menu inline keyboard markup", logger.FError(err))
+		return b.SendTextWithPhotoMedia(
+			update,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			mainMenuReplyMarkup,
+		)
+	}
 	if update.Message.Text == nil {
-		log.Error("text has nil value")
-		return app.NilError
+		log.Debug("text has nil value")
+		return b.SendTextWithPhotoMedia(
+			update,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			mainMenuReplyMarkup,
+		)
 	}
 	text := *update.Message.Text
 	amount, err := strconv.ParseFloat(text, 64)
 	if err != nil {
-		return b.messageWithPlainText(ctx, localizer.LocalizedString("enter_amount_for_payment_in_currency_error"), update)
+		log.Debug("fail to parse number from user input", logger.F("text", text), logger.FError(err))
+		return b.SendTextWithPhotoMedia(
+			update,
+			localizer.LocalizedString("enter_amount_for_payment_in_currency_error_markdown"),
+			avatarImageURL,
+			mainMenuReplyMarkup,
+		)
 	}
-	currency, err := b.sessionService.GetString(ctx, service.SelectedPayCurrencyAbbrKey, *telegramID)
+	currency, err := b.sessionService.GetString(ctx, service.SelectedPayCurrencyAbbrKey, telegramUser.ID)
 	if err != nil {
-		log.Debug("fail to get selected pay currency", logger.FError(err))
-		return b.messageMainMenu(ctx, update)
+		log.Debug("fail to get pay currency from session service", logger.FError(err))
+		return b.SendTextWithPhotoMedia(
+			update,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			mainMenuReplyMarkup,
+		)
+	}
+	profile, err := b.profileRepository.FetchByTelegramID(ctx, telegramUser.ID)
+	if err != nil {
+		log.Debug("fail to get profile by telegram id", logger.F("telegram id", telegramUser.ID), logger.FError(err))
+		return b.SendTextWithPhotoMedia(
+			update,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			mainMenuReplyMarkup,
+		)
+	}
+	if currency == nil || profile.PreferredCurrency == nil {
+		log.Debug(
+			"currency or preferred_currency has nil value",
+			logger.F("currency", currency),
+			logger.F("preferred_currency", profile.PreferredCurrency),
+		)
+		return b.SendTextWithPhotoMedia(
+			update,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			mainMenuReplyMarkup,
+		)
+	}
+	targetAmount, err := b.exchangeRateWorker.Convert(amount, *profile.PreferredCurrency, *currency)
+	if err != nil {
+		log.Debug(
+			"fail to convert",
+			logger.F("source_code", *profile.PreferredCurrency),
+			logger.F("target_code", *currency),
+		)
+		return b.SendTextWithPhotoMedia(
+			update,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			mainMenuReplyMarkup,
+		)
+	}
+	if targetAmount == nil {
+		log.Debug("targetAmount must contains value")
+		return b.SendTextWithPhotoMedia(
+			update,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			mainMenuReplyMarkup,
+		)
 	}
 	invoicePayload := bot.InvoicePayload{
 		ChatID:     update.Message.Chat.ID,
-		TelegramID: *telegramID,
+		TelegramID: telegramUser.ID,
 	}
 	encodedInvoicePayload, err := utils.EncodeCryptoBotInvoicePayload(invoicePayload)
 	if err != nil {
-		log.Error("fail to encode a invoice payload", logger.FError(err))
-		return err
+		log.Debug("fail to encode a invoice payload", logger.FError(err))
+		return b.SendTextWithPhotoMedia(
+			update,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			mainMenuReplyMarkup,
+		)
 	}
-	invoice, err := b.cryptoPayBot.CreateInvoice(*currency, amount, *encodedInvoicePayload)
+	invoice, err := b.cryptoPayBot.CreateInvoice(*currency, *targetAmount, *encodedInvoicePayload)
 	if err != nil {
-		log.Error("fail to create a invoice", logger.FError(err))
-		return err
+		log.Debug("fail to create a invoice", logger.FError(err))
+		return b.SendTextWithPhotoMedia(
+			update,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			mainMenuReplyMarkup,
+		)
 	}
 	replyMarkup, err := b.getCryptoPayBotKeyboardMarkup(langTag, invoice.BotInvoiceURL)
 	if err != nil {
-		log.Error("fail to get cryptoPayBotKeyboardMarkup", logger.FError(err))
-		return err
+		log.Debug("fail to get cryptoPayBotKeyboardMarkup", logger.FError(err))
+		return b.SendTextWithPhotoMedia(
+			update,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			mainMenuReplyMarkup,
+		)
 	}
-	resp := telegram.SendResponse{
-		ChatID:      update.Message.Chat.ID,
-		Text:        localizer.LocalizedString("crypto_bot_pay_title"),
-		ReplyMarkup: replyMarkup,
-	}
-	return b.telegramBotService.SendResponse(resp, app.SendMessageTelegramMethod)
+	return b.SendTextWithPhotoMedia(
+		update,
+		localizer.LocalizedString("crypto_bot_pay_title_markdown"),
+		avatarImageURL,
+		replyMarkup,
+	)
 }

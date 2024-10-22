@@ -547,7 +547,7 @@ func (b *botController) preferredCurrenciesQueryCommandHandler(ctx context.Conte
 	}
 	photoMedia := telegram.InputPhotoMedia{
 		Type:  "photo",
-		Media: selectPreferredLanguageImageURL,
+		Media: selectPreferredCurrencyImageURL,
 		Caption: utils.NewString(localizer.LocalizedStringWithTemplateData("choose_preferred_currency", map[string]any{
 			"Currency": currency.ABBR,
 		})),

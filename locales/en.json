@@ -43,9 +43,9 @@
     "one": "Enter the amount for payment in {{ .Currency }}",
     "other": "Enter the amount for payment in {{ .Currency }}"
   },
-  "enter_amount_for_payment_in_currency_error": "Please enter the amount in currency using the correct number format. Examples: 12.30, 12, 100, etc.",
-  "crypto_bot_pay_title": "To make a payment, press the 'Pay' button.",
-  "balance_updated": "Your account balance has been updated. Thank you for using our service!",
+  "enter_amount_for_payment_in_currency_error_markdown": "Please enter the amount in currency using the correct number format\\. Examples: 12\\.30, 12, 100, etc\\.",
+  "crypto_bot_pay_title_markdown": "To make a payment, press the 'Pay' button\\.",
+  "balance_updated_markdown": "Your account balance has been updated\\. Thank you for using our service\\!",
   "choose_preferred_currency": {
     "description": "Choose an option below",
     "one": "Your selected preferred currency is {{ .Currency }}. Choose an option below",

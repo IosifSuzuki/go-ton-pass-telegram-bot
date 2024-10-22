@@ -52,5 +52,17 @@
     "currency_type": "crypto",
     "abbr": "USDT",
     "symbol": "₮"
+  },
+  {
+    "name": "Indian Rupee",
+    "currency_type": "fiat",
+    "abbr": "INR",
+    "symbol": "₹"
+  },
+  {
+    "name": "Russian Ruble",
+    "currency_type": "fiat",
+    "abbr": "RUB",
+    "symbol": "₽"
   }
 ]
