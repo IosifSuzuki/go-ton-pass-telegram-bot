@@ -1,0 +1,92 @@
+version: "3.9"
+
+services:
+  server:
+    env_file:
+      - .env
+    container_name: "ton-pass-server"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - cache
+      - database
+    restart: unless-stopped
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    networks:
+      - my_network
+  cache:
+    container_name: "redis-cache-service"
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - my_network
+    volumes:
+      - cache:/data
+  database:
+    env_file:
+      - .env
+    container_name: "ton-pass-db"
+    image: postgres:alpine
+    restart: always
+    environment:
+      POSTGRES_MULTIPLE_DATABASES: temporal
+    networks:
+      - my_network
+    ports:
+      - "5432:5432"
+    volumes:
+      - data:/var/lib/postgresql/data
+      - ./scripts/pg-init-scripts:/docker-entrypoint-initdb.d
+  temporal:
+    container_name: temporal
+    image: temporalio/auto-setup:latest
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: temporal
+      POSTGRES_SEEDS: database
+    depends_on:
+      - database
+    ports:
+      - "7233:7233"
+    networks:
+      - my_network
+  temporal-admin-tools:
+    container_name: temporal-admin-tools
+    depends_on:
+      - temporal
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CLI_ADDRESS=temporal:7233
+    image: temporalio/admin-tools:latest
+    networks:
+      - my_network
+    stdin_open: true
+    tty: true
+  temporal-ui:
+      container_name: temporal-ui
+      depends_on:
+        - temporal
+      environment:
+        - TEMPORAL_ADDRESS=temporal:7233
+        - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+      image: temporalio/ui:2.30.3
+      networks:
+        - my_network
+      ports:
+        - "8080:8080"
+
+volumes:
+  cache:
+    driver: local
+  data:
+    driver: local
+
+networks:
+  my_network:
+    driver: bridge

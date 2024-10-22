@@ -1,0 +1,68 @@
+[
+  {
+    "name": "United States Dollar",
+    "currency_type": "fiat",
+    "abbr": "USD",
+    "symbol": "$"
+  },
+  {
+    "name": "Euro",
+    "currency_type": "fiat",
+    "abbr": "EUR",
+    "symbol": "€"
+  },
+  {
+    "name": "British Pound Sterling",
+    "currency_type": "fiat",
+    "abbr": "GBP",
+    "symbol": "£"
+  },
+  {
+    "name": "Ukrainian Hryvnia",
+    "currency_type": "fiat",
+    "abbr": "UAH",
+    "symbol": "₴"
+  },
+  {
+    "name": "Czech Koruna",
+    "currency_type": "fiat",
+    "abbr": "CZK",
+    "symbol": "Kč"
+  },
+  {
+    "name": "Bitcoin",
+    "currency_type": "crypto",
+    "abbr": "BTC",
+    "symbol": "₿"
+  },
+  {
+    "name": "Toncoin",
+    "currency_type": "crypto",
+    "abbr": "TON",
+    "symbol": "$"
+  },
+  {
+    "name": "Ethereum",
+    "currency_type": "crypto",
+    "abbr": "ETH",
+    "symbol": "Ξ"
+  },
+  {
+    "name": "Tether",
+    "currency_type": "crypto",
+    "abbr": "USDT",
+    "symbol": "₮"
+  },
+  {
+    "name": "Indian Rupee",
+    "currency_type": "fiat",
+    "abbr": "INR",
+    "symbol": "₹"
+  },
+  {
+    "name": "Russian Ruble",
+    "currency_type": "fiat",
+    "abbr": "RUB",
+    "symbol": "₽"
+  }
+]
