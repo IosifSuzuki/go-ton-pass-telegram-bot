@@ -103,7 +103,7 @@ func RunServer(box container.Container, conn *sql.DB, sessionService service.Ses
 			log.Fatalln(err)
 		}
 	}()
-	if err := secureServer.ListenAndServeTLS("tls/certificate.crt", "tls/private.key"); err != nil {
+	if err := secureServer.ListenAndServeTLS("tls/public.pem", "tls/private.key"); err != nil {
 		log.Fatalln(err)
 	}
 }

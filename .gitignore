@@ -27,4 +27,4 @@ go.work.sum
 /docs
 
 #tls
-/tls
+/tls/*
