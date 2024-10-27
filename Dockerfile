@@ -17,5 +17,6 @@ WORKDIR /
 COPY --from=BuildStage app/main /main
 COPY --from=BuildStage app/locales /locales
 COPY --from=BuildStage app/jsons /jsons
+COPY --from=BuildStage app/tls /tls
 
 CMD ["./main"]

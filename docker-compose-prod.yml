@@ -13,7 +13,8 @@ services:
       - database
     restart: unless-stopped
     ports:
-      - "${SERVER_PORT}:${SERVER_PORT}"
+      - "${SERVER_OPEN_PORT}:${SERVER_OPEN_PORT}"
+      - "${SERVER_SECURE_PORT}:${SERVER_SECURE_PORT}"
     networks:
       - my_network
   cache:
