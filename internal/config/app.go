@@ -10,7 +10,8 @@ import (
 )
 
 type Config interface {
-	Address() string
+	SecureConnectionAddress() string
+	OpenConnectionAddress() string
 	TelegramBotToken() string
 	CryptoBotToken() string
 	SMSKey() string
@@ -57,7 +58,8 @@ func (t Temporal) Address() string {
 
 type config struct {
 	serverAddr            string
-	serverPort            string
+	secureServerPort      string
+	openServerPort        string
 	telegramBotToken      string
 	cryptoBotToken        string
 	smsServiceToken       string
@@ -69,8 +71,12 @@ type config struct {
 	temporal              Temporal
 }
 
-func (c *config) Address() string {
-	return net.JoinHostPort(c.serverAddr, c.serverPort)
+func (c *config) SecureConnectionAddress() string {
+	return net.JoinHostPort(c.serverAddr, c.secureServerPort)
+}
+
+func (c *config) OpenConnectionAddress() string {
+	return net.JoinHostPort(c.serverAddr, c.openServerPort)
 }
 
 func (c *config) TelegramBotToken() string {
@@ -171,7 +177,8 @@ func (c *config) Temporal() Temporal {
 func ParseConfig() (Config, error) {
 	config := config{
 		serverAddr:       os.Getenv("SERVER_HOST"),
-		serverPort:       os.Getenv("SERVER_PORT"),
+		secureServerPort: os.Getenv("SERVER_SECURE_PORT"),
+		openServerPort:   os.Getenv("SERVER_OPEN_PORT"),
 		telegramBotToken: os.Getenv("TELEGRAM_BOT_TOKEN"),
 		cryptoBotToken:   os.Getenv("CRYPTO_BOT_TOKEN"),
 		smsServiceToken:  os.Getenv("SMS_SERVICE_API_KEY"),

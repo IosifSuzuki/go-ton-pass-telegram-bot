@@ -83,14 +83,27 @@ func RunServer(box container.Container, conn *sql.DB, sessionService service.Ses
 	if err := postponeService.Prepare(); err != nil {
 		log.Fatalln("fail to prepare postpone service", logger.FError(err))
 	}
+
 	r := router.PrepareAndConfigureRouter(box, sessionService, cacheService, smsService, postponeService, profileRepository, smsHistoryRepository)
-	server := &http.Server{
+	openServer := &http.Server{
 		Handler:      r,
-		Addr:         box.GetConfig().Address(),
+		Addr:         box.GetConfig().OpenConnectionAddress(),
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
-	if err := server.ListenAndServe(); err != nil {
+	secureServer := &http.Server{
+		Handler:      r,
+		Addr:         box.GetConfig().SecureConnectionAddress(),
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
+	}
+
+	go func() {
+		if err := openServer.ListenAndServe(); err != nil {
+			log.Fatalln(err)
+		}
+	}()
+	if err := secureServer.ListenAndServeTLS("tls/certificate.crt", "tls/private.key"); err != nil {
 		log.Fatalln(err)
 	}
 }
