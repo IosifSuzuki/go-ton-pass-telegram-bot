@@ -2,10 +2,12 @@ package router
 
 import (
 	"encoding/json"
+	"errors"
 	"go-ton-pass-telegram-bot/internal/container"
 	"go-ton-pass-telegram-bot/internal/controller/crypto"
 	"go-ton-pass-telegram-bot/internal/model/crypto/bot"
 	"go-ton-pass-telegram-bot/pkg/logger"
+	"io"
 	"net/http"
 )
 
@@ -28,8 +30,12 @@ func (c *CryptoBotRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log := c.container.GetLogger()
 	var update bot.WebhookUpdates
 	if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
-		log.Fatal("fail to decode", logger.FError(err))
-		w.WriteHeader(http.StatusBadRequest)
+		if err := filterCryptoErrors(err); err != nil {
+			log.Fatal("fail to decode", logger.FError(err))
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
 		return
 	}
 	err := c.controller.Serve(&update)
@@ -38,4 +44,11 @@ func (c *CryptoBotRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+}
+
+func filterCryptoErrors(err error) error {
+	if errors.Is(err, io.EOF) {
+		return nil
+	}
+	return err
 }

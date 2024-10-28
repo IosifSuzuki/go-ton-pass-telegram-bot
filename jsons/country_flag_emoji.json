@@ -108,7 +108,7 @@
     "flag": "🇭🇹"
   },
   {
-    "name": "Ivory",
+    "name": "Côte d'Ivoire",
     "flag": "🇨🇮"
   },
   {
@@ -364,7 +364,7 @@
     "flag": "🇳🇮"
   },
   {
-    "name": "Timorleste",
+    "name": "Timor-Leste",
     "flag": "🇹🇱"
   },
   {
@@ -372,7 +372,7 @@
     "flag": "🇧🇴"
   },
   {
-    "name": "Costarica",
+    "name": "Costa Rica",
     "flag": "🇨🇷"
   },
   {
@@ -380,7 +380,7 @@
     "flag": "🇬🇹"
   },
   {
-    "name": "Uae",
+    "name": "UAE",
     "flag": "🇦🇪"
   },
   {
@@ -388,7 +388,7 @@
     "flag": "🇿🇼"
   },
   {
-    "name": "Puertorico",
+    "name": "Puerto Rico",
     "flag": "🇵🇷"
   },
   {
@@ -408,7 +408,7 @@
     "flag": "🇸🇻"
   },
   {
-    "name": "Libyan",
+    "name": "Libya",
     "flag": "🇱🇾"
   },
   {
@@ -432,7 +432,7 @@
     "flag": "🇴🇲"
   },
   {
-    "name": "Bosnia",
+    "name": "Bosnia and Herzegovina",
     "flag": "🇧🇦"
   },
   {
@@ -500,7 +500,7 @@
     "flag": "🇧🇿"
   },
   {
-    "name": "Caf",
+    "name": "CAF",
     "flag": "🇨🇫"
   },
   {
@@ -520,7 +520,7 @@
     "flag": "🇬🇷"
   },
   {
-    "name": "Guineabissau",
+    "name": "Guinea-Bissau",
     "flag": "🇬🇼"
   },
   {
@@ -536,7 +536,7 @@
     "flag": "🇰🇲"
   },
   {
-    "name": "Saintkitts",
+    "name": "Saint Kitts",
     "flag": "🇰🇳"
   },
   {
@@ -608,7 +608,7 @@
     "flag": "🇨🇱"
   },
   {
-    "name": "Burkinafaso",
+    "name": "Burkina Faso",
     "flag": "🇧🇫"
   },
   {
@@ -648,7 +648,7 @@
     "flag": "🇹🇲"
   },
   {
-    "name": "Frenchguiana",
+    "name": "French Guiana",
     "flag": "🇬🇫"
   },
   {
@@ -656,7 +656,7 @@
     "flag": "🇫🇮"
   },
   {
-    "name": "Saintlucia",
+    "name": "Saint Lucia",
     "flag": "🇱🇨"
   },
   {
@@ -664,11 +664,11 @@
     "flag": "🇱🇺"
   },
   {
-    "name": "Saintvincentgrenadines",
+    "name": "Saint Vincent and the Grenadines",
     "flag": "🇻🇨"
   },
   {
-    "name": "Equatorialguinea",
+    "name": "Equatorial Guinea",
     "flag": "🇬🇶"
   },
   {
@@ -676,11 +676,11 @@
     "flag": "🇩🇯"
   },
   {
-    "name": "Antiguabarbuda",
+    "name": "Antigua Barbuda",
     "flag": "🇦🇬"
   },
   {
-    "name": "Caymanislands",
+    "name": "Cayman Islands",
     "flag": "🇰🇾"
   },
   {
@@ -708,7 +708,7 @@
     "flag": "🇪🇷"
   },
   {
-    "name": "Southsudan",
+    "name": "South Sudan",
     "flag": "🇸🇸"
   },
   {
@@ -814,5 +814,9 @@
   {
     "name": "Kosovo",
     "flag": "🇽🇰"
+  },
+  {
+    "name": "Cabo Verde",
+    "flag": "🇨🇻"
   }
 ]

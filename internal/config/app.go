@@ -93,10 +93,10 @@ func (c *config) SMSKey() string {
 
 func (c *config) AvailablePreferredCurrencies() []app.Currency {
 	allPreferredCurrencyABBRs := []string{
+		"RUB",
+		"UAH",
 		"USD",
 		"EUR",
-		"UAH",
-		"RUB",
 		"INR",
 	}
 	return utils.Filter(c.allCurrencies, func(currency app.Currency) bool {

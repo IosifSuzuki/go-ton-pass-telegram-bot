@@ -1,6 +1,7 @@
 package container
 
 import (
+	"fmt"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"go-ton-pass-telegram-bot/internal/config"
 	"go-ton-pass-telegram-bot/internal/model/app"
@@ -16,6 +17,7 @@ type Container interface {
 	GetPreferredServiceCodesOrder() []string
 	GetPreferredCountryCodesOrder() []string
 	GetFlagEmoji(name string) *string
+	GetRepresentableCountryName(countryID int64) *string
 	GetExtraService(serviceCode string) *app.ExtraService
 	PreloadData() error
 }
@@ -26,6 +28,7 @@ type container struct {
 	logger                     logger.Logger
 	preferredServiceCodesOrder []string
 	preferredCountryCodesOrder []string
+	smsCountryActivateName     map[string]string
 	emojiFlag                  map[string]string
 	extraServices              map[string]app.ExtraService
 }
@@ -37,6 +40,7 @@ func NewContainer(logger logger.Logger, config config.Config, bundle *i18n.Bundl
 		logger:                     logger,
 		preferredServiceCodesOrder: make([]string, 0),
 		preferredCountryCodesOrder: make([]string, 0),
+		smsCountryActivateName:     make(map[string]string, 0),
 		emojiFlag:                  make(map[string]string),
 		extraServices:              make(map[string]app.ExtraService),
 	}
@@ -62,6 +66,9 @@ func (c *container) PreloadData() error {
 	}
 	for _, value := range extraServices {
 		c.extraServices[value.Code] = value
+	}
+	if err := utils.UnmarshalFromFile("/jsons/country_sms_activate_name.json", &c.smsCountryActivateName); err != nil {
+		return err
 	}
 	return nil
 }
@@ -90,6 +97,15 @@ func (c *container) GetFlagEmoji(name string) *string {
 	flag, ok := c.emojiFlag[name]
 	if ok {
 		return &flag
+	}
+	return nil
+}
+
+func (c *container) GetRepresentableCountryName(countryID int64) *string {
+	key := fmt.Sprintf("%d", countryID)
+	name, ok := c.smsCountryActivateName[key]
+	if ok {
+		return utils.NewString(name)
 	}
 	return nil
 }

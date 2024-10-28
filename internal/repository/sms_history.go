@@ -47,8 +47,8 @@ func (s *smsHistoryRepository) Create(ctx context.Context, smsHistory *domain.SM
 }
 
 func (s *smsHistoryRepository) ReceiveSMSCode(ctx context.Context, smsHistory *domain.SMSHistory) error {
-	query := "UPDATE sms_history SET sms_text = $1, sms_code = $2, status = $3, received_at = $4, updated_at = $5 WHERE profile_id = $6"
-	_, err := s.conn.ExecContext(ctx, query, smsHistory.SMSText, smsHistory.SMSCode, app.DoneSMSActivateState, smsHistory.ReceivedAt, time.Now(), smsHistory.ProfileID)
+	query := "UPDATE sms_history SET sms_text = $1, sms_code = $2, status = $3, received_at = $4, updated_at = $5 WHERE activation_id = $6"
+	_, err := s.conn.ExecContext(ctx, query, smsHistory.SMSText, smsHistory.SMSCode, app.DoneSMSActivateState, smsHistory.ReceivedAt, time.Now(), smsHistory.ActivationID)
 	return err
 }
 

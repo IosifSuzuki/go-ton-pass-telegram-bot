@@ -2,6 +2,7 @@ package router
 
 import (
 	"encoding/json"
+	"errors"
 	"go-ton-pass-telegram-bot/internal/container"
 	"go-ton-pass-telegram-bot/internal/controller/sms"
 	smsModel "go-ton-pass-telegram-bot/internal/model/sms"
@@ -36,8 +37,12 @@ func (s *SMSActivate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Debug("receive body", logger.F("json", string(body)))
 	var update smsModel.WebhookUpdates
 	if err := json.Unmarshal(body, &update); err != nil {
-		log.Fatal("fail to decode", logger.FError(err))
-		w.WriteHeader(http.StatusBadRequest)
+		if err := filterSMSActivateErrors(err); err != nil {
+			log.Fatal("fail to decode", logger.FError(err))
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
 		return
 	}
 	err = s.controller.Serve(&update)
@@ -46,4 +51,11 @@ func (s *SMSActivate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+}
+
+func filterSMSActivateErrors(err error) error {
+	if errors.Is(err, io.EOF) {
+		return nil
+	}
+	return err
 }

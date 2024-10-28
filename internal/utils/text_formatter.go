@@ -20,7 +20,7 @@ func CurrencyAmountTextFormat(amount float64, currency app.Currency) string {
 }
 
 func ShortCurrencyTextFormat(currency app.Currency) string {
-	return fmt.Sprintf("%s %s", currency.Symbol, currency.ABBR)
+	return fmt.Sprintf("%s | %s | %s", currency.Symbol, currency.ABBR, currency.Emoji)
 }
 
 func LanguageTextFormat(language app.Language) string {

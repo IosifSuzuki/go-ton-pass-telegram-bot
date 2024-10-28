@@ -36,9 +36,13 @@ func NewFormatter(container container.Container) Formatter {
 
 func (f *formatter) Country(country *sms.Country, _ FormatterType) string {
 	var title string
-	flag := f.container.GetFlagEmoji(country.Title)
+	name := f.container.GetRepresentableCountryName(country.ID)
+	if name == nil {
+		name = &country.Title
+	}
+	flag := f.container.GetFlagEmoji(*name)
 	if flag != nil {
-		title = fmt.Sprintf("%s %s", *flag, country.Title)
+		title = fmt.Sprintf("%s %s", *flag, *name)
 	} else {
 		title = country.Title
 	}

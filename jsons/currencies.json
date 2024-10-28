@@ -1,12 +1,28 @@
 [
   {
+    "name": "Russian Ruble",
+    "currency_type": "fiat",
+    "emoji": "🇷🇺",
+    "abbr": "RUB",
+    "symbol": "₽"
+  },
+  {
+    "name": "Ukrainian Hryvnia",
+    "currency_type": "fiat",
+    "emoji": "🇺🇦",
+    "abbr": "UAH",
+    "symbol": "₴"
+  },
+  {
     "name": "United States Dollar",
     "currency_type": "fiat",
+    "emoji": "🇺🇸",
     "abbr": "USD",
     "symbol": "$"
   },
   {
     "name": "Euro",
+    "emoji": "🇪🇺",
     "currency_type": "fiat",
     "abbr": "EUR",
     "symbol": "€"
@@ -14,55 +30,50 @@
   {
     "name": "British Pound Sterling",
     "currency_type": "fiat",
+    "emoji": "🇬🇧",
     "abbr": "GBP",
     "symbol": "£"
   },
   {
-    "name": "Ukrainian Hryvnia",
-    "currency_type": "fiat",
-    "abbr": "UAH",
-    "symbol": "₴"
-  },
-  {
     "name": "Czech Koruna",
     "currency_type": "fiat",
+    "emoji": "🇨🇿",
     "abbr": "CZK",
     "symbol": "Kč"
   },
   {
     "name": "Bitcoin",
     "currency_type": "crypto",
+    "emoji": "🪙",
     "abbr": "BTC",
     "symbol": "₿"
   },
   {
     "name": "Toncoin",
     "currency_type": "crypto",
+    "emoji": "🪙",
     "abbr": "TON",
     "symbol": "$"
   },
   {
     "name": "Ethereum",
     "currency_type": "crypto",
+    "emoji": "🪙",
     "abbr": "ETH",
     "symbol": "Ξ"
   },
   {
     "name": "Tether",
     "currency_type": "crypto",
+    "emoji": "🪙",
     "abbr": "USDT",
     "symbol": "₮"
   },
   {
     "name": "Indian Rupee",
     "currency_type": "fiat",
+    "emoji": "🇮🇳",
     "abbr": "INR",
     "symbol": "₹"
-  },
-  {
-    "name": "Russian Ruble",
-    "currency_type": "fiat",
-    "abbr": "RUB",
-    "symbol": "₽"
   }
 ]

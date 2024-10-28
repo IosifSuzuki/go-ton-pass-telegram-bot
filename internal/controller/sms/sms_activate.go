@@ -67,7 +67,7 @@ func (s *smsActivateController) Serve(update *sms.WebhookUpdates) error {
 	sendPhoto := telegram.SendPhoto{
 		ChatID: domainProfile.TelegramChatID,
 		Photo:  successReceivedCodeImageURL,
-		Caption: localizer.LocalizedStringWithTemplateData("success_received_sms_code", map[string]any{
+		Caption: localizer.LocalizedStringWithTemplateData("success_received_sms_code_markdown", map[string]any{
 			"SMSCode": update.Code,
 		}),
 		ReplyMarkup: replyKeyboardRemove,
