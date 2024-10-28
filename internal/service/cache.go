@@ -59,6 +59,7 @@ func (c *cache) GetExchangeRate(ctx context.Context) (*app.CacheResponse[[]app.E
 	}
 	var exchangeRates app.CacheResponse[[]app.ExchangeRate]
 	if err := utils.DecodePayload(encodedText, &exchangeRates); err != nil {
+		log.Debug("fail to decode payload from cache", logger.FError(err))
 		return nil, err
 	}
 	return &exchangeRates, nil

@@ -271,6 +271,9 @@ func (b *botController) getServiceWithCountryInlineKeyboardMarkup(
 		priceInRUB := servicePrice.RetailPrice
 		serviceCountry := b.formatterWorker.Country(&country, worker.DefaultFormatterType)
 		priceInPreferredCurrency, err := b.exchangeRateWorker.ConvertFromRUB(priceInRUB, preferredCurrency)
+		if err != nil {
+			continue
+		}
 		priceWithFee := b.exchangeRateWorker.PriceWithFee(*priceInPreferredCurrency)
 		currency := b.container.GetConfig().CurrencyByAbbr(preferredCurrency)
 		representableText := fmt.Sprintf("%s | %s",
