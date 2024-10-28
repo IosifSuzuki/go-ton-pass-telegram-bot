@@ -28,6 +28,7 @@ func (b *botController) userSelectedLanguageBotStageHandler(ctx context.Context,
 	}
 	selectedLanguage := filteredLanguages[0]
 
+	b.keyboardManager.Set(selectedLanguage.Code)
 	if err := b.profileRepository.SetPreferredLanguage(ctx, telegramID, selectedLanguage.Code); err != nil {
 		return err
 	}
@@ -91,14 +92,15 @@ func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Contex
 		log.Error("fail to get telegram user from update", logger.FError(err))
 		return err
 	}
-	mainMenuReplyMarkup, err := b.getMainMenuInlineKeyboardMarkup(ctx, *telegramUser)
+
+	mainMenuInlineKeyboardMarkup, err := b.keyboardManager.MainMenuInlineKeyboardMarkup()
 	if err != nil {
 		log.Debug("fail to get menu inline keyboard markup", logger.FError(err))
 		return b.SendTextWithPhotoMedia(
 			update,
 			localizer.LocalizedString("internal_error_markdown"),
 			avatarImageURL,
-			mainMenuReplyMarkup,
+			mainMenuInlineKeyboardMarkup,
 		)
 	}
 	if update.Message.Text == nil {
@@ -107,7 +109,7 @@ func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Contex
 			update,
 			localizer.LocalizedString("internal_error_markdown"),
 			avatarImageURL,
-			mainMenuReplyMarkup,
+			mainMenuInlineKeyboardMarkup,
 		)
 	}
 	text := *update.Message.Text
@@ -118,7 +120,7 @@ func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Contex
 			update,
 			localizer.LocalizedString("enter_amount_for_payment_in_currency_error_markdown"),
 			avatarImageURL,
-			mainMenuReplyMarkup,
+			mainMenuInlineKeyboardMarkup,
 		)
 	}
 	currency, err := b.sessionService.GetString(ctx, service.SelectedPayCurrencyAbbrKey, telegramUser.ID)
@@ -128,7 +130,7 @@ func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Contex
 			update,
 			localizer.LocalizedString("internal_error_markdown"),
 			avatarImageURL,
-			mainMenuReplyMarkup,
+			mainMenuInlineKeyboardMarkup,
 		)
 	}
 	profile, err := b.profileRepository.FetchByTelegramID(ctx, telegramUser.ID)
@@ -138,7 +140,7 @@ func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Contex
 			update,
 			localizer.LocalizedString("internal_error_markdown"),
 			avatarImageURL,
-			mainMenuReplyMarkup,
+			mainMenuInlineKeyboardMarkup,
 		)
 	}
 	if currency == nil || profile.PreferredCurrency == nil {
@@ -151,7 +153,7 @@ func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Contex
 			update,
 			localizer.LocalizedString("internal_error_markdown"),
 			avatarImageURL,
-			mainMenuReplyMarkup,
+			mainMenuInlineKeyboardMarkup,
 		)
 	}
 	targetAmount, err := b.exchangeRateWorker.Convert(amount, *profile.PreferredCurrency, *currency)
@@ -165,7 +167,7 @@ func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Contex
 			update,
 			localizer.LocalizedString("internal_error_markdown"),
 			avatarImageURL,
-			mainMenuReplyMarkup,
+			mainMenuInlineKeyboardMarkup,
 		)
 	}
 	if targetAmount == nil {
@@ -174,7 +176,7 @@ func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Contex
 			update,
 			localizer.LocalizedString("internal_error_markdown"),
 			avatarImageURL,
-			mainMenuReplyMarkup,
+			mainMenuInlineKeyboardMarkup,
 		)
 	}
 	invoicePayload := bot.InvoicePayload{
@@ -188,7 +190,7 @@ func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Contex
 			update,
 			localizer.LocalizedString("internal_error_markdown"),
 			avatarImageURL,
-			mainMenuReplyMarkup,
+			mainMenuInlineKeyboardMarkup,
 		)
 	}
 	invoice, err := b.cryptoPayBot.CreateInvoice(*currency, *targetAmount, *encodedInvoicePayload)
@@ -198,23 +200,23 @@ func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Contex
 			update,
 			localizer.LocalizedString("internal_error_markdown"),
 			avatarImageURL,
-			mainMenuReplyMarkup,
+			mainMenuInlineKeyboardMarkup,
 		)
 	}
-	replyMarkup, err := b.getCryptoPayBotKeyboardMarkup(langTag, invoice.BotInvoiceURL)
+	cryptoPayInlineKeyboardMarkup, err := b.getCryptoPayBotKeyboardMarkup(langTag, invoice.BotInvoiceURL)
 	if err != nil {
-		log.Debug("fail to get cryptoPayBotKeyboardMarkup", logger.FError(err))
+		log.Debug("fail to get cryptoPayInlineKeyboardMarkup", logger.FError(err))
 		return b.SendTextWithPhotoMedia(
 			update,
 			localizer.LocalizedString("internal_error_markdown"),
 			avatarImageURL,
-			mainMenuReplyMarkup,
+			mainMenuInlineKeyboardMarkup,
 		)
 	}
 	return b.SendTextWithPhotoMedia(
 		update,
 		localizer.LocalizedString("crypto_bot_pay_title_markdown"),
 		avatarImageURL,
-		replyMarkup,
+		cryptoPayInlineKeyboardMarkup,
 	)
 }

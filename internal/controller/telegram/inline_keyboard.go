@@ -12,44 +12,8 @@ import (
 )
 
 const (
-	MaxInlineKeyboardRows    = 8
-	MaxInlineKeyboardColumns = 3
+	MaxInlineKeyboardRows = 8
 )
-
-func (b *botController) getLanguagesInlineKeyboardMarkup(ctx context.Context, user telegram.User) (*telegram.InlineKeyboardMarkup, error) {
-	langTag, err := b.getLanguageCode(ctx, user)
-	if err != nil {
-		return nil, err
-	}
-	languages := b.container.GetConfig().AvailableLanguages()
-	keyboardButtons := make([]telegram.InlineKeyboardButton, 0, len(languages))
-	for _, language := range languages {
-		parameters := []any{language.Code}
-		selectLanguageTelegramCallbackData := app.TelegramCallbackData{
-			Name:       app.SelectLanguageCallbackQueryCmdText,
-			Parameters: &parameters,
-		}
-		data, err := utils.EncodeTelegramCallbackData(selectLanguageTelegramCallbackData)
-		if err != nil {
-			continue
-		}
-		presentableLanguageText := utils.LanguageTextFormat(language)
-		languageKeyboardButton := telegram.InlineKeyboardButton{
-			Text: presentableLanguageText,
-			Data: data,
-		}
-		keyboardButtons = append(keyboardButtons, languageKeyboardButton)
-	}
-	backToMainMenuKeyboardButton, err := b.getMenuInlineKeyboardButton(langTag)
-	if err != nil {
-		return nil, err
-	}
-	keyboardButtons = append(keyboardButtons, *backToMainMenuKeyboardButton)
-	gridKeyboardButtons := b.prepareGridInlineKeyboardButton(keyboardButtons, 2)
-	return &telegram.InlineKeyboardMarkup{
-		InlineKeyboard: gridKeyboardButtons,
-	}, nil
-}
 
 func (b *botController) getServicesInlineKeyboardMarkup(ctx context.Context, callbackQuery *telegram.CallbackQuery, pagination *app.Pagination[sms.Service]) (*telegram.InlineKeyboardMarkup, error) {
 	log := b.container.GetLogger()
@@ -99,99 +63,6 @@ func (b *botController) getServicesInlineKeyboardMarkup(ctx context.Context, cal
 	})
 	return &telegram.InlineKeyboardMarkup{
 		InlineKeyboard: gridInlineKeyboardButtons,
-	}, nil
-}
-
-func (b *botController) getMainMenuInlineKeyboardMarkup(ctx context.Context, user telegram.User) (*telegram.InlineKeyboardMarkup, error) {
-	langTag, err := b.getLanguageCode(ctx, user)
-	if err != nil {
-		return nil, err
-	}
-	buyNumberParameters := []any{0}
-	historyParameters := []any{0, 3}
-	localizer := b.container.GetLocalizer(langTag)
-	balanceTelegramCallbackData := app.TelegramCallbackData{
-		Name:       app.BalanceCallbackQueryCmdText,
-		Parameters: nil,
-	}
-	buyNumberTelegramCallbackData := app.TelegramCallbackData{
-		Name:       app.BuyNumberCallbackQueryCmdText,
-		Parameters: &buyNumberParameters,
-	}
-	helpTelegramCallbackData := app.TelegramCallbackData{
-		Name:       app.HelpCallbackQueryCmdText,
-		Parameters: nil,
-	}
-	historyTelegramCallbackData := app.TelegramCallbackData{
-		Name:       app.HistoryCallbackQueryCmdText,
-		Parameters: &historyParameters,
-	}
-	languageTelegramCallbackData := app.TelegramCallbackData{
-		Name:       app.LanguageCallbackQueryCmdText,
-		Parameters: nil,
-	}
-	preferredCurrenciesCallbackData := app.TelegramCallbackData{
-		Name:       app.PreferredCurrenciesCallbackQueryCmdText,
-		Parameters: nil,
-	}
-	balanceData, err := utils.EncodeTelegramCallbackData(balanceTelegramCallbackData)
-	if err != nil {
-		return nil, err
-	}
-	buyNumberData, err := utils.EncodeTelegramCallbackData(buyNumberTelegramCallbackData)
-	if err != nil {
-		return nil, err
-	}
-	helpData, err := utils.EncodeTelegramCallbackData(helpTelegramCallbackData)
-	if err != nil {
-		return nil, err
-	}
-	historyData, err := utils.EncodeTelegramCallbackData(historyTelegramCallbackData)
-	if err != nil {
-		return nil, err
-	}
-	languageData, err := utils.EncodeTelegramCallbackData(languageTelegramCallbackData)
-	if err != nil {
-		return nil, err
-	}
-	preferredCurrenciesData, err := utils.EncodeTelegramCallbackData(preferredCurrenciesCallbackData)
-	if err != nil {
-		return nil, err
-	}
-	inlineKeyboardButtons := [][]telegram.InlineKeyboardButton{
-		{
-			telegram.InlineKeyboardButton{
-				Text: utils.ButtonTitle(localizer.LocalizedString("balance"), "💰"),
-				Data: balanceData,
-			},
-			telegram.InlineKeyboardButton{
-				Text: utils.ButtonTitle(localizer.LocalizedString("buy_number"), "🛒"),
-				Data: buyNumberData,
-			},
-		},
-		{
-			telegram.InlineKeyboardButton{
-				Text: utils.ButtonTitle(localizer.LocalizedString("help"), "❓"),
-				Data: helpData,
-			},
-			telegram.InlineKeyboardButton{
-				Text: utils.ButtonTitle(localizer.LocalizedString("history"), "📖"),
-				Data: historyData,
-			},
-		},
-		{
-			telegram.InlineKeyboardButton{
-				Text: utils.ButtonTitle(localizer.LocalizedString("language"), "🗣️"),
-				Data: languageData,
-			},
-			telegram.InlineKeyboardButton{
-				Text: utils.ButtonTitle(localizer.LocalizedString("currency"), "💵"),
-				Data: preferredCurrenciesData,
-			},
-		},
-	}
-	return &telegram.InlineKeyboardMarkup{
-		InlineKeyboard: inlineKeyboardButtons,
 	}, nil
 }
 
@@ -315,36 +186,6 @@ func (b *botController) getServiceWithCountryInlineKeyboardMarkup(
 	})
 	return &telegram.InlineKeyboardMarkup{
 		InlineKeyboard: gridInlineKeyboardButtons,
-	}, nil
-}
-
-func (b *botController) getPayCurrenciesInlineKeyboardMarkup(langTag string) (*telegram.InlineKeyboardMarkup, error) {
-	payCurrencies := b.container.GetConfig().AvailablePayCurrencies()
-	keyboardButtons := make([]telegram.InlineKeyboardButton, 0, len(payCurrencies))
-	for _, currency := range payCurrencies {
-		parameters := []any{currency.ABBR}
-		currencyCallbackData := app.TelegramCallbackData{
-			Name:       app.SelectPayCurrencyCallbackQueryCmdText,
-			Parameters: &parameters,
-		}
-		data, err := utils.EncodeTelegramCallbackData(currencyCallbackData)
-		if err != nil {
-			continue
-		}
-		keyboardButton := telegram.InlineKeyboardButton{
-			Text: utils.ShortCurrencyTextFormat(currency),
-			Data: data,
-		}
-		keyboardButtons = append(keyboardButtons, keyboardButton)
-	}
-	mainMenuKeyboardButton, err := b.getMenuInlineKeyboardButton(langTag)
-	if err != nil {
-		return nil, err
-	}
-	keyboardButtons = append(keyboardButtons, *mainMenuKeyboardButton)
-	gridKeyboardButtons := b.prepareGridInlineKeyboardButton(keyboardButtons, 2)
-	return &telegram.InlineKeyboardMarkup{
-		InlineKeyboard: gridKeyboardButtons,
 	}, nil
 }
 

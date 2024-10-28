@@ -3,6 +3,7 @@ package telegram
 import (
 	"context"
 	"go-ton-pass-telegram-bot/internal/container"
+	"go-ton-pass-telegram-bot/internal/manager"
 	"go-ton-pass-telegram-bot/internal/model/app"
 	"go-ton-pass-telegram-bot/internal/model/domain"
 	"go-ton-pass-telegram-bot/internal/model/telegram"
@@ -45,6 +46,7 @@ type botController struct {
 	exchangeRateWorker   worker.ExchangeRate
 	smsActivateWorker    worker.SMSActivate
 	formatterWorker      worker.Formatter
+	keyboardManager      manager.TelegramKeyboardManager
 }
 
 func NewBotController(
@@ -73,6 +75,7 @@ func NewBotController(
 		exchangeRateWorker:   exchangeRateWorker,
 		smsActivateWorker:    smsActivateWorker,
 		formatterWorker:      formatterWorker,
+		keyboardManager:      manager.NewTelegramKeyboardManager(container),
 	}
 }
 
@@ -296,7 +299,7 @@ func (b *botController) CheckUserIsChatMember(update *telegram.Update) (bool, er
 	text := localizer.LocalizedStringWithTemplateData("subscribe_to_channel_markdown", map[string]any{
 		"Channel": channelLink,
 	})
-	replyKeyboard, err := b.getMainMenuInlineKeyboardMarkup(cxt, *user)
+	replyKeyboard, err := b.keyboardManager.MainMenuInlineKeyboardMarkup()
 	if err != nil {
 		log.Debug("fail to get menuInline keyboard", logger.FError(err))
 		return false, err

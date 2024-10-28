@@ -74,7 +74,7 @@ func (b *botController) messageMainMenu(ctx context.Context, update *telegram.Up
 	if err != nil {
 		return err
 	}
-	mainMenuInlineKeyboardMarkup, err := b.getMainMenuInlineKeyboardMarkup(ctx, *update.Message.From)
+	mainMenuInlineKeyboardMarkup, err := b.keyboardManager.MainMenuInlineKeyboardMarkup()
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func (b *botController) editMessageAndBackToMainMenu(ctx context.Context, callba
 		return err
 	}
 	localizer := b.container.GetLocalizer(langTag)
-	mainMenuInlineKeyboardMarkup, err := b.getMainMenuInlineKeyboardMarkup(ctx, callbackQuery.From)
+	mainMenuInlineKeyboardMarkup, err := b.keyboardManager.MainMenuInlineKeyboardMarkup()
 	if err != nil {
 		return err
 	}
@@ -130,7 +130,7 @@ func (b *botController) messageListPayCurrencies(ctx context.Context, callbackQu
 		log.Error("fail to send a AnswerCallbackQuery to telegram servers", logger.FError(err))
 		return err
 	}
-	payCurrenciesInlineKeyboardMarkup, err := b.getPayCurrenciesInlineKeyboardMarkup(langTag)
+	payCurrenciesInlineKeyboardMarkup, err := b.keyboardManager.PayCurrenciesInlineKeyboardMarkup()
 	if err != nil {
 		return err
 	}

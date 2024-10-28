@@ -20,7 +20,7 @@ func (b *botController) balanceCallbackQueryCommandHandler(ctx context.Context, 
 	if err != nil {
 		log.Debug("fail to retrieve language code", logger.F("langTag", langTag))
 	}
-	replyMarkup, err := b.getMainMenuInlineKeyboardMarkup(ctx, callbackQuery.From)
+	replyMarkup, err := b.keyboardManager.MainMenuInlineKeyboardMarkup()
 	if err != nil {
 		log.Error("fail to get main menu inline keyboard", logger.FError(err))
 		return err
@@ -130,7 +130,7 @@ func (b *botController) languagesCallbackQueryCommandHandler(ctx context.Context
 	telegramProfile, err := b.profileRepository.FetchByTelegramID(ctx, telegramID)
 	languageCode := telegramProfile.PreferredLanguage
 	selectedLanguage := b.container.GetConfig().LanguageByCode(*languageCode)
-	keyboardMarkup, err := b.getLanguagesInlineKeyboardMarkup(ctx, callbackQuery.From)
+	keyboardMarkup, err := b.keyboardManager.LanguagesInlineKeyboardMarkup()
 	if err != nil {
 		log.Error("fail to get a keyboardMarkup", logger.FError(err))
 		return err
@@ -168,6 +168,7 @@ func (b *botController) selectLanguageCallbackQueryCommandHandler(ctx context.Co
 	}
 	parameters := *telegramCallbackData.Parameters
 	selectedLanguageCode := parameters[0].(string)
+	b.keyboardManager.Set(selectedLanguageCode)
 	if err := b.profileRepository.SetPreferredLanguage(ctx, telegramID, selectedLanguageCode); err != nil {
 		log.Error("fail to SetPreferredLanguage", logger.F("preferredLanguage", selectedLanguageCode))
 		return err
@@ -191,7 +192,7 @@ func (b *botController) historyCallbackQueryCommandHandler(ctx context.Context, 
 		log.Debug("fail to getLanguageCode", logger.F("langTag", langTag), logger.FError(err))
 	}
 	localizer := b.container.GetLocalizer(langTag)
-	replyMarkup, err := b.getMenuInlineKeyboardMarkup(langTag)
+	replyMarkup, err := b.keyboardManager.MainMenuInlineKeyboardMarkup()
 	if err != nil {
 		log.Error("fail to get main menu inline keyboard", logger.FError(err))
 		return err
@@ -573,7 +574,7 @@ func (b *botController) payServiceQueryCommandHandler(ctx context.Context, callb
 		log.Error("fail to get language code", logger.FError(err))
 	}
 	localizer := b.container.GetLocalizer(langTag)
-	replyMarkup, err := b.getMainMenuInlineKeyboardMarkup(ctx, callbackQuery.From)
+	replyMarkup, err := b.keyboardManager.MainMenuInlineKeyboardMarkup()
 	if err != nil {
 		log.Error("fail to get main menu inline keyboard", logger.FError(err))
 		return b.AnswerCallbackQueryWithEditMessageMedia(
