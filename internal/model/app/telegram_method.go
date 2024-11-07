@@ -3,6 +3,7 @@ package app
 type TelegramMethod string
 
 const (
+	DeleteMessageTelegramMethod       TelegramMethod = "deleteMessage"
 	SendMessageTelegramMethod         TelegramMethod = "sendMessage"
 	SetMyCommandsTelegramMethod       TelegramMethod = "setMyCommands"
 	SetMyDescriptionTelegramMethod    TelegramMethod = "setMyDescription"

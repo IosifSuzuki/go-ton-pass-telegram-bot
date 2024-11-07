@@ -11,58 +11,6 @@ import (
 	"strconv"
 )
 
-func (b *botController) userSelectedLanguageBotStageHandler(ctx context.Context, update *telegram.Update) error {
-	telegramID := update.Message.From.ID
-	if update.Message.Text == nil {
-		return app.NilError
-	}
-	selectedLanguageNativeName := *update.Message.Text
-
-	availableLanguages := b.container.GetConfig().AvailableLanguages()
-	filteredLanguages := utils.Filter(availableLanguages, func(language app.Language) bool {
-		presentableLanguageText := utils.LanguageTextFormat(language)
-		return presentableLanguageText == selectedLanguageNativeName
-	})
-	if len(filteredLanguages) == 0 {
-		return app.UnknownLanguageError
-	}
-	selectedLanguage := filteredLanguages[0]
-
-	b.keyboardManager.Set(selectedLanguage.Code)
-	if err := b.profileRepository.SetPreferredLanguage(ctx, telegramID, selectedLanguage.Code); err != nil {
-		return err
-	}
-	if err := b.messageWelcome(ctx, update); err != nil {
-		return err
-	}
-	return b.messageToSelectPreferredCurrency(ctx, update)
-}
-
-func (b *botController) userSelectedPreferredCurrencyBotStageHandler(ctx context.Context, update *telegram.Update) error {
-	telegramID := update.Message.From.ID
-	if update.Message.Text == nil {
-		return app.NilError
-	}
-	selectedCurrencyText := *update.Message.Text
-
-	availableCurrencies := b.container.GetConfig().AvailablePreferredCurrencies()
-	filteredCurrencies := utils.Filter(availableCurrencies, func(currency app.Currency) bool {
-		presentableCurrencyText := utils.ShortCurrencyTextFormat(currency)
-		return presentableCurrencyText == selectedCurrencyText
-	})
-	if len(filteredCurrencies) == 0 {
-		return app.UnknownLanguageError
-	}
-	selectedCurrency := filteredCurrencies[0]
-	if err := b.profileRepository.SetPreferredCurrency(ctx, telegramID, selectedCurrency.ABBR); err != nil {
-		return err
-	}
-	if err := b.sessionService.ClearBotStateForUser(ctx, telegramID); err != nil {
-		return err
-	}
-	return b.messageMainMenu(ctx, update)
-}
-
 func (b *botController) enterAmountCurrencyBotStageHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
 	telegramID := callbackQuery.From.ID
 	telegramCallbackData, err := utils.DecodeTelegramCallbackData(callbackQuery.Data)
@@ -93,7 +41,7 @@ func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Contex
 		return err
 	}
 
-	mainMenuInlineKeyboardMarkup, err := b.keyboardManager.MainMenuInlineKeyboardMarkup()
+	mainMenuInlineKeyboardMarkup, err := b.keyboardManager.MainMenuKeyboardMarkup()
 	if err != nil {
 		log.Debug("fail to get menu inline keyboard markup", logger.FError(err))
 		return b.SendTextWithPhotoMedia(
@@ -203,7 +151,7 @@ func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Contex
 			mainMenuInlineKeyboardMarkup,
 		)
 	}
-	cryptoPayInlineKeyboardMarkup, err := b.getCryptoPayBotKeyboardMarkup(langTag, invoice.BotInvoiceURL)
+	cryptoPayInlineKeyboardMarkup, err := b.keyboardManager.CryptoPayBotKeyboardMarkup(invoice.BotInvoiceURL)
 	if err != nil {
 		log.Debug("fail to get cryptoPayInlineKeyboardMarkup", logger.FError(err))
 		return b.SendTextWithPhotoMedia(

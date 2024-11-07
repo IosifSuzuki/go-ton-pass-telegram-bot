@@ -4,32 +4,48 @@ import (
 	"fmt"
 )
 
-type Pagination[T any] struct {
+type Pagination struct {
 	CurrentPage  int
+	LenItems     int
 	ItemsPerPage int
-	DataSource   []T
 }
 
-func (p *Pagination[T]) MidTitle() string {
-	return fmt.Sprintf("%d/%d", p.CurrentPage+1, p.Pages())
+func (p Pagination) MidTitle() string {
+	representPage := p.CurrentPage + 1
+	return fmt.Sprintf("%d/%d", representPage, p.Pages())
 }
 
-func (p *Pagination[T]) Len() int {
-	return len(p.DataSource)
-}
-
-func (p *Pagination[T]) Pages() int {
-	pages := p.Len() / p.ItemsPerPage
-	if p.Len()%p.ItemsPerPage > 0 {
-		pages += 1
+func (p Pagination) Pages() int {
+	pages := p.LenItems / p.ItemsPerPage
+	if p.LenItems%p.ItemsPerPage > 0 {
+		return pages + 1
 	}
 	return pages
 }
 
-func (p *Pagination[T]) NextTitle() string {
+func (p Pagination) NextTitle() string {
 	return "▶"
 }
 
-func (p *Pagination[T]) Previous() string {
+func (p Pagination) PreviousTitle() string {
 	return "◀"
+}
+
+func (p Pagination) NextPage() int {
+	nextPage := p.CurrentPage + 1
+	if nextPage >= p.Pages() {
+		return 0
+	}
+	return nextPage
+}
+
+func (p Pagination) PrevPage() int {
+	prevPage := p.CurrentPage - 1
+	if prevPage < 0 {
+		prevPage = p.Pages() - 1
+	}
+	if prevPage < 0 {
+		prevPage = 0
+	}
+	return prevPage
 }

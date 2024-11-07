@@ -1,103 +1,106 @@
 {
   "bot_name": "TonPass",
-  "back": "Назад",
-  "pay": "Оплатити",
-  "cancel": "Скасувати",
-  "back_to_main_menu": "\uD83C\uDFE0 Головне меню",
-  "bot_description": "🌟Ласкаво просимо до TonPass Бота!🌟\n\nРаді вас бачити! 😊\nTonPass надає миттєві та безпечні SMS-активаційні послуги\nдля всіх ваших потреб в онлайн-верифікації. 🌐\n\nГотові почати? Просто виберіть опцію нижче та відчуйте\nшвидку та надійну SMS-верифікацію.\n\n🔥 Швидко, просто та ефективно! 🔥",
-  "bot_markdown_description": "🌟*Ласкаво просимо до TonPass Бота\\!*🌟\n\nРаді вас бачити\\! 😊\nTonPass надає *миттєві та безпечні* SMS активаційні послуги\nдля всіх ваших потреб в онлайн-верифікації\\. 🌐\n\nГотові почати? Просто виберіть опцію нижче та відчуйте\nшвидку та надійну SMS-верифікацію\\.\n\n🔥 *Швидко, просто та ефективно\\!* 🔥",
-  "balance": "Баланс",
-  "buy_number": "Купити номер",
-  "help": "Допомога",
-  "history": "Історія",
-  "language": "Мова",
-  "currency": "Валюта",
-  "start_cmd_short_description_cmd": "Почати взаємодію з ботом",
-  "help_cmd_short_description_cmd": "Надає інструкції для взаємодії з ботом",
-  "short_description": "Легко отримайте коди SMS-активації для різних онлайн-сервісів. Просто замовте код для таких сервісів, як Google, Instagram або Facebook, та швидко й ефективно отримайте свій код верифікації через SMS.",
-  "unknown_telegram_command": "Невідома телеграм-команда",
-  "select_preferred_language": "Виберіть бажану мову бота",
-  "select_preferred_currency": "Виберіть бажану валюту",
-  "unknown_error": "Невідома помилка",
-  "help_cmd_text": "Цей бот дозволяє легко надсилати коди SMS-активації для верифікації акаунтів популярних онлайн-сервісів.\n\n 📋 Доступні команди:\n/start – Почати взаємодію з ботом",
-  "unknown_cmd_text": "Непідтримувана команда\n\nВибачте, команда, яку ви ввели, не розпізнана. Переконайтеся, що ви використовуєте одну з підтримуваних команд. Введіть /help, щоб переглянути список доступних команд і їх використання.",
-  "your_balance_is": {
-    "description": "Ваш баланс",
-    "one": "Ваш баланс {{ .Balance }}",
-    "other": "Ваш баланс {{ .Balance }}"
+  "back": "Back",
+  "pay": "Pay",
+  "cancel": "Cancel",
+  "next": "Next",
+  "previous": "Previous",
+  "back_to_main_menu": "\uD83C\uDFE0 Main Menu",
+  "bot_description": "🌟Welcome to the TonPass Bot!🌟\n\nWe're glad to have you here! 😊\nTonPass provides instant and secure SMS activation services\nfor all your online verification needs. 🌐\n\nReady to get started? Simply choose an option below and experience\nsmooth, reliable SMS verifications.\n\n🔥 Fast, simple, and efficient! 🔥",
+  "bot_markdown_description": "🌟*Welcome to the TonPass Bot\\!*🌟\n\nWe're glad to have you here\\! 😊\nTonPass provides *instant and secure* SMS activation services\nfor all your online verification needs\\. 🌐\n\nReady to get started? Simply choose an option below and experience\nsmooth, reliable SMS verifications\\.\n\n🔥 *Fast, simple, and efficient\\!* 🔥",
+  "balance": "Balance",
+  "buy_number": "Buy Number",
+  "help": "Help",
+  "history": "History",
+  "language": "Language",
+  "currency": "Currency",
+  "cancel_invoice": "Cancel invoice",
+  "start_cmd_short_description_cmd_markdown": "Start interacting with the bot",
+  "help_cmd_short_description_cmd_markdown": "Provides instructions for interacting with the bot",
+  "short_description_markdown": "Easily obtain SMS activation codes for various online services\\. Simply request a code for services like Google\\, Instagram\\, and Facebook\\, and quickly and efficiently receive your verification SMS\\.",
+  "unknown_telegram_command_markdown": "Unknown telegram command",
+  "select_preferred_language_markdown": "Select preferred bot language",
+  "select_preferred_currency_markdown": "Select preferred currency",
+  "unknown_error_markdown": "Unknown error",
+  "help_cmd_text_markdown": "This bot allows you to easily send SMS activation codes to verify accounts for popular online services\\.\n\n 📋 Available commands:\n/start \\– Start interacting with the bot",
+  "unknown_cmd_text_markdown": "Unsupported command\n\nSorry\\, the command you entered is not recognized\\. Please ensure you are using one of the supported commands\\. Type /help to view the list of available commands and their usage\\.",
+  "your_balance_is_markdown": {
+    "description": "Your balance is",
+    "one": "Your balance is {{ .Balance }}",
+    "other": "Your balance is {{ .Balance }}"
   },
-  "choose_language": {
-    "description": "Виберіть опцію нижче",
-    "one": "Вибрана мова {{ .Language }}. Виберіть опцію нижче",
-    "other": "Вибрана мова {{ .Language }}. Виберіть опцію нижче"
+  "choose_language_markdown": {
+    "description": "Choose an option below",
+    "one": "Your selected language is {{ .Language }}\\. Choose an option below",
+    "other": "Your selected language is {{ .Language }}\\. Choose an option below"
   },
-  "development_process": "\uD83D\uDEA7 Функція в розробці \uD83D\uDEA7",
-  "select_sms_service": "Будь ласка, виберіть онлайн-сервіс, який ви хочете активувати через SMS",
-  "top_up_balance": "Поповнити баланс",
-  "select_sms_service_with_country": "Виберіть країну, номери якої ви хочете використовувати:",
-  "select_currency_to_pay": "Виберіть валюту для оплати.",
-  "enter_amount_for_payment_in_currency": {
-    "description": "Введіть суму для оплати у валюті",
-    "one": "Введіть суму для оплати в {{ .Currency }}",
-    "other": "Введіть суму для оплати в {{ .Currency }}"
+  "development_process_markdown": "\uD83D\uDEA7 Feature Under Development \uD83D\uDEA7",
+  "select_sms_service_markdown": "Please choose the online service you want to activate via SMS",
+  "top_up_balance": "Top up balance",
+  "select_sms_service_with_country_markdown": "Select the country whose numbers you want to use:",
+  "select_currency_to_pay_markdown": "Choose a currency for payment\\.",
+  "enter_amount_for_payment_in_currency_markdown":{
+    "description": "Enter the amount for payment in currency",
+    "one": "Enter the amount for payment in {{ .Currency }}",
+    "other": "Enter the amount for payment in {{ .Currency }}"
   },
-  "enter_amount_for_payment_in_currency_error_markdown": "Будь ласка, введіть суму у валюті з правильним форматом чисел\\. Приклади: 12\\.30, 12, 100 тощо\\.",
-  "crypto_bot_pay_title_markdown": "Для оплати натисніть кнопку 'Оплатити'\\.",
-  "balance_updated_markdown": "Ваш баланс було оновлено\\. Дякуємо, що користуєтесь нашими послугами\\!",
-  "choose_preferred_currency": {
-    "description": "Виберіть опцію нижче",
-    "one": "Ваша вибрана валюта {{ .Currency }}. Виберіть опцію нижче",
-    "other": "Ваша вибрана валюта {{ .Currency }}. Виберіть опцію нижче"
+  "enter_amount_for_payment_in_currency_error_markdown": "Please enter the amount in currency using the correct number format\\. Examples: 12\\.30, 12, 100, etc\\.",
+  "crypto_bot_pay_title_markdown": "To make a payment, press the 'Pay' button\\.",
+  "balance_updated_markdown": "Your account balance has been updated\\. Thank you for using our service\\!",
+  "choose_preferred_currency_markdown": {
+    "description": "Choose an option below",
+    "one": "Your selected preferred currency is {{ .Currency }}\\. Choose an option below",
+    "other": "Your selected preferred currency is {{ .Currency }}\\. Choose an option below"
   },
   "success_received_sms_code_markdown": {
-    "description": "Ваш код SMS активації було отримано!",
-    "one": "Ми отримали ваш код активації: *{{ .SMSCode }}*",
-    "other": "Ми отримали ваш код активації: *{{ .SMSCode }}*"
+    "description": "Your SMS activation code has been received\\!",
+    "one": "We've received your activation code: *{{ .SMSCode }}*",
+    "other": "We've received your activation code: *{{ .SMSCode }}*"
   },
   "start_registration_form_with_sms_code_markdown": {
-    "description": "Будь ласка, введіть номер телефону у реєстраційну форму",
-    "one": "Будь ласка, введіть номер телефону *\\{{ .PhoneNumber }}* у реєстраційну форму\\. Потім зачекайте на *SMS-код*\\. Ми повідомимо вас, як тільки він надійде\\.\n\nЯкщо з якоїсь причини код не надійде протягом *20 хвилин*, гроші будуть автоматично повернені на ваш баланс\\.",
-    "other": "Будь ласка, введіть номер телефону *\\{{ .PhoneNumber }}* у реєстраційну форму\\. Потім зачекайте на *SMS-код*\\. Ми повідомимо вас, як тільки він надійде\\. Якщо з якоїсь причини код не надійде протягом *20 хвилин*, гроші будуть автоматично повернені на ваш баланс\\."
+    "description": "Please enter phone number in registration form",
+    "one": "Please enter phone number *\\{{ .PhoneNumber }}* in registration form\\. Then, wait for the *SMS code*\\. We’ll notify you as soon as it arrives\\.\n\nIf for some reason the code does not arrive within *20 minutes*, the money will automatically be returned to your balance\\.",
+    "other": "Please enter phone number *\\{{ .PhoneNumber }}* in registration form\\. Then, wait for the *SMS code*\\. We’ll notify you as soon as it arrives\\.If for some reason the code does not arrive within *20 minutes*, the money will automatically be returned to your balance\\."
   },
-  "numbers_are_unavailable_markdown": "Вибачте, здається, номери зараз недоступні\\. Будь ласка, спробуйте знову",
-  "fail_to_order_sms_code_markdown": "Виникла проблема з замовленням SMS-коду. Будь ласка, спробуйте ще раз\\.",
-  "internal_error_markdown": "Сталася внутрішня помилка\\. Будь ласка, спробуйте пізніше\\.",
+  "numbers_are_unavailable_markdown": "Sorry, it looks like the numbers are unavailable right now\\. Please try again",
+  "fail_to_order_sms_code_markdown": "There was an issue with order SMS code. Please try again\\.",
+  "internal_error_markdown": "An internal error occurred\\. Please try again later\\.",
   "not_receive_sms_code_markdown": {
-    "description": "На жаль, ми не отримали *SMS-код*\\. У зв'язку з цим, ми повернули *повну суму*\\. *Будь ласка, спробуйте ще раз*, і якщо проблема повторюється, зверніться до нашої служби підтримки\\. Вибачте за незручності\\.",
-    "one": "На жаль, ми не отримали *SMS-код* для *{{ .PhoneNumber }}*\\. У зв'язку з цим, ми повернули *повну суму*\\. *Будь ласка, спробуйте ще раз*, і якщо проблема повторюється, зверніться до нашої служби підтримки\\. Вибачте за незручності\\.",
-    "other": "На жаль, ми не отримали *SMS-код* для *{{ .PhoneNumber }}*\\. У зв'язку з цим, ми повернули *повну суму*\\. *Будь ласка, спробуйте ще раз*, і якщо проблема повторюється, зверніться до нашої служби підтримки\\. Вибачте за незручності\\."
+    "description": "Unfortunately, we did not receive *the sms code*\\. As a result, we have refunded *the full amount*\\. *Please try again*, and if the issue persists, feel free to contact our support team\\. We apologize for the inconvenience\\.",
+    "one": "Unfortunately, we did not receive *the sms code* for *{{ .PhoneNumber }}*\\. As a result, we have refunded *the full amount*\\. *Please try again*, and if the issue persists, feel free to contact our support team\\. We apologize for the inconvenience\\.",
+    "other": "Unfortunately, we did not receive *the sms code* for *{{ .PhoneNumber }}*\\. As a result, we have refunded *the full amount*\\. *Please try again*, and if the issue persists, feel free to contact our support team\\. We apologize for the inconvenience\\."
   },
-  "insufficient_funds_markdown": "Недостатньо коштів для SMS-активації",
+  "insufficient_funds_markdown": "Insufficient funds for SMS activation",
   "subscribe_to_channel_markdown": {
-    "description": "Натисніть на посилання нижче, щоб підписатися на наш Telegram-канал",
-    "one": "Хочете продовжувати використовувати бота? Підпишіться на наш *{{ .Channel }}* Telegram-канал, щоб отримувати миттєві оновлення та важливі оголошення\\! Підписатися зараз",
-    "other": "Хочете продовжувати використовувати бота? Підпишіться на наш *{{ .Channel }}* Telegram-канал, щоб отримувати миттєві оновлення та важливі оголошення\\! Підписатися зараз"
+    "description": "Tap the link below to subscribe to our Telegram channel",
+    "one": "Want to keep using the bot? Subscribe to our *{{ .Channel }}* Telegram channel for instant updates and important announcements\\! Subscribe Now",
+    "other": "Want to keep using the bot? Subscribe to our *{{ .Channel }}* Telegram channel for instant updates and important announcements\\! Subscribe Now"
   },
-  "empty_history_markdown": "*Остання активність не знайдена*",
-  "sms_history_title_markdown": "📩 *Історія SMS* 📩",
+  "empty_history_markdown": "*No recent activity found*",
+  "sms_history_title_markdown": "📩 *SMS History* 📩",
   "sms_history_sms_code_markdown": {
-    "description": "**SMS Код**",
-    "one": "📩 **SMS Код**: {{ .SMSCode }}",
-    "other": "📩 **SMS Код**: {{ .SMSCode }}"
+    "description": "**SMS Code**",
+    "one": "📩 **SMS Code**: {{ .SMSCode }}",
+    "other": "📩 **SMS Code**: {{ .SMSCode }}"
   },
   "sms_history_received_at_markdown": {
-    "description": "**Отримано о**",
-    "one": "📅 **Отримано о**: `{{ .ReceivedDate }}`",
-    "other": "📅 **Отримано о**: {{ .ReceivedDate }}"
+    "description": "**Received On**",
+    "one": "📅 **Received On**: `{{ .ReceivedDate }}",
+    "other": "📅 **Received On**: {{ .ReceivedDate }}"
   },
   "sms_history_start_at_markdown": {
-    "description": "**Початок о**",
-    "one": "📅 **Початок о**: `{{ .StartDate }}`",
-    "other": "📅 **Початок о**: {{ .StartDate }}"
+    "description": "**Start On**",
+    "one": "📅 **Start On**: `{{ .StartDate }}",
+    "other": "📅 **Start On**: {{ .StartDate }}"
   },
   "sms_history_status_markdown": {
-    "description": "**Статус**",
-    "one": "📋 **Статус**: `{{ .State }}`",
-    "other": "📋 **Статус**: {{ .State }}"
+    "description": "**Received On**",
+    "one": "📋 **State**: `{{ .State }}",
+    "other": "📋 **State**: {{ .State }}"
   },
   "sms_history_phoneNumber_markdown": {
-    "description": "**Номер телефону**",
-    "one": "📞 **Номер телефону**: `{{ .PhoneNumber }}`",
-    "other": "📞 **Номер телефону**: {{ .PhoneNumber }}"
+    "description": "**Phone Number**",
+    "one": "📞 **Phone Number**: `{{ .PhoneNumber }}",
+    "other": "📞 **Phone Number**: {{ .PhoneNumber }}"
   }
 }

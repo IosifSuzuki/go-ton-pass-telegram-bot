@@ -1,20 +1,23 @@
 package app
 
 const (
-	BalanceCallbackQueryCmdText                 = "bal"
-	BuyNumberCallbackQueryCmdText               = "buy_num"
-	HistoryCallbackQueryCmdText                 = "hist"
-	HelpCallbackQueryCmdText                    = "help"
-	LanguageCallbackQueryCmdText                = "lang"
-	MainMenuCallbackQueryCmdText                = "menu"
-	SelectSMSServiceCallbackQueryCmdText        = "s_serv"
-	PayServiceCallbackQueryCmdText              = "s_serv_count"
-	SelectLanguageCallbackQueryCmdText          = "s_lang"
-	ListPayCurrenciesCallbackQueryCmdText       = "l_pay_curr"
-	SelectPayCurrencyCallbackQueryCmdText       = "s_pay_curr"
-	PreferredCurrenciesCallbackQueryCmdText     = "pre_curr"
-	SelectPreferredCurrencyCallbackQueryCmdText = "s_pref_curr"
-	EmptyCallbackQueryCmdText                   = "empty"
+	SelectInitialLanguageCallbackQueryCmdText          = "s_i_lang"
+	SelectInitialPreferredCurrencyCallbackQueryCmdText = "s_i_pref_curr"
+	BalanceCallbackQueryCmdText                        = "bal"
+	BuyNumberCallbackQueryCmdText                      = "buy_num"
+	HistoryCallbackQueryCmdText                        = "hist"
+	HelpCallbackQueryCmdText                           = "help"
+	LanguageCallbackQueryCmdText                       = "lang"
+	MainMenuCallbackQueryCmdText                       = "menu"
+	SelectSMSServiceCallbackQueryCmdText               = "s_serv"
+	PayServiceCallbackQueryCmdText                     = "s_serv_count"
+	SelectLanguageCallbackQueryCmdText                 = "s_lang"
+	ListPayCurrenciesCallbackQueryCmdText              = "l_pay_curr"
+	SelectPayCurrencyCallbackQueryCmdText              = "s_pay_curr"
+	PreferredCurrenciesCallbackQueryCmdText            = "pre_curr"
+	SelectPreferredCurrencyCallbackQueryCmdText        = "s_pref_curr"
+	EmptyCallbackQueryCmdText                          = "empty"
+	CancelInvoiceQueryCmdText                          = "c_inv"
 )
 
 type TelegramCallbackData struct {
@@ -24,6 +27,10 @@ type TelegramCallbackData struct {
 
 func (t *TelegramCallbackData) CallbackQueryCommand() CallbackQueryCommand {
 	switch t.Name {
+	case SelectInitialLanguageCallbackQueryCmdText:
+		return SelectInitialLanguageCallbackQueryCommand
+	case SelectInitialPreferredCurrencyCallbackQueryCmdText:
+		return SelectInitialPreferredCurrencyCallbackQueryCommand
 	case BalanceCallbackQueryCmdText:
 		return BalanceCallbackQueryCommand
 	case BuyNumberCallbackQueryCmdText:

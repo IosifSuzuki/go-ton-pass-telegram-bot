@@ -14,31 +14,32 @@
   "history": "History",
   "language": "Language",
   "currency": "Currency",
-  "start_cmd_short_description_cmd": "Start interacting with the bot",
-  "help_cmd_short_description_cmd": "Provides instructions for interacting with the bot",
-  "short_description": "Easily obtain SMS activation codes for various online services. Simply request a code for services like Google, Instagram, and Facebook, and quickly and efficiently receive your verification SMS.",
-  "unknown_telegram_command": "Unknown telegram command",
-  "select_preferred_language": "Select preferred bot language",
-  "select_preferred_currency": "Select preferred currency",
-  "unknown_error": "Unknown error",
-  "help_cmd_text": "This bot allows you to easily send SMS activation codes to verify accounts for popular online services.\n\n 📋 Available commands:\n/start – Start interacting with the bot",
-  "unknown_cmd_text": "Unsupported command\n\nSorry, the command you entered is not recognized. Please ensure you are using one of the supported commands. Type /help to view the list of available commands and their usage.",
-  "your_balance_is": {
+  "cancel_invoice": "Cancel invoice",
+  "start_cmd_short_description_cmd_markdown": "Start interacting with the bot",
+  "help_cmd_short_description_cmd_markdown": "Provides instructions for interacting with the bot",
+  "short_description_markdown": "Easily obtain SMS activation codes for various online services\\. Simply request a code for services like Google\\, Instagram\\, and Facebook\\, and quickly and efficiently receive your verification SMS\\.",
+  "unknown_telegram_command_markdown": "Unknown telegram command",
+  "select_preferred_language_markdown": "Select preferred bot language",
+  "select_preferred_currency_markdown": "Select preferred currency",
+  "unknown_error_markdown": "Unknown error",
+  "help_cmd_text_markdown": "This bot allows you to easily send SMS activation codes to verify accounts for popular online services\\.\n\n 📋 Available commands:\n/start \\– Start interacting with the bot",
+  "unknown_cmd_text_markdown": "Unsupported command\n\nSorry\\, the command you entered is not recognized\\. Please ensure you are using one of the supported commands\\. Type /help to view the list of available commands and their usage\\.",
+  "your_balance_is_markdown": {
     "description": "Your balance is",
     "one": "Your balance is {{ .Balance }}",
     "other": "Your balance is {{ .Balance }}"
   },
-  "choose_language": {
+  "choose_language_markdown": {
     "description": "Choose an option below",
-    "one": "Your selected language is {{ .Language }}. Choose an option below",
-    "other": "Your selected language is {{ .Language }}. Choose an option below"
+    "one": "Your selected language is {{ .Language }}\\. Choose an option below",
+    "other": "Your selected language is {{ .Language }}\\. Choose an option below"
   },
-  "development_process": "\uD83D\uDEA7 Feature Under Development \uD83D\uDEA7",
-  "select_sms_service": "Please choose the online service you want to activate via SMS",
+  "development_process_markdown": "\uD83D\uDEA7 Feature Under Development \uD83D\uDEA7",
+  "select_sms_service_markdown": "Please choose the online service you want to activate via SMS",
   "top_up_balance": "Top up balance",
-  "select_sms_service_with_country": "Select the country whose numbers you want to use:",
-  "select_currency_to_pay": "Choose a currency for payment.",
-  "enter_amount_for_payment_in_currency":{
+  "select_sms_service_with_country_markdown": "Select the country whose numbers you want to use:",
+  "select_currency_to_pay_markdown": "Choose a currency for payment\\.",
+  "enter_amount_for_payment_in_currency_markdown":{
     "description": "Enter the amount for payment in currency",
     "one": "Enter the amount for payment in {{ .Currency }}",
     "other": "Enter the amount for payment in {{ .Currency }}"
@@ -46,13 +47,13 @@
   "enter_amount_for_payment_in_currency_error_markdown": "Please enter the amount in currency using the correct number format\\. Examples: 12\\.30, 12, 100, etc\\.",
   "crypto_bot_pay_title_markdown": "To make a payment, press the 'Pay' button\\.",
   "balance_updated_markdown": "Your account balance has been updated\\. Thank you for using our service\\!",
-  "choose_preferred_currency": {
+  "choose_preferred_currency_markdown": {
     "description": "Choose an option below",
-    "one": "Your selected preferred currency is {{ .Currency }}. Choose an option below",
-    "other": "Your selected preferred currency is {{ .Currency }}. Choose an option below"
+    "one": "Your selected preferred currency is {{ .Currency }}\\. Choose an option below",
+    "other": "Your selected preferred currency is {{ .Currency }}\\. Choose an option below"
   },
   "success_received_sms_code_markdown": {
-    "description": "Your SMS activation code has been received!",
+    "description": "Your SMS activation code has been received\\!",
     "one": "We've received your activation code: *{{ .SMSCode }}*",
     "other": "We've received your activation code: *{{ .SMSCode }}*"
   },

@@ -10,18 +10,18 @@ func (b *botController) startTelegramCommandHandler(ctx context.Context, update 
 
 	exist, _ := b.profileRepository.ExistsWithTelegramID(ctx, telegramID)
 	if !exist {
-		return b.messageToSelectLanguage(ctx, update)
+		return b.messageToSelectInitialLanguage(ctx, update)
 	}
 	profile, err := b.profileRepository.FetchByTelegramID(ctx, telegramID)
 	if err != nil {
 		return err
 	}
 	if profile.PreferredLanguage == nil {
-		return b.messageToSelectLanguage(ctx, update)
+		return b.messageToSelectInitialLanguage(ctx, update)
 	} else if profile.PreferredCurrency == nil {
-		return b.messageToSelectPreferredCurrency(ctx, update)
+		return b.messageToSelectInitialPreferredCurrency(ctx, update.Message.Chat.ID, update.Message.From)
 	}
-	if err := b.messageWelcome(ctx, update); err != nil {
+	if err := b.messageWelcome(ctx, update.CallbackQuery.Message.Chat.ID, &update.CallbackQuery.From); err != nil {
 		return err
 	}
 	return b.messageMainMenu(ctx, update)

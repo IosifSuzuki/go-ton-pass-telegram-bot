@@ -46,7 +46,7 @@ type botController struct {
 	exchangeRateWorker   worker.ExchangeRate
 	smsActivateWorker    worker.SMSActivate
 	formatterWorker      worker.Formatter
-	keyboardManager      manager.TelegramKeyboardManager
+	keyboardManager      manager.TelegramInlineKeyboardManager
 }
 
 func NewBotController(
@@ -75,7 +75,7 @@ func NewBotController(
 		exchangeRateWorker:   exchangeRateWorker,
 		smsActivateWorker:    smsActivateWorker,
 		formatterWorker:      formatterWorker,
-		keyboardManager:      manager.NewTelegramKeyboardManager(container),
+		keyboardManager:      manager.NewTelegramInlineKeyboardManager(container, exchangeRateWorker),
 	}
 }
 
@@ -129,10 +129,6 @@ func (b *botController) Serve(update *telegram.Update) error {
 	userBotState := b.sessionService.GetBotStateForUser(ctx, *telegramID)
 	log.Debug("got bot state from session service", logger.F("userBotState", userBotState))
 	switch userBotState {
-	case app.SelectLanguageBotState:
-		return b.userSelectedLanguageBotStageHandler(ctx, update)
-	case app.SelectCurrencyBotState:
-		return b.userSelectedPreferredCurrencyBotStageHandler(ctx, update)
 	case app.EnteringAmountCurrencyBotState:
 		if callbackQuery := update.CallbackQuery; callbackQuery == nil {
 			return b.enteringAmountCurrencyBotStageHandler(ctx, update)
@@ -144,6 +140,10 @@ func (b *botController) Serve(update *telegram.Update) error {
 		return b.helpTelegramCommandHandler(ctx, update)
 	}
 	switch telegramCallbackData.CallbackQueryCommand() {
+	case app.SelectInitialLanguageCallbackQueryCommand:
+		return b.selectedInitialLanguageCallbackQueryCommandHandler(ctx, update.CallbackQuery)
+	case app.SelectInitialPreferredCurrencyCallbackQueryCommand:
+		return b.selectedInitialPreferredCurrencyCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.BalanceCallbackQueryCommand:
 		return b.balanceCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.MainMenuCallbackQueryCommand:
@@ -209,16 +209,15 @@ func (b *botController) recordTelegramProfile(ctx context.Context, update *teleg
 }
 
 func (b *botController) getLanguageCode(ctx context.Context, user telegram.User) (string, error) {
+	log := b.container.GetLogger()
 	profile, err := b.profileRepository.FetchByTelegramID(ctx, user.ID)
 	defaultLang := "en"
 	if err != nil {
+		log.Error("fail to get profile by telegram id", logger.F("telegram_id", user.ID), logger.FError(err))
 		return defaultLang, err
 	}
 	if preferredLanguage := profile.PreferredLanguage; preferredLanguage != nil {
 		return *preferredLanguage, nil
-	}
-	if user.LanguageCode != nil {
-		return *user.LanguageCode, nil
 	}
 	return defaultLang, nil
 }
@@ -299,7 +298,7 @@ func (b *botController) CheckUserIsChatMember(update *telegram.Update) (bool, er
 	text := localizer.LocalizedStringWithTemplateData("subscribe_to_channel_markdown", map[string]any{
 		"Channel": channelLink,
 	})
-	replyKeyboard, err := b.keyboardManager.MainMenuInlineKeyboardMarkup()
+	replyKeyboard, err := b.keyboardManager.MainMenuKeyboardMarkup()
 	if err != nil {
 		log.Debug("fail to get menuInline keyboard", logger.FError(err))
 		return false, err

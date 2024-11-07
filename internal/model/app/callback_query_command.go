@@ -4,6 +4,8 @@ type CallbackQueryCommand uint
 
 const (
 	NotCallbackQueryCommand CallbackQueryCommand = iota
+	SelectInitialLanguageCallbackQueryCommand
+	SelectInitialPreferredCurrencyCallbackQueryCommand
 	BalanceCallbackQueryCommand
 	BuyNumberCallbackQueryCommand
 	HelpCallbackQueryCommand
