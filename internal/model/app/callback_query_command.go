@@ -20,4 +20,5 @@ const (
 	PreferredCurrenciesCallbackQueryCommand
 	SelectPreferredCurrencyCallbackQueryCommand
 	EmptyCallbackQueryCommand
+	DeleteCryptoBotInvoiceCallbackQueryCommand
 )

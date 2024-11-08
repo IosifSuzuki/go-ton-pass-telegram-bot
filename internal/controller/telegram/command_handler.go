@@ -7,7 +7,10 @@ import (
 
 func (b *botController) startTelegramCommandHandler(ctx context.Context, update *telegram.Update) error {
 	telegramID := update.Message.From.ID
-
+	telegramUser, err := getTelegramUser(update)
+	if err != nil {
+		return err
+	}
 	exist, _ := b.profileRepository.ExistsWithTelegramID(ctx, telegramID)
 	if !exist {
 		return b.messageToSelectInitialLanguage(ctx, update)
@@ -21,10 +24,10 @@ func (b *botController) startTelegramCommandHandler(ctx context.Context, update 
 	} else if profile.PreferredCurrency == nil {
 		return b.messageToSelectInitialPreferredCurrency(ctx, update.Message.Chat.ID, update.Message.From)
 	}
-	if err := b.messageWelcome(ctx, update.CallbackQuery.Message.Chat.ID, &update.CallbackQuery.From); err != nil {
+	if err := b.messageWelcome(ctx, update.Message.Chat.ID, update.Message.From); err != nil {
 		return err
 	}
-	return b.messageMainMenu(ctx, update)
+	return b.messageMainMenu(ctx, update.Message.Chat.ID, telegramUser)
 }
 
 func (b *botController) helpTelegramCommandHandler(ctx context.Context, update *telegram.Update) error {

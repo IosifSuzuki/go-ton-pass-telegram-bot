@@ -2,10 +2,12 @@ package telegram
 
 import (
 	"context"
+	"errors"
 	"go-ton-pass-telegram-bot/internal/model/app"
 	"go-ton-pass-telegram-bot/internal/model/domain"
 	"go-ton-pass-telegram-bot/internal/model/sms"
 	"go-ton-pass-telegram-bot/internal/model/telegram"
+	"go-ton-pass-telegram-bot/internal/service"
 	"go-ton-pass-telegram-bot/internal/utils"
 	"go-ton-pass-telegram-bot/pkg/logger"
 	"strconv"
@@ -162,7 +164,6 @@ func (b *botController) balanceCallbackQueryCommandHandler(ctx context.Context, 
 		return err
 	}
 	localizer := b.container.GetLocalizer(langTag)
-	log.Debug("execute balanceCallbackQueryCommandHandler", logger.F("callbackQuery", callbackQuery))
 	telegramProfile, err := b.profileRepository.FetchByTelegramID(ctx, telegramID)
 	if err != nil {
 		log.Error("fail to fetchByTelegramID", logger.FError(err))
@@ -252,8 +253,9 @@ func (b *botController) selectedPayCurrenciesCallbackQueryCommandHandler(ctx con
 		return err
 	}
 	telegramID := callbackQuery.From.ID
-	if err := b.sessionService.SaveBotStateForUser(ctx, app.EnterAmountCurrencyBotState, telegramID); err != nil {
-		log.Error("fail to save bot state", logger.FError(err))
+	telegramCallbackData, err := utils.DecodeTelegramCallbackData(callbackQuery.Data)
+	if err != nil {
+		log.Error("fail to decode telegram callback data", logger.FError(err))
 		return b.AnswerCallbackQueryWithEditMessageMedia(
 			callbackQuery,
 			localizer.LocalizedString("internal_error_markdown"),
@@ -261,14 +263,38 @@ func (b *botController) selectedPayCurrenciesCallbackQueryCommandHandler(ctx con
 			replyMarkup,
 		)
 	}
-	if err := b.enterAmountCurrencyBotStageHandler(ctx, callbackQuery); err != nil {
-		log.Error("fail to configure entering amount currency", logger.FError(err))
+	parameters := *telegramCallbackData.Parameters
+	selectedPayCurrencyAbbr, ok := parameters[0].(string)
+	if !ok {
+		log.Error("parameter must contains selected pay currency")
 		return b.AnswerCallbackQueryWithEditMessageMedia(
 			callbackQuery,
 			localizer.LocalizedString("internal_error_markdown"),
 			avatarImageURL,
 			replyMarkup,
 		)
+	}
+	if err := b.sessionService.SaveString(ctx, service.SelectedPayCurrencyAbbrKey, selectedPayCurrencyAbbr, telegramID); err != nil {
+		log.Error("fail to save selected pay currency", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	if err := b.messageEnterAmountCurrency(ctx, callbackQuery); err != nil {
+		log.Error("fail to send message with enter amount of currency", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	if err := b.sessionService.SaveBotStateForUser(ctx, app.EnteringAmountCurrencyBotState, telegramID); err != nil {
+		log.Error("fail to save bot state entering amount currency", logger.FError(err))
+		return err
 	}
 	return nil
 }
@@ -974,4 +1000,92 @@ func (b *botController) selectPreferredCurrencyQueryCommandHandler(ctx context.C
 		)
 	}
 	return b.editMessageMainMenu(ctx, callbackQuery)
+}
+
+func (b *botController) deleteCryptoBotQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
+	log := b.container.GetLogger()
+	langTag, err := b.getLanguageCode(ctx, callbackQuery.From)
+	telegramUser := callbackQuery.From
+	if err != nil {
+		log.Debug("fail to retrieve language code", logger.F("langTag", langTag))
+	}
+	localizer := b.container.GetLocalizer(langTag)
+	replyMarkup, err := b.keyboardManager.MainMenuKeyboardMarkup()
+	if err != nil {
+		log.Error("fail to get main menu inline keyboard", logger.FError(err))
+		return err
+	}
+	telegramCallbackQueryData, err := utils.DecodeTelegramCallbackData(callbackQuery.Data)
+	if err != nil {
+		log.Error("fail to decode telegram callback data", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	if telegramCallbackQueryData.Parameters == nil {
+		log.Error("parameters must contains parameters")
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	parameters := *telegramCallbackQueryData.Parameters
+	invoiceID, ok := parameters[0].(int64)
+	if !ok {
+		log.Error("parameters must contains invoiceID")
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	if err := b.cryptoPayBot.RemoveInvoice(invoiceID); err != nil {
+		log.Error("fail to remove invoice", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	deleteMessage := telegram.DeleteMessage{
+		ChatID:    callbackQuery.Message.Chat.ID,
+		MessageID: callbackQuery.Message.ID,
+	}
+	err = b.telegramBotService.SendResponse(deleteMessage, app.DeleteMessageTelegramMethod)
+	if err != nil && errors.Is(err, app.DeleteInvoiceError) {
+		log.Debug("fail to remove invoice", logger.FError(err))
+	} else if err != nil {
+		log.Debug("other unknown error while perform remove invoice", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	if err == nil {
+		err = b.SendTextWithPhotoMedia(
+			callbackQuery.Message.Chat.ID,
+			localizer.LocalizedString("success_deleted_invoice_markdown"),
+			avatarImageURL,
+			nil,
+		)
+		if err != nil {
+			log.Error("fail to send message to telegram")
+			return b.AnswerCallbackQueryWithEditMessageMedia(
+				callbackQuery,
+				localizer.LocalizedString("internal_error_markdown"),
+				avatarImageURL,
+				replyMarkup,
+			)
+		}
+	}
+	return b.messageMainMenu(ctx, callbackQuery.Message.Chat.ID, &telegramUser)
 }

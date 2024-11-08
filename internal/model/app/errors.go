@@ -14,4 +14,5 @@ var (
 	UnknownError                     = errors.New("unknown error")
 	IndexOutOfRangeError             = errors.New("index out of range error")
 	RequiredFieldError               = errors.New("required filed is missing error")
+	DeleteInvoiceError               = errors.New("delete invoice error")
 )

@@ -17,6 +17,7 @@ const (
 
 type CryptoPayBot interface {
 	CreateInvoice(currency string, amount float64, payloadData string) (*bot.Invoice, error)
+	RemoveInvoice(invoiceID int64) error
 	FetchExchangeRate() ([]bot.ExchangeRate, error)
 }
 
@@ -56,6 +57,34 @@ func (c *cryptoPayBot) CreateInvoice(currency string, amount float64, payload st
 		return nil, err
 	}
 	return &result.Result, nil
+}
+
+func (c *cryptoPayBot) RemoveInvoice(invoiceID int64) error {
+	log := c.container.GetLogger()
+	queryParams := url.Values{}
+	queryParams.Set("invoice_id", fmt.Sprintf("%d", invoiceID))
+	req, err := c.prepareRequest(app.DeleteInvoiceCryptoBotMethod, queryParams)
+	if err != nil {
+		log.Error("fail to prepare request", logger.FError(err))
+		return err
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Error("fail to create a http client", logger.FError(err))
+		return err
+	}
+	defer resp.Body.Close()
+	var result bot.Result[bool]
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		log.Error("fail to parse response", logger.FError(err))
+		return err
+	}
+	if !result.Result {
+		log.Debug("fail to delete invoice")
+		return app.DeleteInvoiceError
+	}
+	return nil
 }
 
 func (c *cryptoPayBot) FetchExchangeRate() ([]bot.ExchangeRate, error) {

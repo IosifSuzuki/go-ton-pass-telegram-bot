@@ -4,6 +4,5 @@ type BotState uint
 
 const (
 	IDLEState BotState = iota
-	EnterAmountCurrencyBotState
 	EnteringAmountCurrencyBotState
 )

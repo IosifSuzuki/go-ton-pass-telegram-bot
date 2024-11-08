@@ -65,14 +65,14 @@ func (b *botController) messageWelcome(ctx context.Context, chatID int64, user *
 	return b.telegramBotService.SendResponse(sendPhotoResp, app.SendPhotoTelegramMethod)
 }
 
-func (b *botController) messageMainMenu(ctx context.Context, update *telegram.Update) error {
-	langTag, _ := b.getLanguageCode(ctx, *update.Message.From)
+func (b *botController) messageMainMenu(ctx context.Context, chatID int64, user *telegram.User) error {
+	langTag, _ := b.getLanguageCode(ctx, *user)
 	mainMenuInlineKeyboardMarkup, err := b.keyboardManager.MainMenuKeyboardMarkup()
 	if err != nil {
 		return err
 	}
 	resp := telegram.SendPhoto{
-		ChatID:      update.Message.Chat.ID,
+		ChatID:      chatID,
 		Caption:     b.container.GetLocalizer(langTag).LocalizedString("short_description_markdown"),
 		Photo:       avatarImageURL,
 		ParseMode:   utils.NewString("MarkdownV2"),
@@ -103,12 +103,7 @@ func (b *botController) messageListPayCurrencies(ctx context.Context, callbackQu
 		log.Debug("fail to retrieve language code", logger.F("langTag", langTag), logger.FError(err))
 	}
 	localizer := b.container.GetLocalizer(langTag)
-	answerCallbackQuery := telegram.AnswerCallbackQuery{
-		ID:        callbackQuery.ID,
-		Text:      nil,
-		ShowAlert: false,
-	}
-	if err := b.telegramBotService.SendResponse(answerCallbackQuery, app.AnswerCallbackQueryTelegramMethod); err != nil {
+	if err := b.AnswerCallbackQuery(callbackQuery); err != nil {
 		log.Debug("fail to send a AnswerCallbackQuery to telegram servers", logger.FError(err))
 		return err
 	}
@@ -130,23 +125,15 @@ func (b *botController) messageListPayCurrencies(ctx context.Context, callbackQu
 func (b *botController) messageEnterAmountCurrency(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
 	telegramID := callbackQuery.From.ID
 	log := b.container.GetLogger()
-	langTag, err := b.getLanguageCode(ctx, callbackQuery.From)
-	if err != nil {
-		return err
-	}
+	langTag, _ := b.getLanguageCode(ctx, callbackQuery.From)
 	localizer := b.container.GetLocalizer(langTag)
-	answerCallbackQuery := telegram.AnswerCallbackQuery{
-		ID:        callbackQuery.ID,
-		Text:      nil,
-		ShowAlert: false,
-	}
-	if err := b.telegramBotService.SendResponse(answerCallbackQuery, app.AnswerCallbackQueryTelegramMethod); err != nil {
+	if err := b.AnswerCallbackQuery(callbackQuery); err != nil {
 		log.Error("fail to send a AnswerCallbackQuery to telegram servers", logger.FError(err))
 		return err
 	}
 	profile, err := b.profileRepository.FetchByTelegramID(ctx, telegramID)
 	if err != nil {
-		log.Error("fail to get profile by telegram ID")
+		log.Error("fail to get profile by telegram ID", logger.FError(err))
 		return err
 	}
 	currency := b.container.GetConfig().CurrencyByAbbr(*profile.PreferredCurrency)
@@ -160,10 +147,8 @@ func (b *botController) messageEnterAmountCurrency(ctx context.Context, callback
 			"Currency": currency.Symbol,
 		}),
 		Photo:       enterAmountImageURL,
+		ParseMode:   utils.NewString("MarkdownV2"),
 		ReplyMarkup: nil,
-	}
-	if err := b.sessionService.SaveBotStateForUser(ctx, app.EnteringAmountCurrencyBotState, telegramID); err != nil {
-		return err
 	}
 	return b.telegramBotService.SendResponse(resp, app.SendPhotoTelegramMethod)
 }

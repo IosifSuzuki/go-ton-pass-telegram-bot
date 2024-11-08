@@ -23,7 +23,7 @@ type TelegramInlineKeyboardManager interface {
 	MainMenuKeyboardButton() *telegram.InlineKeyboardButton
 	LinkKeyboardButton(text, link string) *telegram.InlineKeyboardButton
 	TopUpBalanceKeyboardMarkup() (*telegram.InlineKeyboardMarkup, error)
-	CryptoPayBotKeyboardMarkup(url string) (*telegram.InlineKeyboardMarkup, error)
+	CryptoPayBotKeyboardMarkup(url string, invoiceID int64) (*telegram.InlineKeyboardMarkup, error)
 	PageControlKeyboardButtons(commandName string, pagination app.Pagination, leftButtonParameters []any, rightButtonParameters []any) ([]telegram.InlineKeyboardButton, error)
 	ServicesInlineKeyboardMarkup(services []sms.Service, pagination app.Pagination) (*telegram.InlineKeyboardMarkup, error)
 	ServiceCountriesInlineKeyboardMarkup(serviceCode string, preferredCurrency string, pagination app.Pagination, servicePrices []sms.PriceForService, countries []sms.Country) (*telegram.InlineKeyboardMarkup, error)
@@ -248,14 +248,14 @@ func (t *telegramInlineKeyboardManager) ServiceCountriesInlineKeyboardMarkup(
 	}, nil
 }
 
-func (t *telegramInlineKeyboardManager) CryptoPayBotKeyboardMarkup(url string) (*telegram.InlineKeyboardMarkup, error) {
+func (t *telegramInlineKeyboardManager) CryptoPayBotKeyboardMarkup(url string, invoiceID int64) (*telegram.InlineKeyboardMarkup, error) {
 	log := t.container.GetLogger()
 	columns := 1
 	linkButton := t.LinkKeyboardButton(t.localizer.LocalizedString("pay"), url)
 	cancelInvoiceButton, err := NewTelegramInlineButtonBuilder().
-		SetCommandName(app.CancelInvoiceQueryCmdText).
+		SetCommandName(app.DeleteCryptoBotInvoiceQueryCmdText).
 		SetText(utils.ButtonTitle(t.localizer.LocalizedString("cancel_invoice"), "❌")).
-		SetParameters([]any{}).
+		SetParameters([]any{invoiceID}).
 		Build()
 	if err != nil {
 		log.Debug("fail to create cancel invoice button", logger.FError(err))

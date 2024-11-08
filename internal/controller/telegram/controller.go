@@ -130,7 +130,7 @@ func (b *botController) Serve(update *telegram.Update) error {
 	log.Debug("got bot state from session service", logger.F("userBotState", userBotState))
 	switch userBotState {
 	case app.EnteringAmountCurrencyBotState:
-		if callbackQuery := update.CallbackQuery; callbackQuery == nil {
+		if update.CallbackQuery == nil {
 			return b.enteringAmountCurrencyBotStageHandler(ctx, update)
 		}
 		break
@@ -172,6 +172,8 @@ func (b *botController) Serve(update *telegram.Update) error {
 		return b.selectPreferredCurrencyQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.EmptyCallbackQueryCommand:
 		return b.emptyQueryCommandHandler(ctx, update.CallbackQuery)
+	case app.DeleteCryptoBotInvoiceCallbackQueryCommand:
+		return b.deleteCryptoBotQueryCommandHandler(ctx, update.CallbackQuery)
 	default:
 		return b.developingCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	}
@@ -243,10 +245,10 @@ func (b *botController) EditMessageMedia(callbackQuery *telegram.CallbackQuery, 
 	return nil
 }
 
-func (b *botController) SendTextWithPhotoMedia(update *telegram.Update, text string, photoURL string, replyMarkup any) error {
+func (b *botController) SendTextWithPhotoMedia(chatID int64, text string, photoURL string, replyMarkup any) error {
 	log := b.container.GetLogger()
 	resp := telegram.SendPhoto{
-		ChatID:      update.Message.Chat.ID,
+		ChatID:      chatID,
 		Caption:     text,
 		Photo:       photoURL,
 		ParseMode:   utils.NewString("MarkdownV2"),
@@ -307,7 +309,7 @@ func (b *botController) CheckUserIsChatMember(update *telegram.Update) (bool, er
 		replyKeyboard := telegram.ReplyKeyboardRemove{
 			RemoveKeyboard: true,
 		}
-		return false, b.SendTextWithPhotoMedia(update, text, avatarImageURL, replyKeyboard)
+		return false, b.SendTextWithPhotoMedia(update.Message.Chat.ID, text, avatarImageURL, replyKeyboard)
 	}
 	if !isChatMember && update.CallbackQuery != nil {
 		return false, b.AnswerCallbackQueryWithEditMessageMedia(update.CallbackQuery, text, avatarImageURL, replyKeyboard)

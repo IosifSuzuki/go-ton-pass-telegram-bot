@@ -4,5 +4,6 @@ type CryptoBotMethod string
 
 const (
 	CreateInvoiceCryptoBotMethod CryptoBotMethod = "createInvoice"
-	ExchangeRateCryptoBotMethod                  = "getExchangeRates"
+	ExchangeRateCryptoBotMethod  CryptoBotMethod = "getExchangeRates"
+	DeleteInvoiceCryptoBotMethod CryptoBotMethod = "deleteInvoice"
 )

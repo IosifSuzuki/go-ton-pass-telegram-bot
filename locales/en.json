@@ -25,9 +25,9 @@
   "help_cmd_text_markdown": "This bot allows you to easily send SMS activation codes to verify accounts for popular online services\\.\n\n 📋 Available commands:\n/start \\– Start interacting with the bot",
   "unknown_cmd_text_markdown": "Unsupported command\n\nSorry\\, the command you entered is not recognized\\. Please ensure you are using one of the supported commands\\. Type /help to view the list of available commands and their usage\\.",
   "your_balance_is_markdown": {
-    "description": "Your balance is",
-    "one": "Your balance is {{ .Balance }}",
-    "other": "Your balance is {{ .Balance }}"
+    "description": "Available Funds in Your Account",
+    "one": "*Available Funds in Your Account:* {{ .Balance }}",
+    "other": "*Available Funds in Your Account:* {{ .Balance }}"
   },
   "choose_language_markdown": {
     "description": "Choose an option below",
@@ -38,14 +38,14 @@
   "select_sms_service_markdown": "Please choose the online service you want to activate via SMS",
   "top_up_balance": "Top up balance",
   "select_sms_service_with_country_markdown": "Select the country whose numbers you want to use:",
-  "select_currency_to_pay_markdown": "Choose a currency for payment\\.",
+  "select_currency_to_pay_markdown": "*Choose Currency for Your Payment*",
   "enter_amount_for_payment_in_currency_markdown":{
     "description": "Enter the amount for payment in currency",
-    "one": "Enter the amount for payment in {{ .Currency }}",
-    "other": "Enter the amount for payment in {{ .Currency }}"
+    "one": "Enter the amount for payment in *{{ .Currency }}*",
+    "other": "Enter the amount for payment in *{{ .Currency }}*"
   },
   "enter_amount_for_payment_in_currency_error_markdown": "Please enter the amount in currency using the correct number format\\. Examples: 12\\.30, 12, 100, etc\\.",
-  "crypto_bot_pay_title_markdown": "To make a payment, press the 'Pay' button\\.",
+  "crypto_bot_pay_title_markdown": "Tap *'Pay'* to make the payment, or *'Cancel'* if you wish to delete the invoice\\.",
   "balance_updated_markdown": "Your account balance has been updated\\. Thank you for using our service\\!",
   "choose_preferred_currency_markdown": {
     "description": "Choose an option below",
@@ -102,5 +102,10 @@
     "description": "**Phone Number**",
     "one": "📞 **Phone Number**: `{{ .PhoneNumber }}",
     "other": "📞 **Phone Number**: {{ .PhoneNumber }}"
+  },
+  "success_deleted_invoice_markdown": {
+    "description": "Your invoice has been successfully deleted",
+    "one": "Your invoice has been successfully deleted",
+    "other": "Your invoice has been successfully deleted"
   }
 }
