@@ -68,7 +68,8 @@
     "one": "Want to keep using the bot? Subscribe to our *{{ .Channel }}* Telegram channel for instant updates and important announcements\\! Subscribe Now",
     "other": "Want to keep using the bot? Subscribe to our *{{ .Channel }}* Telegram channel for instant updates and important announcements\\! Subscribe Now"
   },
-  "cancel_sms_activation_title": "Your SMS activation has been *successfully canceled*. We've processed your refund, and the amount has been returned to your account",
+  "cancel_sms_activation_title_markdown": "❌Your SMS activation has been *successfully canceled*❌",
+  "cancel_sms_activation_footer_markdown": "We've processed your refund and the amount has been returned to your account",
   "empty_history_markdown": "*No recent activity found*",
   "sms_history_title_markdown": "📩 *SMS History* 📩",
   "sms_activation_code_markdown": {
