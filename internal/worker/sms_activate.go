@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"go-ton-pass-telegram-bot/internal/container"
+	"go-ton-pass-telegram-bot/internal/model/app"
 	"go-ton-pass-telegram-bot/internal/model/sms"
 	"go-ton-pass-telegram-bot/internal/service"
 	"go-ton-pass-telegram-bot/internal/utils"
@@ -13,8 +14,11 @@ import (
 
 type SMSActivate interface {
 	GetOrderedServices() ([]sms.Service, error)
+	GetService(serviceCode string) (*sms.Service, error)
 	GetPriceForService(serviceCode string) ([]sms.PriceForService, error)
 	GetCountries() ([]sms.Country, error)
+	GetServices() ([]sms.Service, error)
+	GetCountry(countryID int64) (*sms.Country, error)
 }
 
 type smsActivate struct {
@@ -49,7 +53,7 @@ func (s *smsActivate) GetOrderedServices() ([]sms.Service, error) {
 	}
 	popularServiceCodes = append(preferredServiceCodesOrder, popularServiceCodes...)
 	log.Debug("got popular services", logger.F("popularServiceCodes", popularServiceCodes))
-	allServices, err := s.smsService.GetServices()
+	allServices, err := s.GetServices()
 	if err != nil {
 		return nil, err
 	}
@@ -70,6 +74,21 @@ func (s *smsActivate) GetOrderedServices() ([]sms.Service, error) {
 		return lhsPopularServiceCodeIndex < rhsPopularServiceCodeIndex
 	})
 	return allServices, nil
+}
+
+func (s *smsActivate) GetService(serviceCode string) (*sms.Service, error) {
+	allServices, err := s.GetServices()
+	if err != nil {
+		return nil, err
+	}
+	filteredServices := utils.Filter(allServices, func(service sms.Service) bool {
+		return service.Code == serviceCode
+	})
+	if len(filteredServices) == 0 {
+		return nil, app.NilError
+	}
+	foundService := filteredServices[0]
+	return &foundService, nil
 }
 
 func (s *smsActivate) GetPriceForService(serviceCode string) ([]sms.PriceForService, error) {
@@ -132,6 +151,38 @@ func (s *smsActivate) GetCountries() ([]sms.Country, error) {
 	return countries, nil
 }
 
+func (s *smsActivate) GetServices() ([]sms.Service, error) {
+	go func() {
+		ctx := context.Background()
+		_ = s.UpToServices(ctx)
+	}()
+	ctx := context.Background()
+	cacheResponse, err := s.cache.GetSMSServices(ctx)
+	if err == nil {
+		return cacheResponse.Result, nil
+	}
+	services, err := s.smsService.GetServices()
+	if err != nil {
+		return nil, err
+	}
+	return services, nil
+}
+
+func (s *smsActivate) GetCountry(countryID int64) (*sms.Country, error) {
+	countries, err := s.GetCountries()
+	if err != nil {
+		return nil, err
+	}
+	filteredCountries := utils.Filter(countries, func(country sms.Country) bool {
+		return country.ID == countryID
+	})
+	if len(filteredCountries) == 0 {
+		return nil, app.NilError
+	}
+	foundCountry := filteredCountries[0]
+	return &foundCountry, nil
+}
+
 func (s *smsActivate) UpToCountries(ctx context.Context) error {
 	response, err := s.cache.GetSMSCountries(ctx)
 	if err != nil {
@@ -148,4 +199,22 @@ func (s *smsActivate) UpToCountries(ctx context.Context) error {
 	}
 	countries, err := s.smsService.GetCountries()
 	return s.cache.SaveSMSCountries(ctx, countries)
+}
+
+func (s *smsActivate) UpToServices(ctx context.Context) error {
+	response, err := s.cache.GetSMSServices(ctx)
+	if err != nil {
+		return err
+	}
+	var timeFetched time.Time
+	if response != nil {
+		timeFetched = response.TimeFetched
+	} else {
+		timeFetched = time.Now()
+	}
+	if timeFetched.Add(24*time.Hour).Compare(time.Now()) <= 0 {
+		return nil
+	}
+	services, err := s.smsService.GetServices()
+	return s.cache.SaveSMSServices(ctx, services)
 }

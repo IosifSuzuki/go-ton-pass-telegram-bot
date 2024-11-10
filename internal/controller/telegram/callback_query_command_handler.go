@@ -5,6 +5,7 @@ import (
 	"errors"
 	"go-ton-pass-telegram-bot/internal/model/app"
 	"go-ton-pass-telegram-bot/internal/model/domain"
+	model "go-ton-pass-telegram-bot/internal/model/postpone"
 	"go-ton-pass-telegram-bot/internal/model/sms"
 	"go-ton-pass-telegram-bot/internal/model/telegram"
 	"go-ton-pass-telegram-bot/internal/service"
@@ -306,9 +307,9 @@ func (b *botController) languagesCallbackQueryCommandHandler(ctx context.Context
 		log.Debug("fail to retrieve language code", logger.F("langTag", langTag))
 	}
 	localizer := b.container.GetLocalizer(langTag)
-	replyMarkup, err := b.keyboardManager.MainMenuKeyboardMarkup()
+	replyMarkup, err := b.keyboardManager.LanguagesKeyboardMarkup()
 	if err != nil {
-		log.Error("fail to get main menu inline keyboard", logger.FError(err))
+		log.Error("fail to get languages inline keyboard", logger.FError(err))
 		return err
 	}
 	language := b.container.GetConfig().LanguageByCode(langTag)
@@ -668,7 +669,7 @@ func (b *botController) selectServiceCallbackQueryCommandHandler(ctx context.Con
 		)
 	}
 	currentPage := utils.GetInt64(parameters[1])
-	itemsPerPage := 16
+	itemsPerPage := 10
 	profile, err := b.profileRepository.FetchByTelegramID(ctx, telegramID)
 	if err != nil {
 		log.Error("fail to fetch profile by telegram id", logger.F("telegram_id", profile.TelegramID))
@@ -779,7 +780,7 @@ func (b *botController) preferredCurrenciesQueryCommandHandler(ctx context.Conte
 	return b.AnswerCallbackQueryWithEditMessageMedia(
 		callbackQuery,
 		localizer.LocalizedStringWithTemplateData("choose_preferred_currency_markdown", map[string]any{
-			"Currency": currency.ABBR,
+			"Currency": utils.EscapeMarkdownText(utils.ShortCurrencyTextFormat(*currency)),
 		}),
 		selectPreferredCurrencyImageURL,
 		replyMarkup,
@@ -788,6 +789,7 @@ func (b *botController) preferredCurrenciesQueryCommandHandler(ctx context.Conte
 
 func (b *botController) payServiceQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
 	log := b.container.GetLogger()
+	telegramUser := callbackQuery.From
 	telegramID := callbackQuery.From.ID
 	langTag, err := b.getLanguageCode(ctx, callbackQuery.From)
 	if err != nil {
@@ -841,7 +843,17 @@ func (b *botController) payServiceQueryCommandHandler(ctx context.Context, callb
 	countryID := utils.GetInt64(parameters[1])
 	maxPrice := utils.GetFloat64(parameters[2])
 	priceWithFee := b.exchangeRateWorker.PriceWithFee(maxPrice)
-	hasSufficientFunds, err := b.profileRepository.HasSufficientFunds(ctx, telegramID, priceWithFee)
+	priceWithFeeUSD, err := b.exchangeRateWorker.ConvertToUSD(priceWithFee, "RUB")
+	if err != nil {
+		log.Error("fail to convert rubles to usd", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	hasSufficientFunds, err := b.profileRepository.HasSufficientFunds(ctx, telegramID, *priceWithFeeUSD)
 	if err != nil {
 		log.Error("fail to check that a profile has sufficient funds", logger.FError(err))
 		return b.AnswerCallbackQueryWithEditMessageMedia(
@@ -907,14 +919,50 @@ func (b *botController) payServiceQueryCommandHandler(ctx context.Context, callb
 			replyMarkup,
 		)
 	}
-	domainSMSHistory := domain.SMSHistory{
-		ProfileID:    domainProfile.ID,
-		ActivationID: activationID,
-		Status:       string(app.PendingSMSActivateState),
-		ServiceCode:  serviceCode,
-		PhoneNumber:  utils.PhoneNumberTitle(requestedNumber.PhoneNumber),
+	country, err := b.smsActivateWorker.GetCountry(countryID)
+	if err != nil {
+		log.Error("fail to get country by id", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
 	}
-	if _, err := b.smsHistoryRepository.Create(ctx, &domainSMSHistory); err != nil {
+	smsService, err := b.smsActivateWorker.GetService(serviceCode)
+	if err != nil {
+		log.Error("fail to get sms service", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	fullPhoneNumber := utils.PhoneNumberTitle(requestedNumber.PhoneNumber)
+	phoneNumber, err := utils.ParsePhoneNumber(fullPhoneNumber)
+	if err != nil {
+		log.Error("fail to parse phone number", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	domainSMSHistory := domain.SMSHistory{
+		ProfileID:        domainProfile.ID,
+		ActivationID:     activationID,
+		Status:           string(app.PendingSMSActivateState),
+		ServiceCode:      smsService.Code,
+		ServiceName:      smsService.Name,
+		CountryID:        country.ID,
+		CountryName:      country.Title,
+		PhoneCodeNumber:  phoneNumber.CountryCode,
+		PhoneShortNumber: phoneNumber.ShortPhoneNumber,
+	}
+	smsHistoryID, err := b.smsHistoryRepository.Create(ctx, &domainSMSHistory)
+	if err != nil {
 		log.Error("fail to create sms history", logger.FError(err))
 		return b.AnswerCallbackQueryWithEditMessageMedia(
 			callbackQuery,
@@ -923,7 +971,7 @@ func (b *botController) payServiceQueryCommandHandler(ctx context.Context, callb
 			replyMarkup,
 		)
 	}
-	if err := b.profileRepository.Debit(ctx, telegramID, priceWithFee); err != nil {
+	if err := b.profileRepository.Debit(ctx, telegramID, *priceWithFeeUSD); err != nil {
 		log.Error("fail to withdraw money from account")
 		return b.AnswerCallbackQueryWithEditMessageMedia(
 			callbackQuery,
@@ -932,10 +980,9 @@ func (b *botController) payServiceQueryCommandHandler(ctx context.Context, callb
 			replyMarkup,
 		)
 	}
-	responseText := localizer.LocalizedStringWithTemplateData("start_registration_form_with_sms_code_markdown", map[string]any{
-		"PhoneNumber": utils.PhoneNumberTitle(requestedNumber.PhoneNumber),
-	})
-	if err := b.postponeService.ScheduleCheckSMSActivation(ctx, telegramID, activationID, priceWithFee); err != nil {
+	responseText := b.formatterWorker.StartSMSActivation(langTag, &domainSMSHistory)
+	workflow, err := b.postponeService.ScheduleCheckSMSActivation(ctx, telegramID, activationID, *priceWithFeeUSD)
+	if err != nil {
 		log.Error("fail to prepare schedule to check the sms activation", logger.FError(err))
 		return b.AnswerCallbackQueryWithEditMessageMedia(
 			callbackQuery,
@@ -944,7 +991,56 @@ func (b *botController) payServiceQueryCommandHandler(ctx context.Context, callb
 			replyMarkup,
 		)
 	}
-	return b.AnswerCallbackQueryWithEditMessageMedia(callbackQuery, responseText, avatarImageURL, replyMarkup)
+	temporalWorkflowDomain := domain.TemporalWorkflow{
+		SMSHistoryID:  *smsHistoryID,
+		TemporalID:    workflow.ID,
+		TemporalRunID: workflow.RunID,
+	}
+	_, err = b.temporalWorkflowRepository.Create(ctx, &temporalWorkflowDomain)
+	if err != nil {
+		log.Error("fail to record temporal workflow to db", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	refundReplyMarkup, err := b.keyboardManager.RefundInlineKeyboardMarkup(*smsHistoryID)
+	if err != nil {
+		log.Error("fail to get refund inline keyboard", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	err = b.SendTextWithPhotoMedia(
+		callbackQuery.Message.Chat.ID,
+		responseText,
+		avatarImageURL,
+		refundReplyMarkup,
+	)
+	if err != nil {
+		log.Error("fail to send text with photo media", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	if err := b.messageMainMenu(ctx, callbackQuery.Message.Chat.ID, &telegramUser); err != nil {
+		log.Error("fail to send message main menu", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	return nil
 }
 
 func (b *botController) emptyQueryCommandHandler(_ context.Context, callbackQuery *telegram.CallbackQuery) error {
@@ -1088,4 +1184,225 @@ func (b *botController) deleteCryptoBotQueryCommandHandler(ctx context.Context, 
 		}
 	}
 	return b.messageMainMenu(ctx, callbackQuery.Message.Chat.ID, &telegramUser)
+}
+
+func (b *botController) confirmServiceQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
+	log := b.container.GetLogger()
+	telegramUser := callbackQuery.From
+	telegramID := telegramUser.ID
+	langTag, err := b.getLanguageCode(ctx, telegramUser)
+	if err != nil {
+		log.Debug("fail to retrieve language code", logger.F("langTag", langTag))
+	}
+	localizer := b.container.GetLocalizer(langTag)
+	replyMarkup, err := b.keyboardManager.MainMenuKeyboardMarkup()
+	if err != nil {
+		log.Error("fail to get main menu inline keyboard", logger.FError(err))
+		return err
+	}
+	telegramCallbackQueryData, err := utils.DecodeTelegramCallbackData(callbackQuery.Data)
+	if err != nil {
+		log.Error("fail to decode telegram callback data", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	if telegramCallbackQueryData.Parameters == nil {
+		log.Error("parameters must contains parameters")
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	parameters := *telegramCallbackQueryData.Parameters
+	serviceCode, ok := parameters[0].(string)
+	if !ok {
+		log.Error("serviceCode isn't string")
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	countryID := utils.GetInt64(parameters[1])
+	maxPrice := utils.GetFloat64(parameters[2])
+	priceInPreferredCurrency := utils.GetFloat64(parameters[3])
+	country, err := b.smsActivateWorker.GetCountry(countryID)
+	if err != nil {
+		log.Error("fail to get country", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	selectedService, err := b.smsActivateWorker.GetService(serviceCode)
+	if err != nil {
+		log.Error("fail to get service", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	profile, err := b.profileRepository.FetchByTelegramID(ctx, telegramID)
+	if err != nil {
+		log.Error("fail to fetch profile by telegram id", logger.F("telegram_id", profile.TelegramID))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	if profile.PreferredCurrency == nil {
+		log.Error("profile must have preferred currency")
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	preferredCurrency := b.container.GetConfig().CurrencyByAbbr(*profile.PreferredCurrency)
+	if preferredCurrency == nil {
+		log.Error("can't find currency", logger.F("preferred_currency_abbr", *profile.PreferredCurrency))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	confirmationPayText := b.formatterWorker.ConfirmationPay(langTag, selectedService, country, priceInPreferredCurrency, *preferredCurrency)
+	replyMarkup, err = b.keyboardManager.ConfirmationPayInlineKeyboardMarkup(serviceCode, countryID, maxPrice)
+	if err != nil {
+		log.Error("fail to get confirmation inline keyboard", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	return b.AnswerCallbackQueryWithEditMessageMedia(
+		callbackQuery,
+		confirmationPayText,
+		avatarImageURL,
+		replyMarkup,
+	)
+}
+
+func (b *botController) cancelPayServiceQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
+	log := b.container.GetLogger()
+	telegramUser := callbackQuery.From
+	langTag, err := b.getLanguageCode(ctx, telegramUser)
+	if err != nil {
+		log.Debug("fail to retrieve language code", logger.F("langTag", langTag))
+	}
+	localizer := b.container.GetLocalizer(langTag)
+	replyMarkup, err := b.keyboardManager.MainMenuKeyboardMarkup()
+	if err != nil {
+		log.Error("fail to get main menu inline keyboard", logger.FError(err))
+		return err
+	}
+	deleteMessage := telegram.DeleteMessage{
+		ChatID:    callbackQuery.Message.Chat.ID,
+		MessageID: callbackQuery.Message.ID,
+	}
+	if err := b.telegramBotService.SendResponse(deleteMessage, app.DeleteMessageTelegramMethod); err != nil {
+		log.Error("fail perform delete message", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	text := localizer.LocalizedString("success_cancel_pay_service_markdown")
+	err = b.SendTextWithPhotoMedia(callbackQuery.Message.Chat.ID, text, avatarImageURL, nil)
+	if err != nil {
+		log.Error("fail send message to telegram servers", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	return b.messageMainMenu(ctx, callbackQuery.Message.Chat.ID, &telegramUser)
+}
+
+func (b *botController) refundAmountFromSMSActivationQueryCommandHandler(ctx context.Context, callbackQuery *telegram.CallbackQuery) error {
+	log := b.container.GetLogger()
+	telegramUser := callbackQuery.From
+	langTag, err := b.getLanguageCode(ctx, telegramUser)
+	if err != nil {
+		log.Debug("fail to retrieve language code", logger.F("langTag", langTag))
+	}
+	localizer := b.container.GetLocalizer(langTag)
+	replyMarkup, err := b.keyboardManager.MainMenuKeyboardMarkup()
+	if err != nil {
+		log.Error("fail to get main menu inline keyboard", logger.FError(err))
+		return err
+	}
+	telegramCallbackQueryData, err := utils.DecodeTelegramCallbackData(callbackQuery.Data)
+	if err != nil {
+		log.Error("fail to decode telegram callback data", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	if telegramCallbackQueryData.Parameters == nil {
+		log.Error("parameters must contains value")
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	parameters := *telegramCallbackQueryData.Parameters
+	smsHistoryID, ok := parameters[0].(int64)
+	if !ok {
+		log.Error("parameters must contains int at first index", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	temporalWorkflowDomain, err := b.temporalWorkflowRepository.GetBySMSHistoryID(ctx, smsHistoryID)
+	if err != nil {
+		log.Error("fetch workflow by sms history id has failed",
+			logger.F("sms_history_id", smsHistoryID),
+			logger.FError(err),
+		)
+	}
+	workflow := model.Workflow{
+		ID:    temporalWorkflowDomain.TemporalID,
+		RunID: temporalWorkflowDomain.TemporalRunID,
+	}
+	if err := b.postponeService.CancelSMSActivation(ctx, workflow); err != nil {
+		log.Error("has fail to cancel sms activation", logger.FError(err))
+		return b.AnswerCallbackQueryWithEditMessageMedia(
+			callbackQuery,
+			localizer.LocalizedString("internal_error_markdown"),
+			avatarImageURL,
+			replyMarkup,
+		)
+	}
+	return b.AnswerCallbackQuery(callbackQuery)
 }

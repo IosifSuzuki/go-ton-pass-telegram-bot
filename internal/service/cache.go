@@ -16,11 +16,14 @@ type Cache interface {
 	GetExchangeRate(ctx context.Context) (*app.CacheResponse[[]app.ExchangeRate], error)
 	SaveSMSCountries(ctx context.Context, services []sms.Country) error
 	GetSMSCountries(ctx context.Context) (*app.CacheResponse[[]sms.Country], error)
+	SaveSMSServices(ctx context.Context, services []sms.Service) error
+	GetSMSServices(ctx context.Context) (*app.CacheResponse[[]sms.Service], error)
 }
 
 const (
 	exchangeRateCacheKey = "exchangeRateCacheKey"
 	smsCountriesCacheKey = "smsCountriesCacheKey"
+	smsServicesCacheKey  = "smsServicesCacheKey"
 )
 
 type cache struct {
@@ -88,6 +91,35 @@ func (c *cache) GetSMSCountries(ctx context.Context) (*app.CacheResponse[[]sms.C
 		return nil, err
 	}
 	var cacheResponse app.CacheResponse[[]sms.Country]
+	if err := utils.DecodePayload(encodedText, &cacheResponse); err != nil {
+		return nil, err
+	}
+	return &cacheResponse, nil
+}
+
+func (c *cache) SaveSMSServices(ctx context.Context, services []sms.Service) error {
+	log := c.container.GetLogger()
+	log.Debug("will save sms services")
+	var cacheResponse app.CacheResponse[[]sms.Service]
+	cacheResponse.Result = services
+	cacheResponse.TimeFetched = time.Now()
+	encodedData, err := utils.EncodePayload(&cacheResponse)
+	if err != nil {
+		log.Debug("fail to encode payload", logger.FError(err))
+		return err
+	}
+	return c.client.Set(ctx, smsServicesCacheKey, encodedData, 0).Err()
+}
+
+func (c *cache) GetSMSServices(ctx context.Context) (*app.CacheResponse[[]sms.Service], error) {
+	log := c.container.GetLogger()
+	log.Debug("will get sms countries")
+	encodedText, err := c.client.Get(ctx, smsServicesCacheKey).Result()
+	if err != nil {
+		log.Debug("fail to get sms services from cache", logger.FError(err))
+		return nil, err
+	}
+	var cacheResponse app.CacheResponse[[]sms.Service]
 	if err := utils.DecodePayload(encodedText, &cacheResponse); err != nil {
 		return nil, err
 	}

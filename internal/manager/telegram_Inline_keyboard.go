@@ -27,6 +27,8 @@ type TelegramInlineKeyboardManager interface {
 	PageControlKeyboardButtons(commandName string, pagination app.Pagination, leftButtonParameters []any, rightButtonParameters []any) ([]telegram.InlineKeyboardButton, error)
 	ServicesInlineKeyboardMarkup(services []sms.Service, pagination app.Pagination) (*telegram.InlineKeyboardMarkup, error)
 	ServiceCountriesInlineKeyboardMarkup(serviceCode string, preferredCurrency string, pagination app.Pagination, servicePrices []sms.PriceForService, countries []sms.Country) (*telegram.InlineKeyboardMarkup, error)
+	ConfirmationPayInlineKeyboardMarkup(serviceCode string, countryID int64, maxPrice float64) (*telegram.InlineKeyboardMarkup, error)
+	RefundInlineKeyboardMarkup(smsHistoryID int64) (*telegram.InlineKeyboardMarkup, error)
 }
 
 type telegramInlineKeyboardManager struct {
@@ -158,7 +160,7 @@ func (t *telegramInlineKeyboardManager) ServicesInlineKeyboardMarkup(services []
 		buttons = append(buttons, *button)
 	}
 	gridButtons := t.getGridInlineKeyboardButton(buttons, columns)
-	pageControlButtons, err := t.PageControlKeyboardButtons(app.SelectSMSServiceCallbackQueryCmdText, pagination, []any{pagination.PrevPage()}, []any{pagination.PrevPage()})
+	pageControlButtons, err := t.PageControlKeyboardButtons(app.BuyNumberCallbackQueryCmdText, pagination, []any{pagination.PrevPage()}, []any{pagination.NextPage()})
 	if err != nil {
 		return nil, err
 	}
@@ -178,6 +180,21 @@ func (t *telegramInlineKeyboardManager) LanguagesKeyboardMarkup() (*telegram.Inl
 	return t.prepareLanguageKeyboardMarkup(app.SelectLanguageCallbackQueryCmdText, true)
 }
 
+func (t *telegramInlineKeyboardManager) RefundInlineKeyboardMarkup(smsHistoryID int64) (*telegram.InlineKeyboardMarkup, error) {
+	refundButton, err := NewTelegramInlineButtonBuilder().
+		SetText(utils.ButtonTitle(t.localizer.LocalizedString("refund"), "♻️")).
+		SetCommandName(app.RefundAmountFromSMSActivationQueryCmdText).
+		SetParameters([]any{smsHistoryID}).
+		Build()
+	if err != nil {
+		return nil, err
+	}
+	gridButtons := t.getGridInlineKeyboardButton([]telegram.InlineKeyboardButton{*refundButton}, 1)
+	return &telegram.InlineKeyboardMarkup{
+		InlineKeyboard: gridButtons,
+	}, nil
+}
+
 func (t *telegramInlineKeyboardManager) ServiceCountriesInlineKeyboardMarkup(
 	serviceCode string,
 	preferredCurrency string,
@@ -186,7 +203,7 @@ func (t *telegramInlineKeyboardManager) ServiceCountriesInlineKeyboardMarkup(
 	countries []sms.Country,
 ) (*telegram.InlineKeyboardMarkup, error) {
 	log := t.container.GetLogger()
-	columns := 2
+	columns := 1
 	startIndex := pagination.CurrentPage * pagination.ItemsPerPage
 	endIndex := (pagination.CurrentPage + 1) * pagination.ItemsPerPage
 	if endIndex > len(servicePrices) {
@@ -221,8 +238,8 @@ func (t *telegramInlineKeyboardManager) ServiceCountriesInlineKeyboardMarkup(
 		)
 		button, err := NewTelegramInlineButtonBuilder().
 			SetText(representableText).
-			SetCommandName(app.PayServiceCallbackQueryCmdText).
-			SetParameters([]any{serviceCode, country.ID, *priceInPreferredCurrency}).
+			SetCommandName(app.ConfirmationPayServiceQueryCmdText).
+			SetParameters([]any{serviceCode, country.ID, priceInRUB, priceWithFee}).
 			Build()
 		if err != nil {
 			log.Debug("can't crete button with price service", logger.FError(err))
@@ -235,7 +252,7 @@ func (t *telegramInlineKeyboardManager) ServiceCountriesInlineKeyboardMarkup(
 		app.SelectSMSServiceCallbackQueryCmdText,
 		pagination,
 		[]any{serviceCode, pagination.PrevPage()},
-		[]any{serviceCode, pagination.PrevPage()},
+		[]any{serviceCode, pagination.NextPage()},
 	)
 	if err != nil {
 		log.Debug("fail to create control keyboard buttons", logger.FError(err))
@@ -251,7 +268,7 @@ func (t *telegramInlineKeyboardManager) ServiceCountriesInlineKeyboardMarkup(
 func (t *telegramInlineKeyboardManager) CryptoPayBotKeyboardMarkup(url string, invoiceID int64) (*telegram.InlineKeyboardMarkup, error) {
 	log := t.container.GetLogger()
 	columns := 1
-	linkButton := t.LinkKeyboardButton(t.localizer.LocalizedString("pay"), url)
+	linkButton := t.LinkKeyboardButton(utils.ButtonTitle(t.localizer.LocalizedString("pay"), "🧾"), url)
 	cancelInvoiceButton, err := NewTelegramInlineButtonBuilder().
 		SetCommandName(app.DeleteCryptoBotInvoiceQueryCmdText).
 		SetText(utils.ButtonTitle(t.localizer.LocalizedString("cancel_invoice"), "❌")).
@@ -291,6 +308,29 @@ func (t *telegramInlineKeyboardManager) MainMenuKeyboardButton() *telegram.Inlin
 		SetCommandName(app.MainMenuCallbackQueryCmdText).
 		Build()
 	return mainMenuInlineKeyboardButton
+}
+
+func (t *telegramInlineKeyboardManager) ConfirmationPayInlineKeyboardMarkup(serviceCode string, countryID int64, maxPrice float64) (*telegram.InlineKeyboardMarkup, error) {
+	columns := 1
+	confirmPayButton, err := NewTelegramInlineButtonBuilder().
+		SetText(utils.ButtonTitle(t.localizer.LocalizedString("confirm"), "✅")).
+		SetCommandName(app.PayServiceCallbackQueryCmdText).
+		SetParameters([]any{serviceCode, countryID, maxPrice}).
+		Build()
+	if err != nil {
+		return nil, err
+	}
+	cancelPayButton, err := NewTelegramInlineButtonBuilder().
+		SetText(utils.ButtonTitle(t.localizer.LocalizedString("cancel"), "❌")).
+		SetCommandName(app.CancelPayServiceQueryCmdText).
+		Build()
+	if err != nil {
+		return nil, err
+	}
+	gridButtons := t.getGridInlineKeyboardButton([]telegram.InlineKeyboardButton{*confirmPayButton, *cancelPayButton}, columns)
+	return &telegram.InlineKeyboardMarkup{
+		InlineKeyboard: gridButtons,
+	}, nil
 }
 
 func (t *telegramInlineKeyboardManager) PageControlKeyboardButtons(commandName string, pagination app.Pagination, leftButtonParameters []any, rightButtonParameters []any) ([]telegram.InlineKeyboardButton, error) {

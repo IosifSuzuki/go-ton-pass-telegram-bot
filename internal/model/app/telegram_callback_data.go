@@ -18,6 +18,9 @@ const (
 	SelectPreferredCurrencyCallbackQueryCmdText        = "s_pref_curr"
 	EmptyCallbackQueryCmdText                          = "empty"
 	DeleteCryptoBotInvoiceQueryCmdText                 = "d_cr_b_inv"
+	ConfirmationPayServiceQueryCmdText                 = "con_s_pay"
+	CancelPayServiceQueryCmdText                       = "can_s_pay"
+	RefundAmountFromSMSActivationQueryCmdText          = "ref_sms_act"
 )
 
 type TelegramCallbackData struct {
@@ -61,6 +64,12 @@ func (t *TelegramCallbackData) CallbackQueryCommand() CallbackQueryCommand {
 		return EmptyCallbackQueryCommand
 	case DeleteCryptoBotInvoiceQueryCmdText:
 		return DeleteCryptoBotInvoiceCallbackQueryCommand
+	case ConfirmationPayServiceQueryCmdText:
+		return ConfirmationPayServiceCallbackQueryCommand
+	case CancelPayServiceQueryCmdText:
+		return CancelPayServiceCallbackQueryCommand
+	case RefundAmountFromSMSActivationQueryCmdText:
+		return RefundAmountFromSMSActivationCallbackQueryCommand
 	default:
 		return NotCallbackQueryCommand
 	}

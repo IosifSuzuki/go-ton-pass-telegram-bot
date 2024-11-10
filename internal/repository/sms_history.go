@@ -28,7 +28,9 @@ func NewSMSHistoryRepository(conn *sql.DB) SMSHistoryRepository {
 }
 
 func (s *smsHistoryRepository) Create(ctx context.Context, smsHistory *domain.SMSHistory) (*int64, error) {
-	query := "INSERT INTO sms_history (profile_id, activation_id, service_code, phone_number, status, created_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;"
+	query := "INSERT INTO sms_history (profile_id, activation_id, service_code, service_name, country_id, country_name, " +
+		"phone_code_number, phone_short_number, status, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) " +
+		"RETURNING id;"
 	var id int64
 	err := s.conn.QueryRowContext(
 		ctx,
@@ -36,7 +38,11 @@ func (s *smsHistoryRepository) Create(ctx context.Context, smsHistory *domain.SM
 		smsHistory.ProfileID,
 		smsHistory.ActivationID,
 		smsHistory.ServiceCode,
-		smsHistory.PhoneNumber,
+		smsHistory.ServiceName,
+		smsHistory.CountryID,
+		smsHistory.CountryName,
+		smsHistory.PhoneCodeNumber,
+		smsHistory.PhoneShortNumber,
 		smsHistory.Status,
 		time.Now(),
 	).Scan(&id)
@@ -53,7 +59,7 @@ func (s *smsHistoryRepository) ReceiveSMSCode(ctx context.Context, smsHistory *d
 }
 
 func (s *smsHistoryRepository) GetByActivationID(ctx context.Context, activationID int64) (*domain.SMSHistory, error) {
-	query := "SELECT id, profile_id, service_code, phone_number, status, sms_text, sms_code, received_at, " +
+	query := "SELECT id, profile_id, service_code, service_name, country_id, country_name, phone_code_number, phone_short_number, status, sms_text, sms_code, received_at, " +
 		"created_at, updated_at, deleted_at FROM sms_history WHERE activation_id = $1"
 	row := s.conn.QueryRowContext(ctx, query, activationID)
 	smsHistory := domain.SMSHistory{
@@ -70,7 +76,11 @@ func (s *smsHistoryRepository) GetByActivationID(ctx context.Context, activation
 		&smsHistory.ID,
 		&smsHistory.ProfileID,
 		&smsHistory.ServiceCode,
-		&smsHistory.PhoneNumber,
+		&smsHistory.ServiceName,
+		&smsHistory.CountryID,
+		&smsHistory.CountryName,
+		&smsHistory.PhoneCodeNumber,
+		&smsHistory.PhoneShortNumber,
 		&smsHistory.Status,
 		&smsText,
 		&smsCode,
@@ -117,7 +127,7 @@ func (s *smsHistoryRepository) GetNumberOfRows(ctx context.Context, profileID in
 }
 
 func (s *smsHistoryRepository) FetchList(ctx context.Context, profileID int64, offset int, limit int) ([]domain.SMSHistory, error) {
-	query := "SELECT id, profile_id, activation_id, service_code, phone_number, status, sms_text, sms_code, received_at, created_at, updated_at, deleted_at " +
+	query := "SELECT id, profile_id, activation_id, service_code, service_name, country_id, country_name, phone_code_number, phone_short_number, status, sms_text, sms_code, received_at, created_at, updated_at, deleted_at " +
 		"FROM sms_history WHERE profile_id = $1  ORDER BY created_at DESC LIMIT $2 OFFSET $3"
 	rows, err := s.conn.QueryContext(ctx, query, profileID, limit, offset)
 	if err != nil {
@@ -138,7 +148,11 @@ func (s *smsHistoryRepository) FetchList(ctx context.Context, profileID int64, o
 			&smsHistory.ProfileID,
 			&smsHistory.ActivationID,
 			&smsHistory.ServiceCode,
-			&smsHistory.PhoneNumber,
+			&smsHistory.ServiceName,
+			&smsHistory.CountryID,
+			&smsHistory.CountryName,
+			&smsHistory.PhoneCodeNumber,
+			&smsHistory.PhoneShortNumber,
 			&smsHistory.Status,
 			&smsText,
 			&smsCode,

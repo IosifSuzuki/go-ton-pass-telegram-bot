@@ -34,19 +34,20 @@ const (
 )
 
 type botController struct {
-	container            container.Container
-	telegramBotService   service.TelegramBotService
-	cryptoPayBot         service.CryptoPayBot
-	sessionService       service.SessionService
-	cacheService         service.Cache
-	smsService           service.SMSService
-	postponeService      postpone.Postpone
-	profileRepository    repository.ProfileRepository
-	smsHistoryRepository repository.SMSHistoryRepository
-	exchangeRateWorker   worker.ExchangeRate
-	smsActivateWorker    worker.SMSActivate
-	formatterWorker      worker.Formatter
-	keyboardManager      manager.TelegramInlineKeyboardManager
+	container                  container.Container
+	telegramBotService         service.TelegramBotService
+	cryptoPayBot               service.CryptoPayBot
+	sessionService             service.SessionService
+	cacheService               service.Cache
+	smsService                 service.SMSService
+	postponeService            postpone.Postpone
+	profileRepository          repository.ProfileRepository
+	smsHistoryRepository       repository.SMSHistoryRepository
+	temporalWorkflowRepository repository.TemporalWorkflowRepository
+	exchangeRateWorker         worker.ExchangeRate
+	smsActivateWorker          worker.SMSActivate
+	formatterWorker            worker.Formatter
+	keyboardManager            manager.TelegramInlineKeyboardManager
 }
 
 func NewBotController(
@@ -57,25 +58,27 @@ func NewBotController(
 	postponeService postpone.Postpone,
 	profileRepository repository.ProfileRepository,
 	smsHistoryRepository repository.SMSHistoryRepository,
+	temporalWorkflowRepository repository.TemporalWorkflowRepository,
 ) BotController {
 	cryptoPayBot := service.NewCryptoPayBot(container)
 	exchangeRateWorker := worker.NewExchangeRate(container, cacheService, cryptoPayBot)
 	smsActivateWorker := worker.NewSMSActivate(container, smsService, cacheService)
 	formatterWorker := worker.NewFormatter(container)
 	return &botController{
-		container:            container,
-		telegramBotService:   service.NewTelegramBot(container),
-		cryptoPayBot:         cryptoPayBot,
-		sessionService:       sessionService,
-		cacheService:         cacheService,
-		smsService:           smsService,
-		postponeService:      postponeService,
-		profileRepository:    profileRepository,
-		smsHistoryRepository: smsHistoryRepository,
-		exchangeRateWorker:   exchangeRateWorker,
-		smsActivateWorker:    smsActivateWorker,
-		formatterWorker:      formatterWorker,
-		keyboardManager:      manager.NewTelegramInlineKeyboardManager(container, exchangeRateWorker),
+		container:                  container,
+		telegramBotService:         service.NewTelegramBot(container),
+		cryptoPayBot:               cryptoPayBot,
+		sessionService:             sessionService,
+		cacheService:               cacheService,
+		smsService:                 smsService,
+		postponeService:            postponeService,
+		profileRepository:          profileRepository,
+		smsHistoryRepository:       smsHistoryRepository,
+		temporalWorkflowRepository: temporalWorkflowRepository,
+		exchangeRateWorker:         exchangeRateWorker,
+		smsActivateWorker:          smsActivateWorker,
+		formatterWorker:            formatterWorker,
+		keyboardManager:            manager.NewTelegramInlineKeyboardManager(container, exchangeRateWorker),
 	}
 }
 
@@ -174,6 +177,12 @@ func (b *botController) Serve(update *telegram.Update) error {
 		return b.emptyQueryCommandHandler(ctx, update.CallbackQuery)
 	case app.DeleteCryptoBotInvoiceCallbackQueryCommand:
 		return b.deleteCryptoBotQueryCommandHandler(ctx, update.CallbackQuery)
+	case app.ConfirmationPayServiceCallbackQueryCommand:
+		return b.confirmServiceQueryCommandHandler(ctx, update.CallbackQuery)
+	case app.CancelPayServiceCallbackQueryCommand:
+		return b.cancelPayServiceQueryCommandHandler(ctx, update.CallbackQuery)
+	case app.RefundAmountFromSMSActivationCallbackQueryCommand:
+		return b.refundAmountFromSMSActivationQueryCommandHandler(ctx, update.CallbackQuery)
 	default:
 		return b.developingCallbackQueryCommandHandler(ctx, update.CallbackQuery)
 	}

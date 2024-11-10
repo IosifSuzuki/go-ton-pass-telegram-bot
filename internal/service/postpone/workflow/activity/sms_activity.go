@@ -8,6 +8,7 @@ import (
 	"go-ton-pass-telegram-bot/internal/repository"
 	"go-ton-pass-telegram-bot/internal/service"
 	"go-ton-pass-telegram-bot/internal/utils"
+	"go-ton-pass-telegram-bot/internal/worker"
 	"go-ton-pass-telegram-bot/pkg/logger"
 )
 
@@ -21,6 +22,7 @@ type SMSActivity struct {
 	smsService           service.SMSService
 	profileRepository    repository.ProfileRepository
 	smsHistoryRepository repository.SMSHistoryRepository
+	formatterWorker      worker.Formatter
 }
 
 func NewSMSActivity(
@@ -36,6 +38,7 @@ func NewSMSActivity(
 		smsService:           smsService,
 		profileRepository:    profileRepository,
 		smsHistoryRepository: smsHistoryRepository,
+		formatterWorker:      worker.NewFormatter(container),
 	}
 }
 
@@ -73,27 +76,50 @@ func (s *SMSActivity) RefundAmount(ctx context.Context, profileID int64, amount 
 	return "", nil
 }
 
-func (s *SMSActivity) RefundMessage(ctx context.Context, chatID int64, profileID int64, activationID int64) (string, error) {
+func (s *SMSActivity) RefundTimeOutMessage(ctx context.Context, chatID int64, profileID int64, activationID int64) (string, error) {
 	log := s.container.GetLogger()
 	profile, err := s.profileRepository.FetchByID(ctx, profileID)
 	if err != nil {
 		log.Debug("fail to get profile by id", logger.F("profile_id", profileID))
 		return "", err
 	}
+	langCode := profile.PreferredLanguage
 	smsHistory, err := s.smsHistoryRepository.GetByActivationID(ctx, activationID)
 	if err != nil {
 		log.Debug("fail to get sms history by id", logger.F("activation_id", activationID))
 		return "", err
 	}
-	localizer := s.container.GetLocalizer(*profile.PreferredLanguage)
-	text := localizer.LocalizedStringWithTemplateData("not_receive_sms_code_markdown", map[string]any{
-		"PhoneNumber": utils.EscapeMarkdownText(smsHistory.PhoneNumber),
-	})
+	respText := s.formatterWorker.FailSMSActivation(*langCode, smsHistory)
 	replyKeyboardRemove := telegram.ReplyKeyboardRemove{RemoveKeyboard: true}
 	sendPhoto := telegram.SendPhoto{
 		ChatID:      chatID,
 		Photo:       failReceivedCodeImageURL,
-		Caption:     text,
+		Caption:     respText,
+		ReplyMarkup: replyKeyboardRemove,
+		ParseMode:   utils.NewString("MarkdownV2"),
+	}
+	return "", s.telegramService.SendResponse(sendPhoto, app.SendPhotoTelegramMethod)
+}
+
+func (s *SMSActivity) UserRefundMessage(ctx context.Context, chatID int64, profileID int64, activationID int64) (string, error) {
+	log := s.container.GetLogger()
+	profile, err := s.profileRepository.FetchByID(ctx, profileID)
+	if err != nil {
+		log.Debug("fail to get profile by id", logger.F("profile_id", profileID))
+		return "", err
+	}
+	langCode := profile.PreferredLanguage
+	smsHistory, err := s.smsHistoryRepository.GetByActivationID(ctx, activationID)
+	if err != nil {
+		log.Debug("fail to get sms history by id", logger.F("activation_id", activationID))
+		return "", err
+	}
+	respText := s.formatterWorker.ManualCancelActivation(*langCode, smsHistory)
+	replyKeyboardRemove := telegram.ReplyKeyboardRemove{RemoveKeyboard: true}
+	sendPhoto := telegram.SendPhoto{
+		ChatID:      chatID,
+		Photo:       failReceivedCodeImageURL,
+		Caption:     respText,
 		ReplyMarkup: replyKeyboardRemove,
 		ParseMode:   utils.NewString("MarkdownV2"),
 	}

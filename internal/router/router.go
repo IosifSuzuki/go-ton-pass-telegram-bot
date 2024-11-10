@@ -20,6 +20,7 @@ func PrepareAndConfigureRouter(
 	postponeService postpone.Postpone,
 	profileRepository repository.ProfileRepository,
 	smsHistoryRepository repository.SMSHistoryRepository,
+	temporalWorkflowRepository repository.TemporalWorkflowRepository,
 ) http.Handler {
 	router := mux.NewRouter()
 	telegramBotController := telegramController.NewBotController(
@@ -30,6 +31,7 @@ func PrepareAndConfigureRouter(
 		postponeService,
 		profileRepository,
 		smsHistoryRepository,
+		temporalWorkflowRepository,
 	)
 	cryptoController := crypto.NewCryptoController(
 		container,

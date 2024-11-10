@@ -21,4 +21,7 @@ const (
 	SelectPreferredCurrencyCallbackQueryCommand
 	EmptyCallbackQueryCommand
 	DeleteCryptoBotInvoiceCallbackQueryCommand
+	ConfirmationPayServiceCallbackQueryCommand
+	CancelPayServiceCallbackQueryCommand
+	RefundAmountFromSMSActivationCallbackQueryCommand
 )

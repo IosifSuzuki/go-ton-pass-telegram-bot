@@ -144,7 +144,7 @@ func (b *botController) messageEnterAmountCurrency(ctx context.Context, callback
 	resp := telegram.SendPhoto{
 		ChatID: callbackQuery.Message.Chat.ID,
 		Caption: localizer.LocalizedStringWithTemplateData("enter_amount_for_payment_in_currency_markdown", map[string]any{
-			"Currency": currency.Symbol,
+			"Currency": utils.EscapeMarkdownText(utils.ShortCurrencyTextFormat(*currency)),
 		}),
 		Photo:       enterAmountImageURL,
 		ParseMode:   utils.NewString("MarkdownV2"),

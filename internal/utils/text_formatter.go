@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"go-ton-pass-telegram-bot/internal/model/app"
+	"regexp"
 	"strings"
 )
 
@@ -39,13 +40,23 @@ func PhoneNumberTitle(number string) string {
 	return fmt.Sprintf("+%s", number)
 }
 
+func ParsePhoneNumber(phoneNumber string) (*app.PhoneNumber, error) {
+	re := regexp.MustCompile(`^\+(\d+)(\d{10,})$`)
+	matches := re.FindStringSubmatch(phoneNumber)
+	if len(matches) == 0 {
+		return nil, app.UnknownPhoneNumberFormatError
+	}
+	return &app.PhoneNumber{
+		CountryCode:      matches[1],
+		ShortPhoneNumber: matches[2],
+	}, nil
+}
+
 func EscapeMarkdownText(text string) string {
 	escapedText := text
-	specialChars := []string{"\\", "*", "_", "{", "}", "[", "]", "(", ")", "#", "+", "-", ".", "!"}
-
+	specialChars := []string{"\\", "*", "_", "{", "}", "[", "]", "(", ")", "#", "+", "-", ".", "!", "|"}
 	for _, char := range specialChars {
 		escapedText = strings.ReplaceAll(escapedText, char, "\\"+char)
 	}
-
 	return escapedText
 }

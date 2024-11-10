@@ -12,7 +12,8 @@ import (
 )
 
 type Postpone interface {
-	ScheduleCheckSMSActivation(ctx context.Context, telegramID int64, activationID int64, amount float64) error
+	ScheduleCheckSMSActivation(ctx context.Context, telegramID int64, activationID int64, amount float64) (*model.Workflow, error)
+	CancelSMSActivation(ctx context.Context, workflow model.Workflow) error
 	Prepare() error
 }
 
@@ -40,12 +41,12 @@ func NewPostpone(
 	}
 }
 
-func (p *postpone) ScheduleCheckSMSActivation(ctx context.Context, telegramID int64, activationID int64, amount float64) error {
+func (p *postpone) ScheduleCheckSMSActivation(ctx context.Context, telegramID int64, activationID int64, amount float64) (*model.Workflow, error) {
 	log := p.container.GetLogger()
 	profile, err := p.profileRepository.FetchByTelegramID(ctx, telegramID)
 	if err != nil {
 		log.Error("fail to fetch profile", logger.F("telegram_id", telegramID), logger.FError(err))
-		return err
+		return nil, err
 	}
 	input := model.SMSActivation{
 		ActivationID: activationID,
@@ -54,6 +55,10 @@ func (p *postpone) ScheduleCheckSMSActivation(ctx context.Context, telegramID in
 		Amount:       amount,
 	}
 	return p.smsWorker.AddToQueue(ctx, input)
+}
+
+func (p *postpone) CancelSMSActivation(ctx context.Context, workflow model.Workflow) error {
+	return p.smsWorker.ExecuteCancel(ctx, workflow)
 }
 
 func (p *postpone) Prepare() error {

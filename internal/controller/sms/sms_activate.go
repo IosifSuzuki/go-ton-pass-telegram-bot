@@ -9,6 +9,7 @@ import (
 	"go-ton-pass-telegram-bot/internal/repository"
 	"go-ton-pass-telegram-bot/internal/service"
 	"go-ton-pass-telegram-bot/internal/utils"
+	"go-ton-pass-telegram-bot/internal/worker"
 	"go-ton-pass-telegram-bot/pkg/logger"
 )
 
@@ -25,6 +26,7 @@ type smsActivateController struct {
 	telegramBotService   service.TelegramBotService
 	profileRepository    repository.ProfileRepository
 	smsHistoryRepository repository.SMSHistoryRepository
+	formatterWorker      worker.Formatter
 }
 
 func NewSMSActivateController(
@@ -37,6 +39,7 @@ func NewSMSActivateController(
 		profileRepository:    profileRepository,
 		smsHistoryRepository: smsHistoryRepository,
 		telegramBotService:   service.NewTelegramBot(container),
+		formatterWorker:      worker.NewFormatter(container),
 	}
 }
 
@@ -59,17 +62,15 @@ func (s *smsActivateController) Serve(update *sms.WebhookUpdates) error {
 		log.Error("fail to get fetch profile from db by id", logger.FError(err))
 		return err
 	}
-
-	localizer := s.container.GetLocalizer(*domainProfile.PreferredLanguage)
+	langCode := *domainProfile.PreferredLanguage
 	replyKeyboardRemove := telegram.ReplyKeyboardRemove{
 		RemoveKeyboard: true,
 	}
+	respText := s.formatterWorker.CompleteSMSActivation(langCode, domainSMSHistory)
 	sendPhoto := telegram.SendPhoto{
-		ChatID: domainProfile.TelegramChatID,
-		Photo:  successReceivedCodeImageURL,
-		Caption: localizer.LocalizedStringWithTemplateData("success_received_sms_code_markdown", map[string]any{
-			"SMSCode": update.Code,
-		}),
+		ChatID:      domainProfile.TelegramChatID,
+		Photo:       successReceivedCodeImageURL,
+		Caption:     respText,
 		ReplyMarkup: replyKeyboardRemove,
 	}
 	if err := s.telegramBotService.SendResponse(sendPhoto, app.SendPhotoTelegramMethod); err != nil {

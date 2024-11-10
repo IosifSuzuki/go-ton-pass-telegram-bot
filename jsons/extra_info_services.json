@@ -693,5 +693,950 @@
     "name": "TheFork",
     "code": "aeu",
     "emoji": "🍽️"
+  },
+  {
+    "name": "Wildberries",
+    "code": "uu",
+    "emoji": "🛒"
+  },
+  {
+    "code": "ok",
+    "name": "ok.ru",
+    "emoji": "🤝"
+  },
+  {
+    "code": "ok",
+    "name": "ok.ru",
+    "emoji": "🤝"
+  },
+  {
+    "code": "hb",
+    "name": "Twitch",
+    "emoji": "🎮"
+  },
+  {
+    "code": "aoh",
+    "name": "YooMoney",
+    "emoji": "💳"
+  },
+  {
+    "code": "axq",
+    "name": "Eventbrite",
+    "emoji": "🎟️"
+  },
+  {
+    "code": "xt",
+    "name": "Flipkart",
+    "emoji": "🛒"
+  },
+  {
+    "code": "aet",
+    "name": "Greywoods",
+    "emoji": "🌲"
+  },
+  {
+    "code": "awg",
+    "name": "Natura Avon",
+    "emoji": "🌿"
+  },
+  {
+    "code": "ah",
+    "name": "EscapeFromTarkov",
+    "emoji": "🎮"
+  },
+  {
+    "code": "rd",
+    "name": "Lenta",
+    "emoji": "🛒"
+  },
+  {
+    "code": "aug",
+    "name": "Magnit Market",
+    "emoji": "🏬"
+  },
+  {
+    "code": "ac",
+    "name": "DoorDash",
+    "emoji": "🚗"
+  },
+  {
+    "code": "yk",
+    "name": "SportMaster",
+    "emoji": "🏅"
+  },
+  {
+    "code": "bv",
+    "name": "Metro",
+    "emoji": "🏪"
+  },
+  {
+    "code": "ir",
+    "name": "Chispa",
+    "emoji": "💖"
+  },
+  {
+    "code": "ws",
+    "name": "Feeld",
+    "emoji": "❤️‍🔥"
+  },
+  {
+    "code": "asf",
+    "name": "TextFree",
+    "emoji": "💬"
+  },
+  {
+    "code": "qj",
+    "name": "Whoosh",
+    "emoji": "🛴"
+  },
+  {
+    "code": "cw",
+    "name": "PaddyPower",
+    "emoji": "🎲"
+  },
+  {
+    "code": "aav",
+    "name": "Alchemy",
+    "emoji": "⚗️"
+  },
+  {
+    "code": "zm",
+    "name": "OfferUp",
+    "emoji": "💸"
+  },
+  {
+    "code": "aq",
+    "name": "Glovo",
+    "emoji": "🚴‍♂️"
+  },
+  {
+    "code": "gq",
+    "name": "Freelancer",
+    "emoji": "💼"
+  },
+  {
+    "code": "aba",
+    "name": "Rappi",
+    "emoji": "🍔"
+  },
+  {
+    "code": "agj",
+    "name": "Marktplaats",
+    "emoji": "🛍️"
+  },
+  {
+    "code": "ajj",
+    "name": "Rebtel",
+    "emoji": "📞"
+  },
+  {
+    "code": "dj",
+    "name": "LUKOIL-AZS",
+    "emoji": "⛽"
+  },
+  {
+    "code": "fk",
+    "name": "BLIBLI",
+    "emoji": "🛒"
+  },
+  {
+    "code": "abg",
+    "name": "PagBank",
+    "emoji": "💳"
+  },
+  {
+    "code": "yu",
+    "name": "Xiaomi",
+    "emoji": "📱"
+  },
+  {
+    "code": "rl",
+    "name": "inDriver",
+    "emoji": "🚖"
+  },
+  {
+    "code": "bba",
+    "name": "SwitchUp",
+    "emoji": "🔄"
+  },
+  {
+    "code": "aly",
+    "name": "Bebeclub",
+    "emoji": "👶"
+  },
+  {
+    "code": "aiv",
+    "name": "Remitly",
+    "emoji": "💸"
+  },
+  {
+    "code": "aio",
+    "name": "Prakerja",
+    "emoji": "🎓"
+  },
+  {
+    "code": "zs",
+    "name": "Bilibili",
+    "emoji": "📺"
+  },
+  {
+    "code": "my",
+    "name": "CAIXA",
+    "emoji": "🏦"
+  },
+  {
+    "code": "yy",
+    "name": "Venmo",
+    "emoji": "💳"
+  },
+  {
+    "code": "avt",
+    "name": "HuntTheMouse",
+    "emoji": "🐭"
+  },
+  {
+    "code": "adw",
+    "name": "Profi",
+    "emoji": "👔"
+  },
+  {
+    "code": "amz",
+    "name": "ImmoScout24",
+    "emoji": "🏠"
+  },
+  {
+    "code": "akr",
+    "name": "Voi",
+    "emoji": "🛴"
+  },
+  {
+    "code": "bcg",
+    "name": "2ГИС",
+    "emoji": "🗺️"
+  },
+  {
+    "code": "zr",
+    "name": "Papara",
+    "emoji": "💳"
+  },
+  {
+    "code": "anm",
+    "name": "CaltexGO",
+    "emoji": "⛽"
+  },
+  {
+    "code": "ayr",
+    "name": "Superbet",
+    "emoji": "🎰"
+  },
+  {
+    "code": "arp",
+    "name": "Continente",
+    "emoji": "🛒"
+  },
+  {
+    "code": "ta",
+    "name": "Wink",
+    "emoji": "😉"
+  },
+  {
+    "code": "axr",
+    "name": "Match",
+    "emoji": "❤️"
+  },
+  {
+    "code": "ns",
+    "name": "Oldubil",
+    "emoji": "🛠️"
+  },
+  {
+    "code": "akm",
+    "name": "LOTTE Mart",
+    "emoji": "🏬"
+  },
+  {
+    "code": "gr",
+    "name": "Astropay",
+    "emoji": "💳"
+  },
+  {
+    "code": "bc",
+    "name": "GCash",
+    "emoji": "💵"
+  },
+  {
+    "code": "sl",
+    "name": "robota.ua",
+    "emoji": "💼"
+  },
+  {
+    "code": "aka",
+    "name": "LinkAja",
+    "emoji": "🔗"
+  },
+  {
+    "code": "ace",
+    "name": "Tata Neu",
+    "emoji": "💻"
+  },
+  {
+    "code": "apy",
+    "name": "Vinlab",
+    "emoji": "🍷"
+  },
+  {
+    "code": "azn",
+    "name": "UFC",
+    "emoji": "🥊"
+  },
+  {
+    "code": "avj",
+    "name": "SumUp",
+    "emoji": "💳"
+  },
+  {
+    "code": "apq",
+    "name": "WePoker",
+    "emoji": "♠️"
+  },
+  {
+    "code": "ng",
+    "name": "FunPay",
+    "emoji": "💳"
+  },
+  {
+    "code": "qv",
+    "name": "Badoo",
+    "emoji": "💬"
+  },
+  {
+    "code": "vs",
+    "name": "WinzoGame",
+    "emoji": "🎮"
+  },
+  {
+    "code": "cp",
+    "name": "Uklon",
+    "emoji": "🚗"
+  },
+  {
+    "code": "aps",
+    "name": "Skelbiu",
+    "emoji": "🛍️"
+  },
+  {
+    "code": "ano",
+    "name": "Shopify",
+    "emoji": "🛒"
+  },
+  {
+    "code": "alo",
+    "name": "Profee",
+    "emoji": "💸"
+  },
+  {
+    "code": "gk",
+    "name": "AptekaRU",
+    "emoji": "💊"
+  },
+  {
+    "code": "azl",
+    "name": "MotoRan",
+    "emoji": "🏍️"
+  },
+  {
+    "code": "mw",
+    "name": "Transfergo",
+    "emoji": "💵"
+  },
+  {
+    "code": "alx",
+    "name": "NutriClub",
+    "emoji": "🥗"
+  },
+  {
+    "code": "aoi",
+    "name": "Cryptonow",
+    "emoji": "💻"
+  },
+  {
+    "code": "fz",
+    "name": "KFC",
+    "emoji": "🍗"
+  },
+  {
+    "code": "zl",
+    "name": "Airtel",
+    "emoji": "📱"
+  },
+  {
+    "code": "za",
+    "name": "JDcom",
+    "emoji": "🛍️"
+  },
+  {
+    "code": "agg",
+    "name": "OneForma",
+    "emoji": "📝"
+  },
+  {
+    "code": "amy",
+    "name": "Otzovik",
+    "emoji": "📝"
+  },
+  {
+    "code": "als",
+    "name": "Greggs",
+    "emoji": "🥐"
+  },
+  {
+    "code": "azg",
+    "name": "LODA",
+    "emoji": "🚗"
+  },
+  {
+    "code": "zh",
+    "name": "Zoho",
+    "emoji": "📊"
+  },
+  {
+    "code": "aif",
+    "name": "Royal Canin",
+    "emoji": "🐱"
+  },
+  {
+    "code": "aff",
+    "name": "C6 Bank",
+    "emoji": "🏦"
+  },
+  {
+    "code": "ij",
+    "name": "Revolut",
+    "emoji": "💳"
+  },
+  {
+    "code": "vy",
+    "name": "Meta",
+    "emoji": "🌐"
+  },
+  {
+    "code": "axg",
+    "name": "Twin",
+    "emoji": "🔗"
+  },
+  {
+    "code": "mx",
+    "name": "SoulApp",
+    "emoji": "🧠"
+  },
+  {
+    "code": "aor",
+    "name": "OKX",
+    "emoji": "💹"
+  },
+  {
+    "code": "aos",
+    "name": "Loloo",
+    "emoji": "🎮"
+  },
+  {
+    "code": "afx",
+    "name": "Gamesofa",
+    "emoji": "🕹️"
+  },
+  {
+    "code": "nl",
+    "name": "Myntra",
+    "emoji": "👗"
+  },
+  {
+    "code": "aaq",
+    "name": "Netease",
+    "emoji": "🎮"
+  },
+  {
+    "code": "cm",
+    "name": "Prom",
+    "emoji": "💼"
+  },
+  {
+    "code": "ash",
+    "name": "Pinjam Yuk",
+    "emoji": "💳"
+  },
+  {
+    "code": "bcy",
+    "name": "Finplus",
+    "emoji": "💸"
+  },
+  {
+    "code": "afs",
+    "name": "Privalia",
+    "emoji": "👗"
+  },
+  {
+    "code": "sb",
+    "name": "Lamoda",
+    "emoji": "🛍️"
+  },
+  {
+    "code": "aub",
+    "name": "Smitten",
+    "emoji": "💘"
+  },
+  {
+    "code": "adv",
+    "name": "Cian",
+    "emoji": "🏠"
+  },
+  {
+    "code": "abh",
+    "name": "UOL Host",
+    "emoji": "💻"
+  },
+  {
+    "code": "dp",
+    "name": "ProtonMail",
+    "emoji": "📧"
+  },
+  {
+    "code": "ee",
+    "name": "Twilio",
+    "emoji": "📱"
+  },
+  {
+    "code": "od",
+    "name": "FWDMAX",
+    "emoji": "📱"
+  },
+  {
+    "code": "akt",
+    "name": "xworldwallet",
+    "emoji": "💳"
+  },
+  {
+    "code": "bm",
+    "name": "MarketGuru",
+    "emoji": "📊"
+  },
+  {
+    "code": "alm",
+    "name": "Muzz",
+    "emoji": "💬"
+  },
+  {
+    "code": "ami",
+    "name": "TEAMORU",
+    "emoji": "👨‍💻"
+  },
+  {
+    "code": "rn",
+    "name": "neftm",
+    "emoji": "💵"
+  },
+  {
+    "code": "auz",
+    "name": "Outlier",
+    "emoji": "🔍"
+  },
+  {
+    "code": "awj",
+    "name": "HyperJar",
+    "emoji": "💰"
+  },
+  {
+    "code": "wc",
+    "name": "Craigslist",
+    "emoji": "🛒"
+  },
+  {
+    "code": "et",
+    "name": "Clubhouse",
+    "emoji": "🎙️"
+  },
+  {
+    "code": "lm",
+    "name": "FarPost",
+    "emoji": "📰"
+  },
+  {
+    "code": "zo",
+    "name": "Kaggle",
+    "emoji": "📊"
+  },
+  {
+    "code": "aup",
+    "name": "Botim",
+    "emoji": "💬"
+  },
+  {
+    "code": "sh",
+    "name": "Vkusvill",
+    "emoji": "🍏"
+  },
+  {
+    "code": "zg",
+    "name": "Setel",
+    "emoji": "💳"
+  },
+  {
+    "code": "awb",
+    "name": "FlixBus",
+    "emoji": "🚌"
+  },
+  {
+    "code": "yh",
+    "name": "hh",
+    "emoji": "💼"
+  },
+  {
+    "code": "anf",
+    "name": "ZoomInfo",
+    "emoji": "📊"
+  },
+  {
+    "code": "io",
+    "name": "ZdravCity",
+    "emoji": "🏥"
+  },
+  {
+    "code": "yj",
+    "name": "eWallet",
+    "emoji": "💳"
+  },
+  {
+    "code": "ajx",
+    "name": "Kemnaker RI",
+    "emoji": "🛠️"
+  },
+  {
+    "code": "aes",
+    "name": "Zolotoye Yabloko",
+    "emoji": "🍏"
+  },
+  {
+    "code": "akp",
+    "name": "Her",
+    "emoji": "❤️"
+  },
+  {
+    "code": "azx",
+    "name": "ToYou",
+    "emoji": "📦"
+  },
+  {
+    "code": "ael",
+    "name": "Cloud Manager",
+    "emoji": "☁️"
+  },
+  {
+    "code": "akj",
+    "name": "Easycash",
+    "emoji": "💵"
+  },
+  {
+    "code": "bbk",
+    "name": "FilipinoCupid",
+    "emoji": "💘"
+  },
+  {
+    "code": "uf",
+    "name": "Eneba",
+    "emoji": "🕹️"
+  },
+  {
+    "code": "axx",
+    "name": "Shopback",
+    "emoji": "🛒"
+  },
+  {
+    "code": "il",
+    "name": "IQOS",
+    "emoji": "🚬"
+  },
+  {
+    "code": "afm",
+    "name": "myboost",
+    "emoji": "⚡"
+  },
+  {
+    "code": "pz",
+    "name": "Lidl",
+    "emoji": "🛒"
+  },
+  {
+    "code": "ke",
+    "name": "Eldorado",
+    "emoji": "🏙️"
+  },
+  {
+    "code": "sd",
+    "name": "dodopizza",
+    "emoji": "🍕"
+  },
+  {
+    "code": "anx",
+    "name": "InfinitePay",
+    "emoji": "💳"
+  },
+  {
+    "code": "acc",
+    "name": "LuckyLand Slots",
+    "emoji": "🎰"
+  },
+  {
+    "code": "bez",
+    "name": "Boom Market",
+    "emoji": "📈"
+  },
+  {
+    "code": "bl",
+    "name": "BIGO LIVE",
+    "emoji": "📹"
+  },
+  {
+    "code": "ls",
+    "name": "Careem",
+    "emoji": "🚗"
+  },
+  {
+    "code": "aiz",
+    "name": "Brevo",
+    "emoji": "📱"
+  },
+  {
+    "code": "km",
+    "name": "Rozetka",
+    "emoji": "📦"
+  },
+  {
+    "code": "abx",
+    "name": "Kaching",
+    "emoji": "💰"
+  },
+  {
+    "code": "ayo",
+    "name": "360Kredi",
+    "emoji": "💳"
+  },
+  {
+    "code": "abl",
+    "name": "gpnbonus",
+    "emoji": "🎁"
+  },
+  {
+    "code": "xx",
+    "name": "Joyride",
+    "emoji": "🎢"
+  },
+  {
+    "code": "ov",
+    "name": "Beget",
+    "emoji": "🌐"
+  },
+  {
+    "code": "dn",
+    "name": "Paxful",
+    "emoji": "💸"
+  },
+  {
+    "code": "sv",
+    "name": "Dostavista",
+    "emoji": "🚚"
+  },
+  {
+    "code": "aro",
+    "name": "GGPoker",
+    "emoji": "♠️"
+  },
+  {
+    "code": "pr",
+    "name": "Trendyol",
+    "emoji": "🛍️"
+  },
+  {
+    "code": "afe",
+    "name": "GovBr",
+    "emoji": "🏛️"
+  },
+  {
+    "code": "aik",
+    "name": "ZUS Coffee",
+    "emoji": "☕"
+  },
+  {
+    "code": "ama",
+    "name": "WooPlus",
+    "emoji": "❤️"
+  },
+  {
+    "code": "jx",
+    "name": "Swiggy",
+    "emoji": "🍔"
+  },
+  {
+    "code": "rj",
+    "name": "Detskiy mir",
+    "emoji": "👶"
+  },
+  {
+    "code": "bas",
+    "name": "Stoiximan",
+    "emoji": "⚽"
+  },
+  {
+    "code": "amb",
+    "name": "Vercel",
+    "emoji": "🚀"
+  },
+  {
+    "code": "nq",
+    "name": "Trip",
+    "emoji": "✈️"
+  },
+  {
+    "code": "ahv",
+    "name": "Curve",
+    "emoji": "📊"
+  },
+  {
+    "code": "awr",
+    "name": "KCEX",
+    "emoji": "💹"
+  },
+  {
+    "code": "rk",
+    "name": "Fotka",
+    "emoji": "📸"
+  },
+  {
+    "code": "arr",
+    "name": "Linii Lybvi",
+    "emoji": "🚂"
+  },
+  {
+    "code": "aut",
+    "name": "Million",
+    "emoji": "💵"
+  },
+  {
+    "code": "axt",
+    "name": "GNJOY",
+    "emoji": "🎮"
+  },
+  {
+    "code": "yg",
+    "name": "CourseHero",
+    "emoji": "📚"
+  },
+  {
+    "code": "adt",
+    "name": "willhaben",
+    "emoji": "🔎"
+  },
+  {
+    "code": "axm",
+    "name": "Não Me Perturbe",
+    "emoji": "😴"
+  },
+  {
+    "code": "aeo",
+    "name": "Allofresh",
+    "emoji": "🥗"
+  },
+  {
+    "code": "gm",
+    "name": "Mocospace",
+    "emoji": "🌍"
+  },
+  {
+    "code": "aax",
+    "name": "Boyaa",
+    "emoji": "♠️"
+  },
+  {
+    "code": "yi",
+    "name": "Yemeksepeti",
+    "emoji": "🍽️"
+  },
+  {
+    "code": "ib",
+    "name": "Immowelt",
+    "emoji": "🏠"
+  },
+  {
+    "code": "apf",
+    "name": "Carrefour",
+    "emoji": "🛒"
+  },
+  {
+    "code": "aqt",
+    "name": "Skrill",
+    "emoji": "💳"
+  },
+  {
+    "code": "xr",
+    "name": "Tango",
+    "emoji": "💬"
+  },
+  {
+    "code": "acn",
+    "name": "Gringo",
+    "emoji": "🇲🇽"
+  },
+  {
+    "code": "fs",
+    "name": "Şikayet var",
+    "emoji": "❗"
+  },
+  {
+    "code": "mz",
+    "name": "Zolushka",
+    "emoji": "👠"
+  },
+  {
+    "code": "afo",
+    "name": "KION",
+    "emoji": "🏗️"
+  },
+  {
+    "code": "pb",
+    "name": "SkyTV",
+    "emoji": "📺"
+  },
+  {
+    "code": "jv",
+    "name": "Consultant",
+    "emoji": "💼"
+  },
+  {
+    "code": "aol",
+    "name": "Paysera",
+    "emoji": "💳"
+  },
+  {
+    "code": "kh",
+    "name": "Bukalapak",
+    "emoji": "📦"
+  },
+  {
+    "code": "kx",
+    "name": "Vivo",
+    "emoji": "📱"
+  },
+  {
+    "code": "fh",
+    "name": "Lalamove",
+    "emoji": "🚚"
+  },
+  {
+    "code": "avk",
+    "name": "Quoka",
+    "emoji": "🛒"
+  },
+  {
+    "code": "xu",
+    "name": "RecargaPay",
+    "emoji": "💳"
   }
 ]
