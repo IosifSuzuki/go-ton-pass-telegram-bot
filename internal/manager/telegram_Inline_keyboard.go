@@ -22,6 +22,8 @@ type TelegramInlineKeyboardManager interface {
 	PayCurrenciesKeyboardMarkup() (*telegram.InlineKeyboardMarkup, error)
 	MainMenuKeyboardButton() *telegram.InlineKeyboardButton
 	LinkKeyboardButton(text, link string) *telegram.InlineKeyboardButton
+	BackKeyboardMarkup() *telegram.InlineKeyboardMarkup
+	BackKeyboardButton() *telegram.InlineKeyboardButton
 	TopUpBalanceKeyboardMarkup() (*telegram.InlineKeyboardMarkup, error)
 	CryptoPayBotKeyboardMarkup(url string, invoiceID int64) (*telegram.InlineKeyboardMarkup, error)
 	PageControlKeyboardButtons(commandName string, pagination app.Pagination, leftButtonParameters []any, rightButtonParameters []any) ([]telegram.InlineKeyboardButton, error)
@@ -128,7 +130,8 @@ func (t *telegramInlineKeyboardManager) PayCurrenciesKeyboardMarkup() (*telegram
 		}
 		payCurrenciesInlineKeyboardButtons = append(payCurrenciesInlineKeyboardButtons, *payCurrencyInlineKeyboardButton)
 	}
-	payCurrenciesInlineKeyboardButtons = append(payCurrenciesInlineKeyboardButtons, *t.MainMenuKeyboardButton())
+	backButton := t.BackKeyboardButton()
+	payCurrenciesInlineKeyboardButtons = append(payCurrenciesInlineKeyboardButtons, *backButton)
 	return &telegram.InlineKeyboardMarkup{
 		InlineKeyboard: t.getGridInlineKeyboardButton(payCurrenciesInlineKeyboardButtons, 2),
 	}, nil
@@ -165,8 +168,8 @@ func (t *telegramInlineKeyboardManager) ServicesInlineKeyboardMarkup(services []
 		return nil, err
 	}
 	gridButtons = append(gridButtons, pageControlButtons)
-	goToMainMenuButton := t.MainMenuKeyboardButton()
-	gridButtons = append(gridButtons, []telegram.InlineKeyboardButton{*goToMainMenuButton})
+	backButton := t.BackKeyboardButton()
+	gridButtons = append(gridButtons, []telegram.InlineKeyboardButton{*backButton})
 	return &telegram.InlineKeyboardMarkup{
 		InlineKeyboard: gridButtons,
 	}, nil
@@ -258,8 +261,8 @@ func (t *telegramInlineKeyboardManager) ServiceCountriesInlineKeyboardMarkup(
 		log.Debug("fail to create control keyboard buttons", logger.FError(err))
 	}
 	gridButtons = append(gridButtons, pageControlButtons)
-	goToMainMenuButton := t.MainMenuKeyboardButton()
-	gridButtons = append(gridButtons, []telegram.InlineKeyboardButton{*goToMainMenuButton})
+	backButton := t.BackKeyboardButton()
+	gridButtons = append(gridButtons, []telegram.InlineKeyboardButton{*backButton})
 	return &telegram.InlineKeyboardMarkup{
 		InlineKeyboard: gridButtons,
 	}, nil
@@ -295,8 +298,8 @@ func (t *telegramInlineKeyboardManager) TopUpBalanceKeyboardMarkup() (*telegram.
 		log.Debug("fail to create top up balance button", logger.FError(err))
 		return nil, err
 	}
-	goToMainMenuButton := t.MainMenuKeyboardButton()
-	gridButtons := t.getGridInlineKeyboardButton([]telegram.InlineKeyboardButton{*topUpBalanceButton, *goToMainMenuButton}, columns)
+	backButton := t.BackKeyboardButton()
+	gridButtons := t.getGridInlineKeyboardButton([]telegram.InlineKeyboardButton{*topUpBalanceButton, *backButton}, columns)
 	return &telegram.InlineKeyboardMarkup{
 		InlineKeyboard: gridButtons,
 	}, nil
@@ -308,6 +311,22 @@ func (t *telegramInlineKeyboardManager) MainMenuKeyboardButton() *telegram.Inlin
 		SetCommandName(app.MainMenuCallbackQueryCmdText).
 		Build()
 	return mainMenuInlineKeyboardButton
+}
+
+func (t *telegramInlineKeyboardManager) BackKeyboardMarkup() *telegram.InlineKeyboardMarkup {
+	backButton := t.BackKeyboardButton()
+	gridButtons := t.getGridInlineKeyboardButton([]telegram.InlineKeyboardButton{*backButton}, 1)
+	return &telegram.InlineKeyboardMarkup{
+		InlineKeyboard: gridButtons,
+	}
+}
+
+func (t *telegramInlineKeyboardManager) BackKeyboardButton() *telegram.InlineKeyboardButton {
+	backInlineKeyboardButton, _ := NewTelegramInlineButtonBuilder().
+		SetText(utils.ButtonTitle(t.localizer.LocalizedString("back"), "⬅️")).
+		SetCommandName(app.BackQueryCmdText).
+		Build()
+	return backInlineKeyboardButton
 }
 
 func (t *telegramInlineKeyboardManager) ConfirmationPayInlineKeyboardMarkup(serviceCode string, countryID int64, maxPrice float64) (*telegram.InlineKeyboardMarkup, error) {
@@ -391,7 +410,7 @@ func (t *telegramInlineKeyboardManager) getGridInlineKeyboardButton(keyboardButt
 	return gridInlineKeyboardButtons
 }
 
-func (t *telegramInlineKeyboardManager) prepareLanguageKeyboardMarkup(commandName string, shouldContainsMainMenu bool) (*telegram.InlineKeyboardMarkup, error) {
+func (t *telegramInlineKeyboardManager) prepareLanguageKeyboardMarkup(commandName string, shouldContainsBack bool) (*telegram.InlineKeyboardMarkup, error) {
 	languages := t.container.GetConfig().AvailableLanguages()
 	buttons := make([]telegram.InlineKeyboardButton, 0, len(languages))
 	for _, language := range languages {
@@ -405,15 +424,16 @@ func (t *telegramInlineKeyboardManager) prepareLanguageKeyboardMarkup(commandNam
 		}
 		buttons = append(buttons, *button)
 	}
-	if shouldContainsMainMenu {
-		buttons = append(buttons, *t.MainMenuKeyboardButton())
+	if shouldContainsBack {
+		backButton := t.BackKeyboardButton()
+		buttons = append(buttons, *backButton)
 	}
 	return &telegram.InlineKeyboardMarkup{
 		InlineKeyboard: t.getGridInlineKeyboardButton(buttons, 2),
 	}, nil
 }
 
-func (t *telegramInlineKeyboardManager) preparePreferredCurrenciesKeyboardMarkup(commandName string, shouldContainsMainMenu bool) (*telegram.InlineKeyboardMarkup, error) {
+func (t *telegramInlineKeyboardManager) preparePreferredCurrenciesKeyboardMarkup(commandName string, shouldContainsBack bool) (*telegram.InlineKeyboardMarkup, error) {
 	preferredCurrencies := t.container.GetConfig().AvailablePreferredCurrencies()
 	buttons := make([]telegram.InlineKeyboardButton, 0, len(preferredCurrencies))
 	for _, currency := range preferredCurrencies {
@@ -427,8 +447,9 @@ func (t *telegramInlineKeyboardManager) preparePreferredCurrenciesKeyboardMarkup
 		}
 		buttons = append(buttons, *button)
 	}
-	if shouldContainsMainMenu {
-		buttons = append(buttons, *t.MainMenuKeyboardButton())
+	if shouldContainsBack {
+		backButton := t.BackKeyboardButton()
+		buttons = append(buttons, *backButton)
 	}
 	return &telegram.InlineKeyboardMarkup{
 		InlineKeyboard: t.getGridInlineKeyboardButton(buttons, 2),

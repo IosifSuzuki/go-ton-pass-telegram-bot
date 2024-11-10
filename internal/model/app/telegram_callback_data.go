@@ -21,6 +21,7 @@ const (
 	ConfirmationPayServiceQueryCmdText                 = "con_s_pay"
 	CancelPayServiceQueryCmdText                       = "can_s_pay"
 	RefundAmountFromSMSActivationQueryCmdText          = "ref_sms_act"
+	BackQueryCmdText                                   = "back"
 )
 
 type TelegramCallbackData struct {
@@ -70,6 +71,8 @@ func (t *TelegramCallbackData) CallbackQueryCommand() CallbackQueryCommand {
 		return CancelPayServiceCallbackQueryCommand
 	case RefundAmountFromSMSActivationQueryCmdText:
 		return RefundAmountFromSMSActivationCallbackQueryCommand
+	case BackQueryCmdText:
+		return BackCallbackQueryCommand
 	default:
 		return NotCallbackQueryCommand
 	}

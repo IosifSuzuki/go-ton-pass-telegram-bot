@@ -24,4 +24,5 @@ const (
 	ConfirmationPayServiceCallbackQueryCommand
 	CancelPayServiceCallbackQueryCommand
 	RefundAmountFromSMSActivationCallbackQueryCommand
+	BackCallbackQueryCommand
 )

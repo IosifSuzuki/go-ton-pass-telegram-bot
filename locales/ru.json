@@ -1,0 +1,142 @@
+{
+  "bot_name": "TonPass",
+  "back": "Back",
+  "pay": "Pay",
+  "cancel": "Cancel",
+  "next": "Next",
+  "previous": "Previous",
+  "confirm": "Confirm",
+  "refund": "Refund",
+  "back_to_main_menu": "\uD83C\uDFE0 Main Menu",
+  "bot_description": "🌟Welcome to the TonPass Bot!🌟\n\nWe're glad to have you here! 😊\nTonPass provides instant and secure SMS activation services\nfor all your online verification needs. 🌐\n\nReady to get started? Simply choose an option below and experience\nsmooth, reliable SMS verifications.\n\n🔥 Fast, simple, and efficient! 🔥",
+  "bot_markdown_description": "🌟*Welcome to the TonPass Bot\\!*🌟\n\nWe're glad to have you here\\! 😊\nTonPass provides *instant and secure* SMS activation services\nfor all your online verification needs\\. 🌐\n\nReady to get started? Simply choose an option below and experience\nsmooth, reliable SMS verifications\\.\n\n🔥 *Fast, simple, and efficient\\!* 🔥",
+  "balance": "Balance",
+  "buy_number": "Buy Number",
+  "help": "Help",
+  "history": "History",
+  "language": "Language",
+  "currency": "Currency",
+  "cancel_invoice": "Cancel invoice",
+  "start_cmd_short_description_cmd_markdown": "Start interacting with the bot",
+  "help_cmd_short_description_cmd_markdown": "Provides instructions for interacting with the bot",
+  "short_description_markdown": "Easily obtain SMS activation codes for various online services\\. Simply request a code for services like Google\\, Instagram\\, and Facebook\\, and quickly and efficiently receive your verification SMS\\.",
+  "unknown_telegram_command_markdown": "Unknown telegram command",
+  "select_preferred_language_markdown": "Select preferred bot language",
+  "select_preferred_currency_markdown": "Select preferred currency",
+  "unknown_error_markdown": "Unknown error",
+  "help_cmd_text_markdown": "This bot allows you to easily send SMS activation codes to verify accounts for popular online services\\.\n\n 📋 Available commands:\n/start \\– Start interacting with the bot",
+  "unknown_cmd_text_markdown": "Unsupported command\n\nSorry\\, the command you entered is not recognized\\. Please ensure you are using one of the supported commands\\. Type /help to view the list of available commands and their usage\\.",
+  "your_balance_is_markdown": {
+    "description": "Available Funds in Your Account",
+    "one": "*Available Funds in Your Account:* {{ .Balance }}",
+    "other": "*Available Funds in Your Account:* {{ .Balance }}"
+  },
+  "choose_language_markdown": {
+    "description": "Choose an option below",
+    "one": "Current Language: *{{ .Language }}*\nWould you like to change the language\\? Choose an option below",
+    "other": "Current Language: *{{ .Language }}*\nWould you like to change the language\\? Choose an option below"
+  },
+  "development_process_markdown": "\uD83D\uDEA7 Feature Under Development \uD83D\uDEA7",
+  "select_sms_service_markdown": "We offer various online services\\.\n Please select the one you’d like to activate via SMS\\.",
+  "top_up_balance": "Top up balance",
+  "select_sms_service_with_country_markdown": "Select the country whose numbers you want to use:",
+  "select_currency_to_pay_markdown": "*Choose Currency for Your Payment*",
+  "enter_amount_for_payment_in_currency_markdown":{
+    "description": "Enter the amount for payment in currency",
+    "one": "Enter the amount for payment in *{{ .Currency }}*",
+    "other": "Enter the amount for payment in *{{ .Currency }}*"
+  },
+  "enter_amount_for_payment_in_currency_error_markdown": "Please enter the amount in currency using the correct number format\\.\n\n Examples: *12\\.30, 12, 100, etc*\\.",
+  "crypto_bot_pay_title_markdown": "Tap *'Pay'* to make the payment, or *'Cancel'* if you wish to delete the invoice\\.",
+  "balance_updated_markdown": "Your account balance has been updated\\. Thank you for using our service\\!",
+  "choose_preferred_currency_markdown": {
+    "description": "Choose an option below",
+    "one": "Preferred Currency: *{{ .Currency }}*\nIf you'd like to switch, please choose an option below",
+    "other": "Preferred Currency: *{{ .Currency }}*\nIf you'd like to switch, please choose an option below"
+  },
+  "success_received_sms_code_title_markdown": "Your SMS activation code has been received\\!",
+  "success_received_sms_code_footer_markdown": "Please use the *SMS code* to complete your registration.\n\nThank you for using our service\\!",
+  "start_sms_activation_title_markdown": "You can start the registration process now\\.\nPlease wait for the *SMS code*\\. We'll notify you as soon as it arrives\\. If the code does not arrive within *20 minutes*\\, the money will automatically be returned to your balance\\.",
+  "numbers_are_unavailable_markdown": "Sorry, it looks like the numbers are unavailable right now\\. Please try again",
+  "fail_to_order_sms_code_markdown": "There was an issue with order SMS code. Please try again\\.",
+  "internal_error_markdown": "An internal error occurred\\. Please try again later\\.",
+  "not_receive_sms_code_title_markdown": "Unfortunately, we did not receive *the sms code*",
+  "not_receive_sms_code_footer_markdown": "As a result, we have refunded *the full amount*\\. *Please try again*, and if the issue persists, feel free to contact our support team\\. We apologize for the inconvenience",
+  "insufficient_funds_markdown": "Insufficient funds for SMS activation",
+  "subscribe_to_channel_markdown": {
+    "description": "Tap the link below to subscribe to our Telegram channel",
+    "one": "Want to keep using the bot? Subscribe to our *{{ .Channel }}* Telegram channel for instant updates and important announcements\\! Subscribe Now",
+    "other": "Want to keep using the bot? Subscribe to our *{{ .Channel }}* Telegram channel for instant updates and important announcements\\! Subscribe Now"
+  },
+  "cancel_sms_activation_title_markdown": "❌Your SMS activation has been *successfully canceled*❌",
+  "cancel_sms_activation_footer_markdown": "We've processed your refund and the amount has been returned to your account",
+  "empty_history_markdown": "*No recent activity found*",
+  "sms_history_title_markdown": "📩 *SMS History* 📩",
+  "sms_activation_code_markdown": {
+    "description": "**SMS Code**",
+    "one": "📩 **SMS Code**: {{ .SMSCode }}",
+    "other": "📩 **SMS Code**: {{ .SMSCode }}"
+  },
+  "sms_activation_received_at_markdown": {
+    "description": "**Received On**",
+    "one": "📅 **Received On**: `{{ .ReceivedDate }}",
+    "other": "📅 **Received On**: {{ .ReceivedDate }}"
+  },
+  "sms_activation_start_at_markdown": {
+    "description": "**Start On**",
+    "one": "📅 **Start On**: `{{ .StartDate }}",
+    "other": "📅 **Start On**: {{ .StartDate }}"
+  },
+  "sms_activation_status_markdown": {
+    "description": "**Received On**",
+    "one": "📋 **State**: `{{ .State }}",
+    "other": "📋 **State**: {{ .State }}"
+  },
+  "sms_activation_short_phone_number_markdown": {
+    "description": "**Phone Number**",
+    "one": "📞 **Local Number**: `{{ .PhoneNumber }}",
+    "other": "📞 **Local Number**: {{ .PhoneNumber }}"
+  },
+  "sms_activation_full_phone_number_markdown": {
+    "description": "**International Phone Number**",
+    "one": "📞 **Number**: `{{ .PhoneNumber }}",
+    "other": "📞 **Number **: {{ .PhoneNumber }}"
+  },
+  "sms_activation_country_markdown": {
+    "description": "**Country**",
+    "one": "🌍 **Country**: `{{ .Country }}",
+    "other": "🌍 **Country**: {{ .Country }}"
+  },
+  "sms_activation_service_markdown": {
+    "description": "**Service**",
+    "one": "🌐 **Service**: `{{ .Service }}",
+    "other": "🌐 **Service**: {{ .Service }}"
+  },
+  "success_deleted_invoice_markdown": {
+    "description": "Your invoice has been successfully deleted",
+    "one": "*Your invoice was deleted successfully*\\. Feel free to create a new one anytime",
+    "other": "*Your invoice was deleted successfully*\\. Feel free to create a new one anytime"
+  },
+  "confirm_sms_activation_title_markdown": {
+    "description": "Confirm Your SMS Service Activation",
+    "one": "*SMS Service Activation*",
+    "other": "*SMS Service Activation*"
+  },
+  "confirm_sms_activation_selected_service_markdown":{
+    "description": "Selected service",
+    "one": "🌐 *Service:* {{ .ServiceName }}",
+    "other": "🌐 *Service:* {{ .ServiceName }}"
+  },
+  "confirm_sms_activation_price_for_service_markdown":{
+    "description": "Price for service",
+    "one": "💰 *Price:* {{ .Price }}",
+    "other": "💰 *Price:* {{ .Price }}"
+  },
+  "confirm_sms_activation_selected_country_markdown":{
+    "description": "Selected country",
+    "one": "🌍 *Country:* {{ .Country }}",
+    "other": "🌍 *Country:* {{ .Country }}"
+  },
+  "confirm_sms_activation_footer_markdown": "Please *confirm* ✅ or *cancel* ❌ to proceed",
+  "success_cancel_pay_service_markdown": "You have *successfully* declined the SMS service payment"
+}

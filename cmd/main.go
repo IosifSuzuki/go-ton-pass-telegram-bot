@@ -78,14 +78,14 @@ func configureAndConnectToRedisClient(conf config.Config) *redis.Client {
 func RunServer(box container.Container, conn *sql.DB, sessionService service.SessionService, temporalClient client.Client, cacheService service.Cache) {
 	profileRepository := repository.NewProfileRepository(conn)
 	smsHistoryRepository := repository.NewSMSHistoryRepository(conn)
-	temporalWorflowRepositry := repository.NewTemporalWorkflowRepository(conn)
+	temporalWorkflowRepository := repository.NewTemporalWorkflowRepository(conn)
 	smsService := service.NewSMSService(box)
 	postponeService := postpone.NewPostpone(box, temporalClient, profileRepository, smsHistoryRepository)
 	if err := postponeService.Prepare(); err != nil {
 		log.Fatalln("fail to prepare postpone service", logger.FError(err))
 	}
 
-	r := router.PrepareAndConfigureRouter(box, sessionService, cacheService, smsService, postponeService, profileRepository, smsHistoryRepository, temporalWorflowRepositry)
+	r := router.PrepareAndConfigureRouter(box, sessionService, cacheService, smsService, postponeService, profileRepository, smsHistoryRepository, temporalWorkflowRepository)
 	openServer := &http.Server{
 		Handler:      r,
 		Addr:         box.GetConfig().OpenConnectionAddress(),

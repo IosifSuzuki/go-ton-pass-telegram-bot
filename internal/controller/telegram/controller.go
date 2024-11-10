@@ -48,6 +48,7 @@ type botController struct {
 	smsActivateWorker          worker.SMSActivate
 	formatterWorker            worker.Formatter
 	keyboardManager            manager.TelegramInlineKeyboardManager
+	callbackDataStack          service.CallbackDataStack
 }
 
 func NewBotController(
@@ -64,6 +65,7 @@ func NewBotController(
 	exchangeRateWorker := worker.NewExchangeRate(container, cacheService, cryptoPayBot)
 	smsActivateWorker := worker.NewSMSActivate(container, smsService, cacheService)
 	formatterWorker := worker.NewFormatter(container)
+	callbackDataStack := service.NewCallbackDataStack(container, cacheService)
 	return &botController{
 		container:                  container,
 		telegramBotService:         service.NewTelegramBot(container),
@@ -79,6 +81,7 @@ func NewBotController(
 		smsActivateWorker:          smsActivateWorker,
 		formatterWorker:            formatterWorker,
 		keyboardManager:            manager.NewTelegramInlineKeyboardManager(container, exchangeRateWorker),
+		callbackDataStack:          callbackDataStack,
 	}
 }
 
@@ -142,49 +145,70 @@ func (b *botController) Serve(update *telegram.Update) error {
 	if telegramCallbackData == nil {
 		return b.helpTelegramCommandHandler(ctx, update)
 	}
-	switch telegramCallbackData.CallbackQueryCommand() {
+	callbackQuery := update.CallbackQuery
+	callbackQueryCommand := telegramCallbackData.CallbackQueryCommand()
+	if callbackQueryCommand == app.BackCallbackQueryCommand {
+		callbackData, err := b.callbackDataStack.Pop(ctx, callbackQuery)
+		if err != nil {
+			callbackData = &app.TelegramCallbackData{
+				Name: app.MainMenuCallbackQueryCmdText,
+			}
+			log.Debug("fail to pop callbackDataStack", logger.FError(err))
+		}
+		encodedCallbackData, err := utils.EncodeTelegramCallbackData(*callbackData)
+		if err != nil {
+			log.Error("fail to encode telegram callback data", logger.FError(err))
+			return err
+		}
+		callbackQueryCommand = callbackData.CallbackQueryCommand()
+		callbackQuery.Data = *encodedCallbackData
+	} else if err := b.callbackDataStack.Push(ctx, callbackQuery); err != nil {
+		log.Error("fail to record callback query to cache", logger.FError(err))
+		return err
+	}
+	switch callbackQueryCommand {
 	case app.SelectInitialLanguageCallbackQueryCommand:
-		return b.selectedInitialLanguageCallbackQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.selectedInitialLanguageCallbackQueryCommandHandler(ctx, callbackQuery)
 	case app.SelectInitialPreferredCurrencyCallbackQueryCommand:
-		return b.selectedInitialPreferredCurrencyCallbackQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.selectedInitialPreferredCurrencyCallbackQueryCommandHandler(ctx, callbackQuery)
 	case app.BalanceCallbackQueryCommand:
-		return b.balanceCallbackQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.balanceCallbackQueryCommandHandler(ctx, callbackQuery)
 	case app.MainMenuCallbackQueryCommand:
-		return b.mainMenuCallbackQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.mainMenuCallbackQueryCommandHandler(ctx, callbackQuery)
 	case app.BuyNumberCallbackQueryCommand:
-		return b.servicesCallbackQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.servicesCallbackQueryCommandHandler(ctx, callbackQuery)
 	case app.SelectSMSServiceCallbackQueryCommand:
-		return b.selectServiceCallbackQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.selectServiceCallbackQueryCommandHandler(ctx, callbackQuery)
 	case app.HelpCallbackQueryCommand:
-		return b.helpCallbackQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.helpCallbackQueryCommandHandler(ctx, callbackQuery)
 	case app.LanguageCallbackQueryCommand:
-		return b.languagesCallbackQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.languagesCallbackQueryCommandHandler(ctx, callbackQuery)
 	case app.SelectLanguageCallbackQueryCommand:
-		return b.selectLanguageCallbackQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.selectLanguageCallbackQueryCommandHandler(ctx, callbackQuery)
 	case app.HistoryCallbackQueryCommand:
-		return b.historyCallbackQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.historyCallbackQueryCommandHandler(ctx, callbackQuery)
 	case app.PayServiceCallbackQueryCommand:
-		return b.payServiceQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.payServiceQueryCommandHandler(ctx, callbackQuery)
 	case app.ListPayCurrenciesCallbackQueryCommand:
-		return b.listPayCurrenciesCallbackQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.listPayCurrenciesCallbackQueryCommandHandler(ctx, callbackQuery)
 	case app.SelectPayCurrencyCallbackQueryCommand:
-		return b.selectedPayCurrenciesCallbackQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.selectedPayCurrenciesCallbackQueryCommandHandler(ctx, callbackQuery)
 	case app.PreferredCurrenciesCallbackQueryCommand:
-		return b.preferredCurrenciesQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.preferredCurrenciesQueryCommandHandler(ctx, callbackQuery)
 	case app.SelectPreferredCurrencyCallbackQueryCommand:
-		return b.selectPreferredCurrencyQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.selectPreferredCurrencyQueryCommandHandler(ctx, callbackQuery)
 	case app.EmptyCallbackQueryCommand:
-		return b.emptyQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.emptyQueryCommandHandler(ctx, callbackQuery)
 	case app.DeleteCryptoBotInvoiceCallbackQueryCommand:
-		return b.deleteCryptoBotQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.deleteCryptoBotQueryCommandHandler(ctx, callbackQuery)
 	case app.ConfirmationPayServiceCallbackQueryCommand:
-		return b.confirmServiceQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.confirmServiceQueryCommandHandler(ctx, callbackQuery)
 	case app.CancelPayServiceCallbackQueryCommand:
-		return b.cancelPayServiceQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.cancelPayServiceQueryCommandHandler(ctx, callbackQuery)
 	case app.RefundAmountFromSMSActivationCallbackQueryCommand:
-		return b.refundAmountFromSMSActivationQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.refundAmountFromSMSActivationQueryCommandHandler(ctx, callbackQuery)
 	default:
-		return b.developingCallbackQueryCommandHandler(ctx, update.CallbackQuery)
+		return b.developingCallbackQueryCommandHandler(ctx, callbackQuery)
 	}
 }
 

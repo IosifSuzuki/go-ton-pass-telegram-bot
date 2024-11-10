@@ -456,7 +456,7 @@ func (b *botController) historyCallbackQueryCommandHandler(ctx context.Context, 
 			callbackQuery,
 			localizer.LocalizedString("empty_history_markdown"),
 			historyImageURL,
-			replyMarkup,
+			b.keyboardManager.BackKeyboardMarkup(),
 		)
 	}
 	pagination := app.Pagination{
@@ -492,10 +492,10 @@ func (b *botController) historyCallbackQueryCommandHandler(ctx context.Context, 
 			replyMarkup,
 		)
 	}
-	mainMenuButton := b.keyboardManager.MainMenuKeyboardButton()
+	backButton := b.keyboardManager.BackKeyboardButton()
 	buttons := [][]telegram.InlineKeyboardButton{
 		pageControlButtons,
-		{*mainMenuButton},
+		{*backButton},
 	}
 	replyMarkup = &telegram.InlineKeyboardMarkup{
 		InlineKeyboard: buttons,
@@ -516,16 +516,11 @@ func (b *botController) helpCallbackQueryCommandHandler(ctx context.Context, cal
 		log.Debug("fail to retrieve language code", logger.F("langTag", langTag))
 	}
 	localizer := b.container.GetLocalizer(langTag)
-	replyMarkup, err := b.keyboardManager.MainMenuKeyboardMarkup()
-	if err != nil {
-		log.Error("fail to get main menu keyboard markup", logger.FError(err))
-		return err
-	}
 	return b.AnswerCallbackQueryWithEditMessageMedia(
 		callbackQuery,
 		localizer.LocalizedString("help_cmd_text_markdown"),
 		helpImageURL,
-		replyMarkup,
+		b.keyboardManager.BackKeyboardButton(),
 	)
 }
 

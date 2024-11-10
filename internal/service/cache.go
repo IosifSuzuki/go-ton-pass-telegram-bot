@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"github.com/redis/go-redis/v9"
 	"go-ton-pass-telegram-bot/internal/container"
 	"go-ton-pass-telegram-bot/internal/model/app"
@@ -18,12 +19,18 @@ type Cache interface {
 	GetSMSCountries(ctx context.Context) (*app.CacheResponse[[]sms.Country], error)
 	SaveSMSServices(ctx context.Context, services []sms.Service) error
 	GetSMSServices(ctx context.Context) (*app.CacheResponse[[]sms.Service], error)
+	SaveTelegramCallbackData(ctx context.Context, callbackData []app.TelegramCallbackData, userID, chatID, messageID int64) error
+	GetTelegramCallbackData(ctx context.Context, userID, chatID, messageID int64) ([]app.TelegramCallbackData, error)
+	GetLastTelegramCallbackDataOperation(ctx context.Context, userID, chatID, messageID int64) (string, error)
+	SetLastTelegramCallbackDataOperation(ctx context.Context, operation string, userID, chatID, messageID int64) error
 }
 
 const (
-	exchangeRateCacheKey = "exchangeRateCacheKey"
-	smsCountriesCacheKey = "smsCountriesCacheKey"
-	smsServicesCacheKey  = "smsServicesCacheKey"
+	exchangeRateCacheKey              = "exchangeRateCacheKey"
+	smsCountriesCacheKey              = "smsCountriesCacheKey"
+	smsServicesCacheKey               = "smsServicesCacheKey"
+	telegramCallbackDataCacheKey      = "telegramCallbackDataCacheKey"
+	lastOperationCallbackDataCacheKey = "lastOperationCallbackDataCacheKey"
 )
 
 type cache struct {
@@ -124,4 +131,71 @@ func (c *cache) GetSMSServices(ctx context.Context) (*app.CacheResponse[[]sms.Se
 		return nil, err
 	}
 	return &cacheResponse, nil
+}
+
+func (c *cache) SaveTelegramCallbackData(ctx context.Context, callbackData []app.TelegramCallbackData, userID, chatID, messageID int64) error {
+	log := c.container.GetLogger()
+	log.Debug("will save telegram callback data")
+	var cacheResponse app.CacheResponse[[]string]
+	key := keyForTelegramCallbackData(telegramCallbackDataCacheKey, userID, chatID, messageID)
+	encodedData := make([]string, 0, len(callbackData))
+	for _, item := range callbackData {
+		encodedItem, err := utils.EncodeTelegramCallbackData(item)
+		if err != nil {
+			return err
+		}
+		encodedData = append(encodedData, *encodedItem)
+	}
+	cacheResponse.Result = encodedData
+	finalEncoding, err := utils.EncodePayload(&cacheResponse)
+	if err != nil {
+		log.Debug("fail to encode payload", logger.FError(err))
+		return err
+	}
+	return c.client.Set(ctx, key, finalEncoding, 4*time.Hour).Err()
+}
+
+func (c *cache) GetTelegramCallbackData(ctx context.Context, userID, chatID, messageID int64) ([]app.TelegramCallbackData, error) {
+	log := c.container.GetLogger()
+	log.Debug("will get telegram callback data")
+	key := keyForTelegramCallbackData(telegramCallbackDataCacheKey, userID, chatID, messageID)
+	encodedText, err := c.client.Get(ctx, key).Result()
+	if err != nil {
+		return nil, err
+	}
+	var cacheResponse app.CacheResponse[[]string]
+	if err := utils.DecodePayload(encodedText, &cacheResponse); err != nil {
+		return nil, err
+	}
+	callbackData := make([]app.TelegramCallbackData, 0, len(cacheResponse.Result))
+	for _, item := range cacheResponse.Result {
+		decodedItem, err := utils.DecodeTelegramCallbackData(item)
+		if err != nil {
+			return nil, err
+		}
+		callbackData = append(callbackData, *decodedItem)
+	}
+	return callbackData, nil
+}
+
+func (c *cache) GetLastTelegramCallbackDataOperation(ctx context.Context, userID, chatID, messageID int64) (string, error) {
+	log := c.container.GetLogger()
+	log.Debug("will get telegram callback data")
+	key := keyForTelegramCallbackData(telegramCallbackDataCacheKey, userID, chatID, messageID)
+	operation, err := c.client.Get(ctx, key).Result()
+	if err != nil {
+		return "", err
+	}
+	return operation, nil
+}
+
+func (c *cache) SetLastTelegramCallbackDataOperation(ctx context.Context, operation string, userID, chatID, messageID int64) error {
+	log := c.container.GetLogger()
+	log.Debug("will get telegram callback data")
+	key := keyForTelegramCallbackData(telegramCallbackDataCacheKey, userID, chatID, messageID)
+	return c.client.Set(ctx, key, operation, 4*time.Hour).Err()
+}
+
+func keyForTelegramCallbackData(key string, userID, chatID, messageID int64) string {
+	return fmt.Sprintf("%s/%d_%d_%d", key, userID, chatID, messageID)
 }
