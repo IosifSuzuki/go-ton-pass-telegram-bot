@@ -79,37 +79,37 @@
   },
   "sms_activation_received_at_markdown": {
     "description": "**Отримано**",
-    "one": "📅 **Отримано**: `{{ .ReceivedDate }}`,
+    "one": "📅 **Отримано**: `{{ .ReceivedDate }}'",
     "other": "📅 **Отримано**: {{ .ReceivedDate }}"
   },
   "sms_activation_start_at_markdown": {
     "description": "**Початок**",
-    "one": "📅 **Початок**: `{{ .StartDate }}`,
+    "one": "📅 **Початок**: `{{ .StartDate }}`",
     "other": "📅 **Початок**: {{ .StartDate }}"
   },
   "sms_activation_status_markdown": {
     "description": "**Статус**",
-    "one": "📋 **Стан**: `{{ .State }}`,
+    "one": "📋 **Стан**: `{{ .State }}`",
     "other": "📋 **Стан**: {{ .State }}"
   },
   "sms_activation_short_phone_number_markdown": {
     "description": "**Локальний номер**",
-    "one": "📞 **Локальний номер**: `{{ .PhoneNumber }}`,
+    "one": "📞 **Локальний номер**: `{{ .PhoneNumber }}`",
     "other": "📞 **Локальний номер**: {{ .PhoneNumber }}"
   },
   "sms_activation_full_phone_number_markdown": {
     "description": "**Міжнародний номер**",
-    "one": "📞 **Номер**: `{{ .PhoneNumber }}`,
+    "one": "📞 **Номер**: `{{ .PhoneNumber }}`",
     "other": "📞 **Номер**: {{ .PhoneNumber }}"
   },
   "sms_activation_country_markdown": {
     "description": "**Країна**",
-    "one": "🌍 **Країна**: `{{ .Country }}`,
+    "one": "🌍 **Країна**: `{{ .Country }}`",
     "other": "🌍 **Країна**: {{ .Country }}"
   },
   "sms_activation_service_markdown": {
     "description": "**Сервіс**",
-    "one": "🌐 **Сервіс**: `{{ .Service }}`,
+    "one": "🌐 **Сервіс**: `{{ .Service }}`",
     "other": "🌐 **Сервіс**: {{ .Service }}"
   },
   "success_deleted_invoice_markdown": {
