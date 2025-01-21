@@ -19,12 +19,12 @@
   "cancel_invoice": "Zrušiť faktúru",
   "start_cmd_short_description_cmd_markdown": "Začať komunikáciu s botom",
   "help_cmd_short_description_cmd_markdown": "Poskytuje pokyny na používanie bota",
-  "short_description_markdown": "Jednoducho získajte SMS aktivačné kódy pre rôzne online služby\\. Požiadajte o kód pre služby ako Google\\, Instagram\\, a Facebook\\, a rýchlo a efektívne dostanete vaše overovacie SMS\\.",
+  "short_description_markdown": "Jednoducho získajte *SMS aktivačné kódy* pre rôzne online služby\\. Požiadajte o kód pre služby ako Google\\, Instagram\\, a Facebook\\, a rýchlo a efektívne dostanete vaše overovacie SMS\\.",
   "unknown_telegram_command_markdown": "Neznámy telegramový príkaz",
   "select_preferred_language_markdown": "Vyberte preferovaný jazyk bota",
   "select_preferred_currency_markdown": "Vyberte preferovanú menu",
   "unknown_error_markdown": "Neznáma chyba",
-  "help_cmd_text_markdown": "Tento bot vám umožňuje jednoducho posielať SMS aktivačné kódy na overenie účtov pre populárne online služby\\.\n\n 📋 Dostupné príkazy:\n/start \\– Začiatok komunikácie s botom",
+  "help_cmd_text_markdown": "Tento bot vám umožňuje jednoducho posielať SMS aktivačné kódy na overenie účtov pre populárne online služby\\.\n\n 📋 Dostupné príkazy:\n/start – Začiatok komunikácie s botom",
   "unknown_cmd_text_markdown": "Nepodporovaný príkaz\n\nOspravedlňujeme sa\\, príkaz, ktorý ste zadali, nie je rozpoznaný\\. Skontrolujte, či používate niektorý z podporovaných príkazov\\. Zadajte /help pre zobrazenie zoznamu dostupných príkazov a ich použitia\\.",
   "your_balance_is_markdown": {
     "description": "Dostupné finančné prostriedky na vašom účte",
@@ -46,9 +46,13 @@
     "one": "Zadajte sumu pre platbu v *{{ .Currency }}*",
     "other": "Zadajte sumu pre platbu v *{{ .Currency }}*"
   },
-  "enter_amount_for_payment_in_currency_error_markdown": "Prosím zadajte sumu v mene pomocou správneho číselného formátu\\.\n\n Príklady: *12\\.30, 12, 100, atď*\\.",
+  "enter_amount_for_payment_in_currency_error_markdown": {
+    "description": "Prosím zadajte sumu v mene pomocou správneho číselného formátu",
+    "one": "Prosím zadajte sumu v *{{ .Currency }}* pomocou správneho číselného formátu\\.\n\n Príklady: *12\\.30, 12, 100, atď*\\.",
+    "other": "Prosím zadajte sumu v *{{ .Currency }}* pomocou správneho číselného formátu\\.\n\n Príklady: *12\\.30, 12, 100, atď*\\."
+  },
   "crypto_bot_pay_title_markdown": "Klepnutím na *'Zaplatiť'* vykonajte platbu, alebo *'Zrušiť'* ak chcete faktúru odstrániť\\.",
-  "balance_updated_markdown": "Váš zostatok na účte bol aktualizovaný\\. Ďakujeme za použitie našej služby\\!",
+  "balance_updated_markdown": "\uD83D\uDCB3 *Zostatok na vašom účte bol aktualizovaný*\\!\n\n\uD83D\uDE4F Ďakujeme, že používate naše služby\\!",
   "choose_preferred_currency_markdown": {
     "description": "Vyberte možnosť nižšie",
     "one": "Preferovaná mena: *{{ .Currency }}*\nAk chcete zmeniť, vyberte možnosť nižšie",

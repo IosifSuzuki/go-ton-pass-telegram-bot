@@ -2,56 +2,37 @@ package telegram
 
 import (
 	"context"
-	"go-ton-pass-telegram-bot/internal/model/telegram"
+	"go-ton-pass-telegram-bot/pkg/logger"
 )
 
-func (b *botController) startTelegramCommandHandler(ctx context.Context, update *telegram.Update) error {
-	telegramID := update.Message.From.ID
-	telegramUser, err := getTelegramUser(update)
-	if err != nil {
+func (b *botController) startTelegramCommandHandler(ctx context.Context, ctxOptions *ContextOptions) error {
+	if ctxOptions.Profile.PreferredLanguage == nil {
+		return b.sendMessageToSelectInitialLanguage(ctx, ctxOptions)
+	} else if ctxOptions.Profile.PreferredCurrency == nil {
+		return b.sendMessageToSelectInitialPreferredCurrency(ctx, ctxOptions)
+	}
+	if err := b.sendMessageWelcome(ctx, ctxOptions); err != nil {
 		return err
 	}
-	exist, _ := b.profileRepository.ExistsWithTelegramID(ctx, telegramID)
-	if !exist {
-		return b.messageToSelectInitialLanguage(ctx, update)
-	}
-	profile, err := b.profileRepository.FetchByTelegramID(ctx, telegramID)
-	if err != nil {
-		return err
-	}
-	if profile.PreferredLanguage == nil {
-		return b.messageToSelectInitialLanguage(ctx, update)
-	} else if profile.PreferredCurrency == nil {
-		return b.messageToSelectInitialPreferredCurrency(ctx, update.Message.Chat.ID, update.Message.From)
-	}
-	if err := b.messageWelcome(ctx, update.Message.Chat.ID, update.Message.From); err != nil {
-		return err
-	}
-	return b.messageMainMenu(ctx, update.Message.Chat.ID, telegramUser)
+	return b.sendMessageMainMenu(ctx, ctxOptions)
 }
 
-func (b *botController) helpTelegramCommandHandler(ctx context.Context, update *telegram.Update) error {
-	telegramID := update.Message.From.ID
-	langTag, err := b.getLanguageCode(ctx, *update.Message.From)
-	if err != nil {
+func (b *botController) helpTelegramCommandHandler(ctx context.Context, ctxOptions *ContextOptions) error {
+	log := b.container.GetLogger()
+	telegramID := ctxOptions.Update.GetTelegramID()
+	if err := b.sessionService.ClearBotStateForUser(ctx, telegramID); err != nil {
+		log.Error("fail to clear bot state for telegram profile", logger.FError(err))
 		return err
 	}
+	return b.sendHelpText(ctx, ctxOptions)
+}
 
+func (b *botController) unknownTelegramCommandHandler(ctx context.Context, ctxOptions *ContextOptions) error {
+	telegramID := ctxOptions.Profile.TelegramID
+	preferredLanguage := b.getPreferredLanguage(ctxOptions)
 	if err := b.sessionService.ClearBotStateForUser(ctx, telegramID); err != nil {
 		return err
 	}
-	return b.messageWithPlainText(ctx, b.container.GetLocalizer(langTag).LocalizedString("help_cmd_text"), update)
-}
-
-func (b *botController) unknownTelegramCommandHandler(ctx context.Context, update *telegram.Update) error {
-	telegramID := update.Message.From.ID
-	langTag, err := b.getLanguageCode(ctx, *update.Message.From)
-	if err != nil {
-		return err
-	}
-
-	if err := b.sessionService.ClearBotStateForUser(ctx, telegramID); err != nil {
-		return err
-	}
-	return b.messageWithPlainText(ctx, b.container.GetLocalizer(langTag).LocalizedString("unknown_cmd_text"), update)
+	text := b.container.GetLocalizer(preferredLanguage).LocalizedString("unknown_cmd_text")
+	return b.sendMessagePlainText(ctx, text, ctxOptions)
 }

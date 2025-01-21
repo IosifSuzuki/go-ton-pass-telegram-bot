@@ -9,6 +9,7 @@ const (
 	HelpCallbackQueryCmdText                           = "help"
 	LanguageCallbackQueryCmdText                       = "lang"
 	MainMenuCallbackQueryCmdText                       = "menu"
+	CancelEnterAmountCallbackQueryCmdText              = "c_ent_am"
 	SelectSMSServiceCallbackQueryCmdText               = "s_serv"
 	PayServiceCallbackQueryCmdText                     = "s_serv_count"
 	SelectLanguageCallbackQueryCmdText                 = "s_lang"
@@ -19,7 +20,6 @@ const (
 	EmptyCallbackQueryCmdText                          = "empty"
 	DeleteCryptoBotInvoiceQueryCmdText                 = "d_cr_b_inv"
 	ConfirmationPayServiceQueryCmdText                 = "con_s_pay"
-	CancelPayServiceQueryCmdText                       = "can_s_pay"
 	RefundAmountFromSMSActivationQueryCmdText          = "ref_sms_act"
 	BackQueryCmdText                                   = "back"
 )
@@ -67,12 +67,12 @@ func (t *TelegramCallbackData) CallbackQueryCommand() CallbackQueryCommand {
 		return DeleteCryptoBotInvoiceCallbackQueryCommand
 	case ConfirmationPayServiceQueryCmdText:
 		return ConfirmationPayServiceCallbackQueryCommand
-	case CancelPayServiceQueryCmdText:
-		return CancelPayServiceCallbackQueryCommand
 	case RefundAmountFromSMSActivationQueryCmdText:
 		return RefundAmountFromSMSActivationCallbackQueryCommand
 	case BackQueryCmdText:
 		return BackCallbackQueryCommand
+	case CancelEnterAmountCallbackQueryCmdText:
+		return CancelEnterAmountCallbackQueryCommand
 	default:
 		return NotCallbackQueryCommand
 	}

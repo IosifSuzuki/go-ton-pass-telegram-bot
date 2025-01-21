@@ -22,7 +22,7 @@ type ExchangeRate interface {
 	PriceWithFee(amount float64) float64
 }
 
-const feePriceRate = 1.15
+const feePriceRate = 1.2
 
 type exchangeRate struct {
 	container container.Container
