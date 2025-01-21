@@ -442,6 +442,7 @@ func (b *botController) selectPreferredCurrencyQueryCommandHandler(
 		log.Error("parameters[0] should be a string")
 		return b.editMessageInternalServerError(ctx, ctxOptions)
 	}
+	log.Debug("profile did select preferred currency", logger.F("currency", selectedPreferredCurrency))
 	if err := b.profileRepository.SetPreferredCurrency(ctx, telegramID, selectedPreferredCurrency); err != nil {
 		log.Error("fail to set preferred currency to profile", logger.FError(err))
 		return b.editMessageInternalServerError(ctx, ctxOptions)

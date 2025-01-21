@@ -17,5 +17,5 @@ func (u *Update) GetTelegramID() int64 {
 	if u.Message != nil {
 		return u.Message.From.ID
 	}
-	return u.CallbackQuery.Message.From.ID
+	return u.CallbackQuery.From.ID
 }
