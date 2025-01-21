@@ -29,18 +29,26 @@ func main() {
 		log.Fatalln(err)
 	}
 	db, err := openConnectionToDB(conf.DB())
-	defer db.Close()
 	if err != nil {
 		log.Fatalln(err)
 	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Fatalln(err)
+		}
+	}()
 	bundle := loadBundle()
-	l := logger.NewLogger(logger.DEV, logger.LevelDebug)
-	box := container.NewContainer(l, conf, bundle)
+	logger := logger.NewLogger(logger.DEV, logger.LevelDebug)
+	box := container.NewContainer(logger, conf, bundle)
 	if err := box.PreloadData(); err != nil {
 		log.Fatalln(err)
 	}
 	redisClient := configureAndConnectToRedisClient(conf)
-	defer redisClient.Close()
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			log.Fatalln(err)
+		}
+	}()
 	sessionService := service.NewSessionService(box, redisClient)
 	cacheService := service.NewCache(box, redisClient)
 	temporalClient, err := client.Dial(client.Options{
@@ -84,8 +92,16 @@ func RunServer(box container.Container, conn *sql.DB, sessionService service.Ses
 	if err := postponeService.Prepare(); err != nil {
 		log.Fatalln("fail to prepare postpone service", logger.FError(err))
 	}
-
-	r := router.PrepareAndConfigureRouter(box, sessionService, cacheService, smsService, postponeService, profileRepository, smsHistoryRepository, temporalWorkflowRepository)
+	r := router.PrepareAndConfigureRouter(
+		box,
+		sessionService,
+		cacheService,
+		smsService,
+		postponeService,
+		profileRepository,
+		smsHistoryRepository,
+		temporalWorkflowRepository,
+	)
 	openServer := &http.Server{
 		Handler:      r,
 		Addr:         box.GetConfig().OpenConnectionAddress(),
@@ -115,6 +131,7 @@ func loadBundle() *i18n.Bundle {
 	bundle.MustLoadMessageFile("locales/en.json")
 	bundle.MustLoadMessageFile("locales/sk.json")
 	bundle.MustLoadMessageFile("locales/uk.json")
+	bundle.MustLoadMessageFile("locales/ru.json")
 	return bundle
 }
 

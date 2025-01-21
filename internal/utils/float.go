@@ -1,6 +1,9 @@
 package utils
 
-import "strconv"
+import (
+	"regexp"
+	"strconv"
+)
 
 func GetFloat64(value any) float64 {
 	switch value := value.(type) {
@@ -12,10 +15,12 @@ func GetFloat64(value any) float64 {
 	return 0
 }
 
-func ParseFloat64FromText(text string) float64 {
+func ParseFloat64FromText(text string) (float64, error) {
+	re := regexp.MustCompile(`([-+]?\d*)([.,])(\d+)`)
+	text = re.ReplaceAllString(text, "${1}.${3}")
 	value, err := strconv.ParseFloat(text, 64)
 	if err != nil {
-		return 0
+		return 0, err
 	}
-	return value
+	return value, nil
 }

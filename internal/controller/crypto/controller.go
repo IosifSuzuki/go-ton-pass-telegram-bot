@@ -51,7 +51,7 @@ func (c *cryptoController) Serve(update *bot.WebhookUpdates) error {
 	}
 	payloadInvoiceEncodedText := invoice.Payload
 	if payloadInvoiceEncodedText == nil {
-		log.Debug("expected payload invoice")
+		log.Error("expected payload invoice")
 		return app.NilError
 	}
 	payloadInvoice, err := utils.DecodeCryptoBotInvoicePayload(*payloadInvoiceEncodedText)
@@ -65,7 +65,9 @@ func (c *cryptoController) Serve(update *bot.WebhookUpdates) error {
 		return err
 	}
 	localizer := c.container.GetLocalizer(*profile.PreferredLanguage)
-	replyMarkup := telegram.ReplyKeyboardRemove{RemoveKeyboard: true}
+	replyMarkup := telegram.ReplyKeyboardRemove{
+		RemoveKeyboard: true,
+	}
 	paidUsdRate, err := strconv.ParseFloat(*update.PayloadInvoice.PaidUsdRate, 64)
 	if err != nil {
 		log.Debug("paidUsdRate has unknown float format", logger.FError(err))
@@ -88,7 +90,11 @@ func (c *cryptoController) Serve(update *bot.WebhookUpdates) error {
 	}
 	amountInUSD := amount * paidUsdRate
 	log.Debug("will top up balance", logger.F("amountInUSD", amountInUSD))
-	if err := c.profileRepository.TopUpBalanceByTelegramID(ctx, payloadInvoice.TelegramID, amountInUSD); err != nil {
+	if err := c.profileRepository.TopUpBalanceByTelegramID(
+		ctx,
+		payloadInvoice.TelegramID,
+		amountInUSD,
+	); err != nil {
 		log.Debug("fail to top up balance", logger.FError(err))
 		return c.SendTextWithPhotoMedia(
 			profile.TelegramChatID,

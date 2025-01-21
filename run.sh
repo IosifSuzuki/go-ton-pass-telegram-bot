@@ -35,5 +35,5 @@ function element_in_array() {
   return 1
 }
 
-#start endpoint
+#start point
 main

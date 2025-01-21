@@ -7,15 +7,18 @@ import (
 type Localizer interface {
 	LocalizedString(key string) string
 	LocalizedStringWithTemplateData(key string, templateData map[string]any) string
+	GetISOLang() string
 }
 
 type localizer struct {
 	localizer *i18n.Localizer
+	lang      string
 }
 
 func NewLocalizer(bundle *i18n.Bundle, lang string) Localizer {
 	return &localizer{
 		localizer: i18n.NewLocalizer(bundle, lang),
+		lang:      lang,
 	}
 }
 
@@ -36,4 +39,8 @@ func (l *localizer) LocalizedStringWithTemplateData(key string, templateData map
 		TemplateData: templateData,
 	})
 	return localizedString
+}
+
+func (l *localizer) GetISOLang() string {
+	return l.lang
 }

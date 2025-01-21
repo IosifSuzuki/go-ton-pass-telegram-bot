@@ -19,23 +19,28 @@ type Cache interface {
 	GetSMSCountries(ctx context.Context) (*app.CacheResponse[[]sms.Country], error)
 	SaveSMSServices(ctx context.Context, services []sms.Service) error
 	GetSMSServices(ctx context.Context) (*app.CacheResponse[[]sms.Service], error)
-	SaveTelegramCallbackData(ctx context.Context, callbackData []app.TelegramCallbackData, userID, chatID, messageID int64) error
-	GetTelegramCallbackData(ctx context.Context, userID, chatID, messageID int64) ([]app.TelegramCallbackData, error)
-	GetLastTelegramCallbackDataOperation(ctx context.Context, userID, chatID, messageID int64) (string, error)
-	SetLastTelegramCallbackDataOperation(ctx context.Context, operation string, userID, chatID, messageID int64) error
+	SetLastCallbackQueryCommand(ctx context.Context, callbackQueryCommand app.CallbackQueryCommand, telegramMessagingInfo TelegramMessagingInfo) error
+	GetLastCallbackQueryCommand(ctx context.Context, telegramMessagingInfo TelegramMessagingInfo) (*app.CallbackQueryCommand, error)
+	SaveTelegramCallbackData(ctx context.Context, callbackData []app.TelegramCallbackData, telegramMessagingInfo TelegramMessagingInfo) error
+	GetTelegramCallbackData(ctx context.Context, telegramMessagingInfo TelegramMessagingInfo) ([]app.TelegramCallbackData, error)
 }
 
 const (
-	exchangeRateCacheKey              = "exchangeRateCacheKey"
-	smsCountriesCacheKey              = "smsCountriesCacheKey"
-	smsServicesCacheKey               = "smsServicesCacheKey"
-	telegramCallbackDataCacheKey      = "telegramCallbackDataCacheKey"
-	lastOperationCallbackDataCacheKey = "lastOperationCallbackDataCacheKey"
+	exchangeRateCacheKey             = "exchangeRateCacheKey"
+	smsCountriesCacheKey             = "smsCountriesCacheKey"
+	smsServicesCacheKey              = "smsServicesCacheKey"
+	telegramCallbackDataCacheKey     = "telegramCallbackDataCacheKey"
+	lastCallbackQueryCommandCacheKey = "lastCallbackQueryCommandCacheKey"
 )
 
 type cache struct {
 	container container.Container
 	client    *redis.Client
+}
+
+type TelegramMessagingInfo struct {
+	ChatID    int64
+	MessageID int64
 }
 
 func NewCache(container container.Container, client *redis.Client) Cache {
@@ -133,11 +138,15 @@ func (c *cache) GetSMSServices(ctx context.Context) (*app.CacheResponse[[]sms.Se
 	return &cacheResponse, nil
 }
 
-func (c *cache) SaveTelegramCallbackData(ctx context.Context, callbackData []app.TelegramCallbackData, userID, chatID, messageID int64) error {
+func (c *cache) SaveTelegramCallbackData(
+	ctx context.Context,
+	callbackData []app.TelegramCallbackData,
+	telegramMessagingInfo TelegramMessagingInfo,
+) error {
 	log := c.container.GetLogger()
 	log.Debug("will save telegram callback data")
 	var cacheResponse app.CacheResponse[[]string]
-	key := keyForTelegramCallbackData(telegramCallbackDataCacheKey, userID, chatID, messageID)
+	key := keyForTelegramMessagingInfo(telegramCallbackDataCacheKey, telegramMessagingInfo)
 	encodedData := make([]string, 0, len(callbackData))
 	for _, item := range callbackData {
 		encodedItem, err := utils.EncodeTelegramCallbackData(item)
@@ -155,10 +164,13 @@ func (c *cache) SaveTelegramCallbackData(ctx context.Context, callbackData []app
 	return c.client.Set(ctx, key, finalEncoding, 4*time.Hour).Err()
 }
 
-func (c *cache) GetTelegramCallbackData(ctx context.Context, userID, chatID, messageID int64) ([]app.TelegramCallbackData, error) {
+func (c *cache) GetTelegramCallbackData(
+	ctx context.Context,
+	telegramMessagingInfo TelegramMessagingInfo,
+) ([]app.TelegramCallbackData, error) {
 	log := c.container.GetLogger()
 	log.Debug("will get telegram callback data")
-	key := keyForTelegramCallbackData(telegramCallbackDataCacheKey, userID, chatID, messageID)
+	key := keyForTelegramMessagingInfo(telegramCallbackDataCacheKey, telegramMessagingInfo)
 	encodedText, err := c.client.Get(ctx, key).Result()
 	if err != nil {
 		return nil, err
@@ -178,24 +190,26 @@ func (c *cache) GetTelegramCallbackData(ctx context.Context, userID, chatID, mes
 	return callbackData, nil
 }
 
-func (c *cache) GetLastTelegramCallbackDataOperation(ctx context.Context, userID, chatID, messageID int64) (string, error) {
-	log := c.container.GetLogger()
-	log.Debug("will get telegram callback data")
-	key := keyForTelegramCallbackData(telegramCallbackDataCacheKey, userID, chatID, messageID)
-	operation, err := c.client.Get(ctx, key).Result()
+func (c *cache) SetLastCallbackQueryCommand(ctx context.Context, callbackQueryCommand app.CallbackQueryCommand, telegramMessagingInfo TelegramMessagingInfo) error {
+	key := keyForTelegramMessagingInfo(lastCallbackQueryCommandCacheKey, telegramMessagingInfo)
+	return c.client.Set(ctx, key, int(callbackQueryCommand), 4*time.Hour).Err()
+}
+
+func (c *cache) GetLastCallbackQueryCommand(ctx context.Context, telegramMessagingInfo TelegramMessagingInfo) (*app.CallbackQueryCommand, error) {
+	key := keyForTelegramMessagingInfo(lastCallbackQueryCommandCacheKey, telegramMessagingInfo)
+	lastCallbackQueryCommandInt, err := c.client.Get(ctx, key).Int()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return operation, nil
+	lastCallbackQueryCommand := app.CallbackQueryCommand(lastCallbackQueryCommandInt)
+	return &lastCallbackQueryCommand, nil
 }
 
-func (c *cache) SetLastTelegramCallbackDataOperation(ctx context.Context, operation string, userID, chatID, messageID int64) error {
-	log := c.container.GetLogger()
-	log.Debug("will get telegram callback data")
-	key := keyForTelegramCallbackData(telegramCallbackDataCacheKey, userID, chatID, messageID)
-	return c.client.Set(ctx, key, operation, 4*time.Hour).Err()
-}
-
-func keyForTelegramCallbackData(key string, userID, chatID, messageID int64) string {
-	return fmt.Sprintf("%s/%d_%d_%d", key, userID, chatID, messageID)
+func keyForTelegramMessagingInfo(key string, telegramMessagingInfo TelegramMessagingInfo) string {
+	return fmt.Sprintf(
+		"%s/%d_%d",
+		key,
+		telegramMessagingInfo.ChatID,
+		telegramMessagingInfo.MessageID,
+	)
 }
