@@ -17,7 +17,7 @@ func (p *PriceForService) MinPriceCount() int {
 	minPrice := math.MaxFloat64
 	count := 0
 	for key, value := range p.FreePriceMap {
-		price := utils.ParseFloat64FromText(key)
+		price, _ := utils.ParseFloat64FromText(key)
 		if minPrice > price {
 			minPrice = price
 			count = value

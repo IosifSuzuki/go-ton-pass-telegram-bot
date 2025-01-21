@@ -19,12 +19,12 @@
   "cancel_invoice": "Cancel invoice",
   "start_cmd_short_description_cmd_markdown": "Start interacting with the bot",
   "help_cmd_short_description_cmd_markdown": "Provides instructions for interacting with the bot",
-  "short_description_markdown": "Easily obtain SMS activation codes for various online services\\. Simply request a code for services like Google\\, Instagram\\, and Facebook\\, and quickly and efficiently receive your verification SMS\\.",
+  "short_description_markdown": "Easily obtain *SMS activation codes* for various online services\\. Simply request a code for services like Google\\, Instagram\\, and Facebook\\, and quickly and efficiently receive your verification SMS\\.",
   "unknown_telegram_command_markdown": "Unknown telegram command",
   "select_preferred_language_markdown": "Select preferred bot language",
   "select_preferred_currency_markdown": "Select preferred currency",
   "unknown_error_markdown": "Unknown error",
-  "help_cmd_text_markdown": "This bot allows you to easily send SMS activation codes to verify accounts for popular online services\\.\n\n 📋 Available commands:\n/start \\– Start interacting with the bot",
+  "help_cmd_text_markdown": "This bot allows you to easily send SMS activation codes to verify accounts for popular online services\\.\n\n 📋 Available commands:\n/start – Start interacting with the bot",
   "unknown_cmd_text_markdown": "Unsupported command\n\nSorry\\, the command you entered is not recognized\\. Please ensure you are using one of the supported commands\\. Type /help to view the list of available commands and their usage\\.",
   "your_balance_is_markdown": {
     "description": "Available Funds in Your Account",
@@ -46,9 +46,13 @@
     "one": "Enter the amount for payment in *{{ .Currency }}*",
     "other": "Enter the amount for payment in *{{ .Currency }}*"
   },
-  "enter_amount_for_payment_in_currency_error_markdown": "Please enter the amount in currency using the correct number format\\.\n\n Examples: *12\\.30, 12, 100, etc*\\.",
+  "enter_amount_for_payment_in_currency_error_markdown": {
+    "description": "Please enter the amount in currency using the correct number format",
+    "one": "Please enter the amount in *{{ .Currency }}* using the correct number format\\.\n\n Examples: *12\\.30, 12, 100, etc*\\.",
+    "other": "Please enter the amount in *{{ .Currency }}* using the correct number format\\.\n\n Examples: *12\\.30, 12, 100, etc*\\."
+  },
   "crypto_bot_pay_title_markdown": "Tap *'Pay'* to make the payment, or *'Cancel'* if you wish to delete the invoice\\.",
-  "balance_updated_markdown": "Your account balance has been updated\\. Thank you for using our service\\!",
+  "balance_updated_markdown": "💳 *Your account balance has been updated*\\!\n\n\uD83D\uDE4F Thank you for using our service\\!",
   "choose_preferred_currency_markdown": {
     "description": "Choose an option below",
     "one": "Preferred Currency: *{{ .Currency }}*\nIf you'd like to switch, please choose an option below",

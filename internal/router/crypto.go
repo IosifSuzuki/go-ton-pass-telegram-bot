@@ -28,6 +28,7 @@ func (c *CryptoBotRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}()
 	log := c.container.GetLogger()
+	log.Debug("receive message from webhook")
 	var update bot.WebhookUpdates
 	if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
 		if err := filterCryptoErrors(err); err != nil {
@@ -38,8 +39,7 @@ func (c *CryptoBotRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-	err := c.controller.Serve(&update)
-	if err != nil {
+	if err := c.controller.Serve(&update); err != nil {
 		log.Fatal("controller has failed", logger.FError(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return

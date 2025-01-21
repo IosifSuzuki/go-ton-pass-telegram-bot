@@ -22,7 +22,7 @@ const (
 	EmptyCallbackQueryCommand
 	DeleteCryptoBotInvoiceCallbackQueryCommand
 	ConfirmationPayServiceCallbackQueryCommand
-	CancelPayServiceCallbackQueryCommand
 	RefundAmountFromSMSActivationCallbackQueryCommand
 	BackCallbackQueryCommand
+	CancelEnterAmountCallbackQueryCommand
 )

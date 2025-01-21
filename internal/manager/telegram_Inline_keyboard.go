@@ -31,6 +31,7 @@ type TelegramInlineKeyboardManager interface {
 	ServiceCountriesInlineKeyboardMarkup(serviceCode string, preferredCurrency string, pagination app.Pagination, servicePrices []sms.PriceForService, countries []sms.Country) (*telegram.InlineKeyboardMarkup, error)
 	ConfirmationPayInlineKeyboardMarkup(serviceCode string, countryID int64, maxPrice float64) (*telegram.InlineKeyboardMarkup, error)
 	RefundInlineKeyboardMarkup(smsHistoryID int64) (*telegram.InlineKeyboardMarkup, error)
+	EnteringAmountInlineKeyboardMarkup() (*telegram.InlineKeyboardMarkup, error)
 }
 
 type telegramInlineKeyboardManager struct {
@@ -54,6 +55,8 @@ func (t *telegramInlineKeyboardManager) Set(languageTag string) {
 }
 
 func (t *telegramInlineKeyboardManager) MainMenuKeyboardMarkup() (*telegram.InlineKeyboardMarkup, error) {
+	langCode := t.localizer.GetISOLang()
+	flagEmoji := t.container.GetConfig().LanguageByCode(langCode).FlagEmoji
 	balanceInlineKeyboardButton, err := NewTelegramInlineButtonBuilder().
 		SetText(utils.ButtonTitle(t.localizer.LocalizedString("balance"), "💰")).
 		SetCommandName(app.BalanceCallbackQueryCmdText).
@@ -85,7 +88,7 @@ func (t *telegramInlineKeyboardManager) MainMenuKeyboardMarkup() (*telegram.Inli
 		return nil, err
 	}
 	languageInlineKeyboardButton, err := NewTelegramInlineButtonBuilder().
-		SetText(utils.ButtonTitle(t.localizer.LocalizedString("language"), "🗣️")).
+		SetText(utils.ButtonTitle(t.localizer.LocalizedString("language"), flagEmoji)).
 		SetCommandName(app.LanguageCallbackQueryCmdText).
 		Build()
 	if err != nil {
@@ -290,12 +293,13 @@ func (t *telegramInlineKeyboardManager) CryptoPayBotKeyboardMarkup(url string, i
 func (t *telegramInlineKeyboardManager) TopUpBalanceKeyboardMarkup() (*telegram.InlineKeyboardMarkup, error) {
 	log := t.container.GetLogger()
 	columns := 1
+	topUpBalanceButtonTitle := utils.ButtonTitle(t.localizer.LocalizedString("top_up_balance"), "💳")
 	topUpBalanceButton, err := NewTelegramInlineButtonBuilder().
-		SetText(t.localizer.LocalizedString("top_up_balance")).
+		SetText(topUpBalanceButtonTitle).
 		SetCommandName(app.ListPayCurrenciesCallbackQueryCmdText).
 		Build()
 	if err != nil {
-		log.Debug("fail to create top up balance button", logger.FError(err))
+		log.Error("fail to create top up balance button", logger.FError(err))
 		return nil, err
 	}
 	backButton := t.BackKeyboardButton()
@@ -339,16 +343,27 @@ func (t *telegramInlineKeyboardManager) ConfirmationPayInlineKeyboardMarkup(serv
 	if err != nil {
 		return nil, err
 	}
-	cancelPayButton, err := NewTelegramInlineButtonBuilder().
+	t.BackKeyboardButton()
+	backButton := t.BackKeyboardButton()
+	gridButtons := t.getGridInlineKeyboardButton([]telegram.InlineKeyboardButton{*confirmPayButton, *backButton}, columns)
+	return &telegram.InlineKeyboardMarkup{
+		InlineKeyboard: gridButtons,
+	}, nil
+}
+
+func (t *telegramInlineKeyboardManager) EnteringAmountInlineKeyboardMarkup() (*telegram.InlineKeyboardMarkup, error) {
+	cancelEnterAmountButton, err := NewTelegramInlineButtonBuilder().
 		SetText(utils.ButtonTitle(t.localizer.LocalizedString("cancel"), "❌")).
-		SetCommandName(app.CancelPayServiceQueryCmdText).
+		SetCommandName(app.CancelEnterAmountCallbackQueryCmdText).
 		Build()
 	if err != nil {
 		return nil, err
 	}
-	gridButtons := t.getGridInlineKeyboardButton([]telegram.InlineKeyboardButton{*confirmPayButton, *cancelPayButton}, columns)
+	inlineKeyboardButtons := []telegram.InlineKeyboardButton{
+		*cancelEnterAmountButton,
+	}
 	return &telegram.InlineKeyboardMarkup{
-		InlineKeyboard: gridButtons,
+		InlineKeyboard: t.getGridInlineKeyboardButton(inlineKeyboardButtons, 1),
 	}, nil
 }
 

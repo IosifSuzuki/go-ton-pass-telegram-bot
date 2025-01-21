@@ -6,9 +6,11 @@ import (
 	"go-ton-pass-telegram-bot/internal/controller/crypto"
 	"go-ton-pass-telegram-bot/internal/controller/sms"
 	telegramController "go-ton-pass-telegram-bot/internal/controller/telegram"
+	"go-ton-pass-telegram-bot/internal/middleware"
 	"go-ton-pass-telegram-bot/internal/repository"
 	"go-ton-pass-telegram-bot/internal/service"
 	"go-ton-pass-telegram-bot/internal/service/postpone"
+	"go-ton-pass-telegram-bot/internal/worker"
 	"net/http"
 )
 
@@ -23,6 +25,12 @@ func PrepareAndConfigureRouter(
 	temporalWorkflowRepository repository.TemporalWorkflowRepository,
 ) http.Handler {
 	router := mux.NewRouter()
+	telegramService := service.NewTelegramBot(container)
+	authenticationMiddleware := middleware.NewAuthentication(container, profileRepository)
+	subscriptionMiddleware := middleware.NewSubscription(container, telegramService)
+	telegramParserMiddleware := middleware.NewTelegramParser(container)
+	cryptoPayBot := service.NewCryptoPayBot(container)
+	exchangeRate := worker.NewExchangeRate(container, cacheService, cryptoPayBot)
 	telegramBotController := telegramController.NewBotController(
 		container,
 		sessionService,
@@ -31,6 +39,8 @@ func PrepareAndConfigureRouter(
 		postponeService,
 		profileRepository,
 		smsHistoryRepository,
+		cryptoPayBot,
+		exchangeRate,
 		temporalWorkflowRepository,
 	)
 	cryptoController := crypto.NewCryptoController(
@@ -40,8 +50,15 @@ func PrepareAndConfigureRouter(
 	)
 	router.HandleFunc("/ping", PingServe)
 	smsActivateController := sms.NewSMSActivateController(container, profileRepository, smsHistoryRepository)
-	telegramRouter := NewTelegramRouter(container, telegramBotController)
-	router.Handle("/telegram/handler/webhook", telegramRouter)
+	telegramRouter := NewTelegramRouter(container, telegramBotController, exchangeRate)
+	router.Handle(
+		"/telegram/handler/webhook",
+		telegramParserMiddleware.Handler(
+			authenticationMiddleware.Handler(
+				subscriptionMiddleware.Handler(telegramRouter),
+			),
+		),
+	)
 	cryptoRouter := NewCryptoBotRouter(container, cryptoController)
 	router.Handle("/telegram/crypto_bot/webhook", cryptoRouter)
 	smsActivateRouter := NewSMSActivateRouter(container, smsActivateController)

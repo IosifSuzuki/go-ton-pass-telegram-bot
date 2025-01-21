@@ -10,13 +10,19 @@ import (
 	"go-ton-pass-telegram-bot/internal/repository"
 	"go-ton-pass-telegram-bot/internal/service"
 	"go-ton-pass-telegram-bot/internal/service/postpone"
-	"go-ton-pass-telegram-bot/internal/utils"
 	"go-ton-pass-telegram-bot/internal/worker"
 	"go-ton-pass-telegram-bot/pkg/logger"
 )
 
 type BotController interface {
-	Serve(update *telegram.Update) error
+	Serve(*ContextOptions) error
+}
+
+type ContextOptions struct {
+	TelegramInlineKeyboardManager manager.TelegramInlineKeyboardManager
+	Update                        *telegram.Update
+	Profile                       *domain.Profile
+	IsMemberSubscription          bool
 }
 
 const (
@@ -47,7 +53,6 @@ type botController struct {
 	exchangeRateWorker         worker.ExchangeRate
 	smsActivateWorker          worker.SMSActivate
 	formatterWorker            worker.Formatter
-	keyboardManager            manager.TelegramInlineKeyboardManager
 	callbackDataStack          service.CallbackDataStack
 }
 
@@ -59,10 +64,10 @@ func NewBotController(
 	postponeService postpone.Postpone,
 	profileRepository repository.ProfileRepository,
 	smsHistoryRepository repository.SMSHistoryRepository,
+	cryptoPayBot service.CryptoPayBot,
+	exchangeRateWorker worker.ExchangeRate,
 	temporalWorkflowRepository repository.TemporalWorkflowRepository,
 ) BotController {
-	cryptoPayBot := service.NewCryptoPayBot(container)
-	exchangeRateWorker := worker.NewExchangeRate(container, cacheService, cryptoPayBot)
 	smsActivateWorker := worker.NewSMSActivate(container, smsService, cacheService)
 	formatterWorker := worker.NewFormatter(container)
 	callbackDataStack := service.NewCallbackDataStack(container, cacheService)
@@ -80,135 +85,122 @@ func NewBotController(
 		exchangeRateWorker:         exchangeRateWorker,
 		smsActivateWorker:          smsActivateWorker,
 		formatterWorker:            formatterWorker,
-		keyboardManager:            manager.NewTelegramInlineKeyboardManager(container, exchangeRateWorker),
 		callbackDataStack:          callbackDataStack,
 	}
 }
 
-func (b *botController) Serve(update *telegram.Update) error {
-	log := b.container.GetLogger()
-	log.Debug("receive telegram message", logger.F("update", update))
-	if isEmpty(update) {
-		return app.EmptyUpdateError
-	}
-
+func (b *botController) Serve(ctxOptions *ContextOptions) error {
 	ctx := context.Background()
-	telegramID, err := getTelegramID(update)
+	log := b.container.GetLogger()
+	log.Debug(
+		"serve data from bot",
+		logger.F("update", ctxOptions.Update),
+	)
+
+	hasSubscription, err := b.ServeSubscription(ctx, ctxOptions)
 	if err != nil {
-		log.Error("can't get telegram id", logger.FError(err))
-		return err
+		log.Error("fail to serve subscription", logger.FError(err))
+		return b.editMessageInternalServerError(ctx, ctxOptions)
 	}
-	if err := b.recordTelegramProfile(ctx, update); err != nil {
-		log.Error("recordTelegramProfile has failed", logger.FError(err))
-		return err
-	}
-	isChatMember, err := b.CheckUserIsChatMember(update)
-	if err != nil {
-		log.Error("fail CheckUserIsChatMember", logger.FError(err))
-		return err
-	}
-	if !isChatMember {
+	if !hasSubscription {
 		return nil
 	}
-	telegramCmd, err := b.telegramBotService.ParseTelegramCommand(update)
+
+	telegramCmd, err := b.telegramBotService.ParseTelegramCommand(ctxOptions.Update)
 	switch telegramCmd {
 	case app.StartTelegramCommand:
-		return b.startTelegramCommandHandler(ctx, update)
+		return b.startTelegramCommandHandler(ctx, ctxOptions)
 	case app.HelpTelegramCommand:
-		return b.helpTelegramCommandHandler(ctx, update)
+		return b.helpTelegramCommandHandler(ctx, ctxOptions)
 	}
 	if err != nil && telegramCmd == app.UnknownTelegramCommand {
-		if err := b.sessionService.ClearBotStateForUser(ctx, *telegramID); err != nil {
+		err := b.sessionService.ClearBotStateForUser(ctx, ctxOptions.Update.GetChatID())
+		if err != nil {
 			return err
 		}
-		return b.unknownTelegramCommandHandler(ctx, update)
+		return b.unknownTelegramCommandHandler(ctx, ctxOptions)
 	}
 
-	var telegramCallbackData *app.TelegramCallbackData
-	if callbackQuery := update.CallbackQuery; callbackQuery != nil {
-		telegramCallbackData, err = b.telegramBotService.ParseTelegramCallbackData(update.CallbackQuery)
-		if err != nil {
-			log.Debug("fail to parse telegram callback data", logger.F("telegramCallbackData", telegramCallbackData), logger.FError(err))
-			return err
-		}
-	}
-	userBotState := b.sessionService.GetBotStateForUser(ctx, *telegramID)
-	log.Debug("got bot state from session service", logger.F("userBotState", userBotState))
+	userBotState := b.sessionService.GetBotStateForUser(ctx, ctxOptions.Update.GetTelegramID())
+	log.Debug(
+		"got bot state from session service",
+		logger.F("userBotState", userBotState),
+	)
 	switch userBotState {
 	case app.EnteringAmountCurrencyBotState:
-		if update.CallbackQuery == nil {
-			return b.enteringAmountCurrencyBotStageHandler(ctx, update)
-		}
-		break
+		return b.enteringAmountCurrencyBotStageHandler(ctx, ctxOptions)
 	}
-
-	if telegramCallbackData == nil {
-		return b.helpTelegramCommandHandler(ctx, update)
+	callbackQuery := ctxOptions.Update.CallbackQuery
+	if callbackQuery == nil {
+		log.Error(
+			"fail to retrieve callback query from update",
+			logger.FError(err),
+		)
+		// fallback
+		return b.helpTelegramCommandHandler(ctx, ctxOptions)
 	}
-	callbackQuery := update.CallbackQuery
-	callbackQueryCommand := telegramCallbackData.CallbackQueryCommand()
-	if callbackQueryCommand == app.BackCallbackQueryCommand {
-		callbackData, err := b.callbackDataStack.Pop(ctx, callbackQuery)
-		if err != nil {
-			callbackData = &app.TelegramCallbackData{
-				Name: app.MainMenuCallbackQueryCmdText,
-			}
-			log.Debug("fail to pop callbackDataStack", logger.FError(err))
-		}
-		encodedCallbackData, err := utils.EncodeTelegramCallbackData(*callbackData)
-		if err != nil {
-			log.Error("fail to encode telegram callback data", logger.FError(err))
-			return err
-		}
-		callbackQueryCommand = callbackData.CallbackQueryCommand()
-		callbackQuery.Data = *encodedCallbackData
-	} else if err := b.callbackDataStack.Push(ctx, callbackQuery); err != nil {
-		log.Error("fail to record callback query to cache", logger.FError(err))
+	telegramCallbackData, err := b.telegramBotService.ParseTelegramCallbackData(callbackQuery)
+	if err != nil {
+		log.Error(
+			"fail to parse telegram callback data",
+			logger.F("telegramCallbackData", telegramCallbackData),
+			logger.FError(err),
+		)
 		return err
 	}
+	if telegramCallbackData == nil {
+		log.Error("telegramCallbackData has nil value")
+		return b.helpTelegramCommandHandler(ctx, ctxOptions)
+	}
+	transformedTelegramCallbackData, err := b.ServeCallbackQueryStack(ctx, callbackQuery, telegramCallbackData)
+	if err != nil {
+		log.Error("fail to serve callback query stack", logger.FError(err))
+		return b.editMessageInternalServerError(ctx, ctxOptions)
+	}
+	callbackQueryCommand := transformedTelegramCallbackData.CallbackQueryCommand()
 	switch callbackQueryCommand {
 	case app.SelectInitialLanguageCallbackQueryCommand:
-		return b.selectedInitialLanguageCallbackQueryCommandHandler(ctx, callbackQuery)
+		return b.selectedInitialLanguageCallbackQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
 	case app.SelectInitialPreferredCurrencyCallbackQueryCommand:
-		return b.selectedInitialPreferredCurrencyCallbackQueryCommandHandler(ctx, callbackQuery)
+		return b.selectedInitialPreferredCurrencyCallbackQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
 	case app.BalanceCallbackQueryCommand:
-		return b.balanceCallbackQueryCommandHandler(ctx, callbackQuery)
+		return b.balanceCallbackQueryCommandHandler(ctx, ctxOptions)
 	case app.MainMenuCallbackQueryCommand:
-		return b.mainMenuCallbackQueryCommandHandler(ctx, callbackQuery)
+		return b.mainMenuCallbackQueryCommandHandler(ctx, ctxOptions)
 	case app.BuyNumberCallbackQueryCommand:
-		return b.servicesCallbackQueryCommandHandler(ctx, callbackQuery)
+		return b.servicesCallbackQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
 	case app.SelectSMSServiceCallbackQueryCommand:
-		return b.selectServiceCallbackQueryCommandHandler(ctx, callbackQuery)
+		return b.selectServiceCallbackQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
 	case app.HelpCallbackQueryCommand:
-		return b.helpCallbackQueryCommandHandler(ctx, callbackQuery)
+		return b.helpCallbackQueryCommandHandler(ctx, ctxOptions)
 	case app.LanguageCallbackQueryCommand:
-		return b.languagesCallbackQueryCommandHandler(ctx, callbackQuery)
+		return b.languagesCallbackQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
 	case app.SelectLanguageCallbackQueryCommand:
-		return b.selectLanguageCallbackQueryCommandHandler(ctx, callbackQuery)
+		return b.selectedLanguageCallbackQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
 	case app.HistoryCallbackQueryCommand:
-		return b.historyCallbackQueryCommandHandler(ctx, callbackQuery)
+		return b.historyCallbackQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
 	case app.PayServiceCallbackQueryCommand:
-		return b.payServiceQueryCommandHandler(ctx, callbackQuery)
+		return b.payServiceQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
 	case app.ListPayCurrenciesCallbackQueryCommand:
-		return b.listPayCurrenciesCallbackQueryCommandHandler(ctx, callbackQuery)
+		return b.listPayCurrenciesCallbackQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
 	case app.SelectPayCurrencyCallbackQueryCommand:
-		return b.selectedPayCurrenciesCallbackQueryCommandHandler(ctx, callbackQuery)
+		return b.selectedPayCurrenciesCallbackQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
+	case app.CancelEnterAmountCallbackQueryCommand:
+		return b.cancelEnteringAmountCallbackQueryCommandHandler(ctx, ctxOptions)
 	case app.PreferredCurrenciesCallbackQueryCommand:
-		return b.preferredCurrenciesQueryCommandHandler(ctx, callbackQuery)
+		return b.preferredCurrenciesQueryCommandHandler(ctx, ctxOptions)
 	case app.SelectPreferredCurrencyCallbackQueryCommand:
-		return b.selectPreferredCurrencyQueryCommandHandler(ctx, callbackQuery)
+		return b.selectPreferredCurrencyQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
 	case app.EmptyCallbackQueryCommand:
 		return b.emptyQueryCommandHandler(ctx, callbackQuery)
 	case app.DeleteCryptoBotInvoiceCallbackQueryCommand:
-		return b.deleteCryptoBotQueryCommandHandler(ctx, callbackQuery)
+		return b.deleteCryptoBotQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
 	case app.ConfirmationPayServiceCallbackQueryCommand:
-		return b.confirmServiceQueryCommandHandler(ctx, callbackQuery)
-	case app.CancelPayServiceCallbackQueryCommand:
-		return b.cancelPayServiceQueryCommandHandler(ctx, callbackQuery)
+		return b.confirmServiceQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
 	case app.RefundAmountFromSMSActivationCallbackQueryCommand:
-		return b.refundAmountFromSMSActivationQueryCommandHandler(ctx, callbackQuery)
+		return b.refundAmountFromSMSActivationQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
 	default:
-		return b.developingCallbackQueryCommandHandler(ctx, callbackQuery)
+		return b.developingCallbackQueryCommandHandler(ctx, ctxOptions)
 	}
 }
 
@@ -243,138 +235,89 @@ func (b *botController) recordTelegramProfile(ctx context.Context, update *teleg
 	return nil
 }
 
-func (b *botController) getLanguageCode(ctx context.Context, user telegram.User) (string, error) {
-	log := b.container.GetLogger()
-	profile, err := b.profileRepository.FetchByTelegramID(ctx, user.ID)
-	defaultLang := "en"
-	if err != nil {
-		log.Error("fail to get profile by telegram id", logger.F("telegram_id", user.ID), logger.FError(err))
-		return defaultLang, err
-	}
-	if preferredLanguage := profile.PreferredLanguage; preferredLanguage != nil {
-		return *preferredLanguage, nil
-	}
-	return defaultLang, nil
-}
-
-func (b *botController) EditMessageMedia(callbackQuery *telegram.CallbackQuery, text string, photoURL string, replyMarkup any) error {
-	log := b.container.GetLogger()
-	photoMedia := telegram.InputPhotoMedia{
-		Type:      "photo",
-		Media:     photoURL,
-		Caption:   utils.NewString(text),
-		ParseMode: utils.NewString("MarkdownV2"),
-	}
-	editMessageMedia := telegram.EditMessageMedia{
-		ChatID:      &callbackQuery.Message.Chat.ID,
-		MessageID:   &callbackQuery.Message.ID,
-		Media:       photoMedia,
-		ReplyMarkup: replyMarkup,
-	}
-	if err := b.telegramBotService.SendResponse(editMessageMedia, app.EditMessageMediaTelegramMethod); err != nil {
-		log.Error("fail to edit message media", logger.FError(err))
-		return err
-	}
-	return nil
-}
-
-func (b *botController) SendTextWithPhotoMedia(chatID int64, text string, photoURL string, replyMarkup any) error {
-	log := b.container.GetLogger()
-	resp := telegram.SendPhoto{
-		ChatID:      chatID,
-		Caption:     text,
-		Photo:       photoURL,
-		ParseMode:   utils.NewString("MarkdownV2"),
-		ReplyMarkup: replyMarkup,
-	}
-	if err := b.telegramBotService.SendResponse(resp, app.SendPhotoTelegramMethod); err != nil {
-		log.Debug("fail to send message with photo media", logger.FError(err))
-		return err
-	}
-	return nil
-}
-
-func (b *botController) AnswerCallbackQuery(callbackQuery *telegram.CallbackQuery) error {
-	log := b.container.GetLogger()
-	answerCallbackQuery := telegram.AnswerCallbackQuery{
-		ID:        callbackQuery.ID,
-		Text:      nil,
-		ShowAlert: false,
-	}
-	if err := b.telegramBotService.SendResponse(answerCallbackQuery, app.AnswerCallbackQueryTelegramMethod); err != nil {
-		log.Debug("fail to send a AnswerCallbackQuery to telegram servers", logger.FError(err))
-		return err
-	}
-	return nil
-}
-
-func (b *botController) CheckUserIsChatMember(update *telegram.Update) (bool, error) {
-	cxt := context.Background()
-	log := b.container.GetLogger()
-	channelLink := "@tonpassnews"
-	user, err := getTelegramUser(update)
-	if err != nil {
-		log.Error("fail retrieve telegram user", logger.FError(err))
-		return false, err
-	}
-	isChatMember, err := b.telegramBotService.UserIsChatMember(channelLink, user.ID)
-	if isChatMember {
-		return isChatMember, nil
-	}
-	langCode, err := b.getLanguageCode(cxt, *user)
-	if err != nil {
-		log.Debug("fail to get language code from user", logger.F("langCode", langCode))
-	}
-	localizer := b.container.GetLocalizer(langCode)
-	if err != nil {
-		log.Debug("fail to check is chat member", logger.FError(err))
-		return false, err
-	}
-	text := localizer.LocalizedStringWithTemplateData("subscribe_to_channel_markdown", map[string]any{
-		"Channel": channelLink,
-	})
-	replyKeyboard, err := b.keyboardManager.MainMenuKeyboardMarkup()
-	if err != nil {
-		log.Debug("fail to get menuInline keyboard", logger.FError(err))
-		return false, err
-	}
-	if !isChatMember && update.Message != nil {
-		replyKeyboard := telegram.ReplyKeyboardRemove{
-			RemoveKeyboard: true,
-		}
-		return false, b.SendTextWithPhotoMedia(update.Message.Chat.ID, text, avatarImageURL, replyKeyboard)
-	}
-	if !isChatMember && update.CallbackQuery != nil {
-		return false, b.AnswerCallbackQueryWithEditMessageMedia(update.CallbackQuery, text, avatarImageURL, replyKeyboard)
-	}
-	return false, nil
-}
-
-func (b *botController) AnswerCallbackQueryWithEditMessageMedia(
+func (b *botController) ServeCallbackQueryStack(
+	ctx context.Context,
 	callbackQuery *telegram.CallbackQuery,
-	text string,
-	photoURL string,
-	replyMarkup any,
-) error {
+	telegramCallbackData *app.TelegramCallbackData,
+) (*app.TelegramCallbackData, error) {
 	log := b.container.GetLogger()
-	if err := b.AnswerCallbackQuery(callbackQuery); err != nil {
-		log.Debug("fail to answer callback query", logger.FError(err))
-		return err
+	requestedCallbackQueryCommand := telegramCallbackData.CallbackQueryCommand()
+	telegramMessagingInfo := service.TelegramMessagingInfo{
+		ChatID:    callbackQuery.Message.Chat.ID,
+		MessageID: callbackQuery.Message.ID,
 	}
-	if err := b.EditMessageMedia(callbackQuery, text, photoURL, replyMarkup); err != nil {
-		log.Debug("fail to perform EditMessageMedia", logger.FError(err))
-		return err
+	previousCallbackQueryCommandPointer, _ := b.cacheService.GetLastCallbackQueryCommand(ctx, telegramMessagingInfo)
+	previousCallbackQueryCommand := app.NotCallbackQueryCommand
+	if previousCallbackQueryCommandPointer != nil {
+		previousCallbackQueryCommand = *previousCallbackQueryCommandPointer
 	}
-	return nil
+	var newTelegramCallbackData = telegramCallbackData
+	if requestedCallbackQueryCommand == app.BackCallbackQueryCommand {
+		var (
+			poppedCallbackData *app.TelegramCallbackData
+			err                error
+		)
+		if requestedCallbackQueryCommand == app.BackCallbackQueryCommand {
+			_, _ = b.callbackDataStack.Pop(ctx, callbackQuery)
+			poppedCallbackData, err = b.callbackDataStack.Top(ctx, callbackQuery)
+		} else {
+			poppedCallbackData, err = b.callbackDataStack.Pop(ctx, callbackQuery)
+		}
+		if err != nil {
+			log.Error("fail to perform pop operation in callbackDataStack", logger.FError(err))
+		}
+		if poppedCallbackData != nil {
+			newTelegramCallbackData = poppedCallbackData
+		} else {
+			newTelegramCallbackData = &app.TelegramCallbackData{
+				Name:       app.MainMenuCallbackQueryCmdText,
+				Parameters: nil,
+			}
+		}
+	}
+	switch requestedCallbackQueryCommand {
+	case
+		app.EmptyCallbackQueryCommand,
+		app.NotCallbackQueryCommand,
+		app.SelectInitialLanguageCallbackQueryCommand,
+		app.SelectInitialPreferredCurrencyCallbackQueryCommand,
+		app.BackCallbackQueryCommand,
+		app.CancelEnterAmountCallbackQueryCommand,
+		app.SelectPayCurrencyCallbackQueryCommand:
+		// skip serving these commands
+		break
+	default:
+		if previousCallbackQueryCommand == requestedCallbackQueryCommand {
+			// we should omit pushing commands with pagination
+			break
+		}
+		err := b.callbackDataStack.Push(ctx, callbackQuery)
+		if err != nil {
+			log.Error("fail to record callback query to cache", logger.FError(err))
+			return nil, err
+		}
+	}
+	if err := b.cacheService.SetLastCallbackQueryCommand(ctx, requestedCallbackQueryCommand, telegramMessagingInfo); err != nil {
+		log.Error("fail to set last callbackQueryCommand", logger.FError(err))
+		return nil, err
+	}
+	commandNames, err := b.callbackDataStack.DebugListCommands(ctx, callbackQuery)
+	if err != nil {
+		log.Debug("fail to get list commands", logger.FError(err))
+	}
+	log.Debug("callback query commands in cache", logger.F("commands", commandNames))
+	return newTelegramCallbackData, nil
 }
 
-func getTelegramUser(update *telegram.Update) (*telegram.User, error) {
-	if update.Message != nil {
-		return update.Message.From, nil
-	} else if update.CallbackQuery != nil {
-		return update.CallbackQuery.Message.From, nil
+func (b *botController) ServeSubscription(ctx context.Context, ctxOption *ContextOptions) (bool, error) {
+	shouldSendMessageAboutSubscription := !ctxOption.IsMemberSubscription
+	if ctxOption.Profile.PreferredLanguage == nil || ctxOption.Profile.PreferredCurrency == nil {
+		shouldSendMessageAboutSubscription = true
 	}
-	return nil, app.NilError
+	if shouldSendMessageAboutSubscription {
+		return false, b.sendMessageSubscription(ctx, ctxOption)
+	}
+	return true, nil
 }
 
 func getTelegramID(update *telegram.Update) (*int64, error) {
@@ -405,8 +348,4 @@ func getTelegramUsername(update *telegram.Update) (*string, error) {
 		return nil, app.NilError
 	}
 	return username, nil
-}
-
-func isEmpty(update *telegram.Update) bool {
-	return update.Message == nil && update.CallbackQuery == nil
 }
