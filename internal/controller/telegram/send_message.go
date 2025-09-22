@@ -189,11 +189,15 @@ func (b *botController) sendMessageSubscription(_ context.Context, ctxOptions *C
 	text := localizer.LocalizedStringWithTemplateData("subscribe_to_channel_markdown", map[string]any{
 		"Channel": "@tonpassnews",
 	})
+	isSubscriptionMemberReplyMarkup, err := ctxOptions.TelegramInlineKeyboardManager.IsSubscriptionMemberInlineKeyboardMarkup()
+	if err != nil {
+		return err
+	}
 	return b.SendTextWithPhotoMedia(
 		ctxOptions.Update.GetChatID(),
 		text,
 		avatarImageURL,
-		nil,
+		isSubscriptionMemberReplyMarkup,
 	)
 }
 

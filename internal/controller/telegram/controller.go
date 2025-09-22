@@ -42,6 +42,7 @@ const (
 type botController struct {
 	container                  container.Container
 	telegramBotService         service.TelegramBotService
+	telegramPaymentService     service.TelegramPaymentService
 	cryptoPayBot               service.CryptoPayBot
 	sessionService             service.SessionService
 	cacheService               service.Cache
@@ -50,6 +51,7 @@ type botController struct {
 	profileRepository          repository.ProfileRepository
 	smsHistoryRepository       repository.SMSHistoryRepository
 	temporalWorkflowRepository repository.TemporalWorkflowRepository
+	telegramPaymentRepository  repository.TelegramPaymentRepository
 	exchangeRateWorker         worker.ExchangeRate
 	smsActivateWorker          worker.SMSActivate
 	formatterWorker            worker.Formatter
@@ -67,6 +69,7 @@ func NewBotController(
 	cryptoPayBot service.CryptoPayBot,
 	exchangeRateWorker worker.ExchangeRate,
 	temporalWorkflowRepository repository.TemporalWorkflowRepository,
+	telegramPaymentRepository repository.TelegramPaymentRepository,
 ) BotController {
 	smsActivateWorker := worker.NewSMSActivate(container, smsService, cacheService)
 	formatterWorker := worker.NewFormatter(container)
@@ -74,6 +77,7 @@ func NewBotController(
 	return &botController{
 		container:                  container,
 		telegramBotService:         service.NewTelegramBot(container),
+		telegramPaymentService:     service.NewTelegramPaymentService(container),
 		cryptoPayBot:               cryptoPayBot,
 		sessionService:             sessionService,
 		cacheService:               cacheService,
@@ -82,6 +86,7 @@ func NewBotController(
 		profileRepository:          profileRepository,
 		smsHistoryRepository:       smsHistoryRepository,
 		temporalWorkflowRepository: temporalWorkflowRepository,
+		telegramPaymentRepository:  telegramPaymentRepository,
 		exchangeRateWorker:         exchangeRateWorker,
 		smsActivateWorker:          smsActivateWorker,
 		formatterWorker:            formatterWorker,
@@ -112,6 +117,8 @@ func (b *botController) Serve(ctxOptions *ContextOptions) error {
 		return b.startTelegramCommandHandler(ctx, ctxOptions)
 	case app.HelpTelegramCommand:
 		return b.helpTelegramCommandHandler(ctx, ctxOptions)
+	default:
+		break
 	}
 	if err != nil && telegramCmd == app.UnknownTelegramCommand {
 		err := b.sessionService.ClearBotStateForUser(ctx, ctxOptions.Update.GetChatID())
@@ -126,12 +133,22 @@ func (b *botController) Serve(ctxOptions *ContextOptions) error {
 		"got bot state from session service",
 		logger.F("userBotState", userBotState),
 	)
-	switch userBotState {
-	case app.EnteringAmountCurrencyBotState:
-		return b.enteringAmountCurrencyBotStageHandler(ctx, ctxOptions)
-	}
+	message := ctxOptions.Update.Message
+	preCheckoutQuery := ctxOptions.Update.PreCheckoutQuery
 	callbackQuery := ctxOptions.Update.CallbackQuery
-	if callbackQuery == nil {
+	if preCheckoutQuery != nil {
+		return b.PreCheckoutHandler(ctx, ctxOptions)
+	} else if message != nil && message.SuccessfulPayment != nil {
+		return b.SuccessfulPaymentHandler(ctx, ctxOptions)
+	} else if message != nil && message.RefundedPayment != nil {
+		return b.RefundPaymentHandler(ctx, ctxOptions)
+	} else if callbackQuery == nil {
+		// probably user type a message ...
+		switch userBotState {
+		case app.EnteringAmountCurrencyBotState:
+			return b.enteringAmountCurrencyBotStageHandler(ctx, ctxOptions)
+		}
+
 		log.Error(
 			"fail to retrieve callback query from update",
 			logger.FError(err),
@@ -181,10 +198,12 @@ func (b *botController) Serve(ctxOptions *ContextOptions) error {
 		return b.historyCallbackQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
 	case app.PayServiceCallbackQueryCommand:
 		return b.payServiceQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
-	case app.ListPayCurrenciesCallbackQueryCommand:
-		return b.listPayCurrenciesCallbackQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
-	case app.SelectPayCurrencyCallbackQueryCommand:
-		return b.selectedPayCurrenciesCallbackQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
+	case app.CryptoBotListPayCurrenciesCallbackQueryCommand:
+		return b.cryptoBotListPayCurrenciesCallbackQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
+	case app.SelectCryptoBotPayCurrencyCallbackQueryCommand:
+		return b.selectedCryptoBotPayCurrenciesCallbackQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
+	case app.SelectTelegramStarsCallbackQueryCommand:
+		return b.selectTelegramStarsQueryCommandHandler(ctx, ctxOptions)
 	case app.CancelEnterAmountCallbackQueryCommand:
 		return b.cancelEnteringAmountCallbackQueryCommandHandler(ctx, ctxOptions)
 	case app.PreferredCurrenciesCallbackQueryCommand:
@@ -199,6 +218,8 @@ func (b *botController) Serve(ctxOptions *ContextOptions) error {
 		return b.confirmServiceQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
 	case app.RefundAmountFromSMSActivationCallbackQueryCommand:
 		return b.refundAmountFromSMSActivationQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
+	case app.CancelPayTelegramStarsCallbackQueryCommand:
+		return b.cancelPayTelegramStarsQueryCommandHandler(ctx, ctxOptions)
 	default:
 		return b.developingCallbackQueryCommandHandler(ctx, ctxOptions)
 	}
@@ -257,12 +278,10 @@ func (b *botController) ServeCallbackQueryStack(
 			poppedCallbackData *app.TelegramCallbackData
 			err                error
 		)
-		if requestedCallbackQueryCommand == app.BackCallbackQueryCommand {
-			_, _ = b.callbackDataStack.Pop(ctx, callbackQuery)
-			poppedCallbackData, err = b.callbackDataStack.Top(ctx, callbackQuery)
-		} else {
-			poppedCallbackData, err = b.callbackDataStack.Pop(ctx, callbackQuery)
-		}
+
+		_, _ = b.callbackDataStack.Pop(ctx, callbackQuery)
+		poppedCallbackData, err = b.callbackDataStack.Top(ctx, callbackQuery)
+
 		if err != nil {
 			log.Error("fail to perform pop operation in callbackDataStack", logger.FError(err))
 		}
@@ -283,7 +302,8 @@ func (b *botController) ServeCallbackQueryStack(
 		app.SelectInitialPreferredCurrencyCallbackQueryCommand,
 		app.BackCallbackQueryCommand,
 		app.CancelEnterAmountCallbackQueryCommand,
-		app.SelectPayCurrencyCallbackQueryCommand:
+		app.SelectTelegramStarsCallbackQueryCommand,
+		app.SelectCryptoBotPayCurrencyCallbackQueryCommand:
 		// skip serving these commands
 		break
 	default:
@@ -311,9 +331,6 @@ func (b *botController) ServeCallbackQueryStack(
 
 func (b *botController) ServeSubscription(ctx context.Context, ctxOption *ContextOptions) (bool, error) {
 	shouldSendMessageAboutSubscription := !ctxOption.IsMemberSubscription
-	if ctxOption.Profile.PreferredLanguage == nil || ctxOption.Profile.PreferredCurrency == nil {
-		shouldSendMessageAboutSubscription = true
-	}
 	if shouldSendMessageAboutSubscription {
 		return false, b.sendMessageSubscription(ctx, ctxOption)
 	}

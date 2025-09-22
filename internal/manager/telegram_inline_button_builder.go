@@ -12,12 +12,14 @@ type TelegramInlineButtonBuilder interface {
 	SetParameters(parameters []any) TelegramInlineButtonBuilder
 	SetLink(url string) TelegramInlineButtonBuilder
 	Build() (*telegram.InlineKeyboardButton, error)
+	SetPay(pay bool) TelegramInlineButtonBuilder
 }
 
 type telegramInlineButtonBuilder struct {
 	text        *string
 	url         *string
 	commandName *string
+	pay         bool
 	parameters  *[]any
 }
 
@@ -49,6 +51,11 @@ func (t *telegramInlineButtonBuilder) SetParameters(parameters []any) TelegramIn
 	return t
 }
 
+func (t *telegramInlineButtonBuilder) SetPay(pay bool) TelegramInlineButtonBuilder {
+	t.pay = pay
+	return t
+}
+
 func (t *telegramInlineButtonBuilder) Build() (*telegram.InlineKeyboardButton, error) {
 	if t.text == nil {
 		return nil, app.RequiredFieldError
@@ -75,5 +82,6 @@ func (t *telegramInlineButtonBuilder) Build() (*telegram.InlineKeyboardButton, e
 		Text: text,
 		URL:  url,
 		Data: data,
+		Pay:  t.pay,
 	}, nil
 }

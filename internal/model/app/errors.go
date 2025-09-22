@@ -16,4 +16,5 @@ var (
 	RequiredFieldError               = errors.New("required filed is missing error")
 	DeleteInvoiceError               = errors.New("delete invoice error")
 	UnknownPhoneNumberFormatError    = errors.New("unknown phone number format")
+	UserNotFoundError                = errors.New("user not found")
 )

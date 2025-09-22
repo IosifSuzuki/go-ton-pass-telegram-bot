@@ -15,8 +15,9 @@ const (
 	SelectSMSServiceCallbackQueryCommand
 	PayServiceCallbackQueryCommand
 	SelectLanguageCallbackQueryCommand
-	ListPayCurrenciesCallbackQueryCommand
-	SelectPayCurrencyCallbackQueryCommand
+	CryptoBotListPayCurrenciesCallbackQueryCommand
+	SelectTelegramStarsCallbackQueryCommand
+	SelectCryptoBotPayCurrencyCallbackQueryCommand
 	PreferredCurrenciesCallbackQueryCommand
 	SelectPreferredCurrencyCallbackQueryCommand
 	EmptyCallbackQueryCommand
@@ -25,4 +26,5 @@ const (
 	RefundAmountFromSMSActivationCallbackQueryCommand
 	BackCallbackQueryCommand
 	CancelEnterAmountCallbackQueryCommand
+	CancelPayTelegramStarsCallbackQueryCommand
 )

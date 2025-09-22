@@ -44,7 +44,16 @@ func (a *Authentication) Handler(next http.Handler) http.Handler {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		if !profileExist {
+		if !profileExist && update.PreCheckoutQuery != nil {
+			err = app.UserNotFoundError
+			log.Error(
+				"profile is not exist in db with pre checkout query",
+				logger.F("telegram_id", update.PreCheckoutQuery.From.ID),
+				logger.FError(err),
+			)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		} else if !profileExist {
 			log.Debug(
 				"record the profile to db",
 				logger.F("telegram_id", telegramUser.ID),
@@ -83,6 +92,8 @@ func getTelegramUser(update *telegram.Update) (*telegram.User, error) {
 		return update.Message.From, nil
 	} else if update.CallbackQuery != nil {
 		return &update.CallbackQuery.From, nil
+	} else if update.PreCheckoutQuery != nil {
+		return &update.PreCheckoutQuery.From, nil
 	}
 	return nil, app.NilError
 }

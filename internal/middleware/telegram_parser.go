@@ -40,5 +40,5 @@ func (t *TelegramParser) Handler(next http.Handler) http.Handler {
 }
 
 func isEmpty(update *telegram.Update) bool {
-	return update.Message == nil && update.CallbackQuery == nil
+	return update.Message == nil && update.CallbackQuery == nil && update.PreCheckoutQuery == nil
 }

@@ -51,7 +51,7 @@ func (t *telegramBotService) ParseTelegramCallbackData(callbackQuery *telegram.C
 
 func (t *telegramBotService) ParseTelegramCommand(update *telegram.Update) (app.TelegramCommand, error) {
 	var text = ""
-	if update.Message != nil {
+	if update.Message != nil && update.Message.Text != nil {
 		text = *update.Message.Text
 	}
 	return parseTelegramCommand(text)
@@ -88,7 +88,7 @@ func (t *telegramBotService) prepareRequest(method app.TelegramMethod, model any
 	config := t.container.GetConfig()
 	log := t.container.GetLogger()
 	telegramBotToken := config.TelegramBotToken()
-	path := fmt.Sprintf("%s%s/%s", baseTelegramAPI, telegramBotToken, method)
+	path := fmt.Sprintf("%s%s/test/%s", baseTelegramAPI, telegramBotToken, method)
 	jsonData, err := json.Marshal(model)
 	if err != nil {
 		log.Error("fail to marshal json model", logger.FError(err))
@@ -100,6 +100,10 @@ func (t *telegramBotService) prepareRequest(method app.TelegramMethod, model any
 	)
 	bodyBuffer := bytes.NewReader(jsonData)
 	req, err := http.NewRequest(http.MethodPost, path, bodyBuffer)
+	if req == nil {
+		log.Error("fail to create request for telegram bot service", logger.FError(err))
+		return nil, app.NilError
+	}
 	req.Header.Set("Content-Type", "application/json")
 	if err != nil {
 		log.Error("fail to create request", logger.FError(err))
@@ -154,14 +158,18 @@ func (t *telegramBotService) UserIsChatMember(chatID string, telegramID int64) (
 	}
 	c := &http.Client{}
 	resp, err := c.Do(req)
-	defer resp.Body.Close()
+	defer func() {
+		if resp != nil {
+			_ = resp.Body.Close()
+		}
+	}()
 	if err != nil {
 		log.Error("fail to get perform response", logger.FError(err))
 		return false, err
 	}
 	var result telegram.Result[telegram.ChatMember]
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		log.Error("fail to decode ChatMember", logger.FError(err))
+		log.Error("fail to decode ChatMember from response", logger.FError(err))
 		return false, err
 	}
 	log.Debug("get result from telegram for check is user a chat member", logger.F("telegram_id", telegramID), logger.F("status", result.Result.Status))

@@ -19,7 +19,7 @@ type Config interface {
 	DB() DB
 	Temporal() Temporal
 	AvailablePreferredCurrencies() []app.Currency
-	AvailablePayCurrencies() []app.Currency
+	AvailableCryptoBotPayCurrencies() []app.Currency
 	CurrencyByAbbr(abbr string) *app.Currency
 	AvailableLanguages() []app.Language
 	AllLanguages() []app.Language
@@ -106,7 +106,7 @@ func (c *config) AvailablePreferredCurrencies() []app.Currency {
 	})
 }
 
-func (c *config) AvailablePayCurrencies() []app.Currency {
+func (c *config) AvailableCryptoBotPayCurrencies() []app.Currency {
 	allPayCurrenciesABBRs := []string{
 		"USDT",
 		"ETH",

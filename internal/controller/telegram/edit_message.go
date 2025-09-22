@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"context"
+	"fmt"
 	"go-ton-pass-telegram-bot/internal/model/app"
 	"go-ton-pass-telegram-bot/internal/model/sms"
 	"go-ton-pass-telegram-bot/internal/model/telegram"
@@ -38,11 +39,11 @@ func (b *botController) editMessageDevelopingMode(_ context.Context, ctxOptions 
 	return b.telegramBotService.SendResponse(answerCallbackQuery, app.AnswerCallbackQueryTelegramMethod)
 }
 
-func (b *botController) editMessageListPayCurrencies(ctx context.Context, ctxOptions *ContextOptions) error {
+func (b *botController) editMessageCryptoBotListPayCurrencies(ctx context.Context, ctxOptions *ContextOptions) error {
 	log := b.container.GetLogger()
 	preferredLanguage := b.getPreferredLanguage(ctxOptions)
 	localizer := b.container.GetLocalizer(preferredLanguage)
-	payCurrenciesInlineKeyboardMarkup, err := ctxOptions.TelegramInlineKeyboardManager.PayCurrenciesKeyboardMarkup()
+	payCurrenciesInlineKeyboardMarkup, err := ctxOptions.TelegramInlineKeyboardManager.CryptoBotPayCurrenciesKeyboardMarkup()
 	if err != nil {
 		log.Error("fail to get a pay currencies inline keyboard", logger.FError(err))
 		return b.sendMessageInternalServerError(ctx, ctxOptions)
@@ -111,9 +112,12 @@ func (b *botController) editMessageProfileBalance(ctx context.Context, ctxOption
 		)
 		return b.editMessageInternalServerError(ctx, ctxOptions)
 	}
-	text := localizer.LocalizedStringWithTemplateData("your_balance_is_markdown", map[string]any{
+	balanceText := localizer.LocalizedStringWithTemplateData("your_balance_is_markdown", map[string]any{
 		"Balance": utils.EscapeMarkdownText(utils.CurrencyAmountTextFormat(*convertedBalance, *currency)),
 	})
+	choosePaymentMethodText := localizer.LocalizedString("choose_payment_method_markdown")
+	text := fmt.Sprintf("%s\n\n%s", balanceText, choosePaymentMethodText)
+
 	return b.AnswerCallbackQueryWithEditMessageMedia(
 		callbackQuery,
 		text,

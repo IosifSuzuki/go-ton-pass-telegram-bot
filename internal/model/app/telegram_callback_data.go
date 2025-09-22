@@ -13,7 +13,8 @@ const (
 	SelectSMSServiceCallbackQueryCmdText               = "s_serv"
 	PayServiceCallbackQueryCmdText                     = "s_serv_count"
 	SelectLanguageCallbackQueryCmdText                 = "s_lang"
-	ListPayCurrenciesCallbackQueryCmdText              = "l_pay_curr"
+	CryptoBotListPayCurrenciesCallbackQueryCmdText     = "l_pay_curr"
+	SelectTelegramStarsCallbackQueryCmdText            = "s_telegram_stars"
 	SelectPayCurrencyCallbackQueryCmdText              = "s_pay_curr"
 	PreferredCurrenciesCallbackQueryCmdText            = "pre_curr"
 	SelectPreferredCurrencyCallbackQueryCmdText        = "s_pref_curr"
@@ -22,6 +23,7 @@ const (
 	ConfirmationPayServiceQueryCmdText                 = "con_s_pay"
 	RefundAmountFromSMSActivationQueryCmdText          = "ref_sms_act"
 	BackQueryCmdText                                   = "back"
+	CancelPayTelegramStarsCmdText                      = "c_pay_xtr"
 )
 
 type TelegramCallbackData struct {
@@ -53,10 +55,12 @@ func (t *TelegramCallbackData) CallbackQueryCommand() CallbackQueryCommand {
 		return PayServiceCallbackQueryCommand
 	case SelectLanguageCallbackQueryCmdText:
 		return SelectLanguageCallbackQueryCommand
-	case ListPayCurrenciesCallbackQueryCmdText:
-		return ListPayCurrenciesCallbackQueryCommand
+	case CryptoBotListPayCurrenciesCallbackQueryCmdText:
+		return CryptoBotListPayCurrenciesCallbackQueryCommand
+	case SelectTelegramStarsCallbackQueryCmdText:
+		return SelectTelegramStarsCallbackQueryCommand
 	case SelectPayCurrencyCallbackQueryCmdText:
-		return SelectPayCurrencyCallbackQueryCommand
+		return SelectCryptoBotPayCurrencyCallbackQueryCommand
 	case PreferredCurrenciesCallbackQueryCmdText:
 		return PreferredCurrenciesCallbackQueryCommand
 	case SelectPreferredCurrencyCallbackQueryCmdText:
@@ -73,6 +77,8 @@ func (t *TelegramCallbackData) CallbackQueryCommand() CallbackQueryCommand {
 		return BackCallbackQueryCommand
 	case CancelEnterAmountCallbackQueryCmdText:
 		return CancelEnterAmountCallbackQueryCommand
+	case CancelPayTelegramStarsCmdText:
+		return CancelPayTelegramStarsCallbackQueryCommand
 	default:
 		return NotCallbackQueryCommand
 	}

@@ -21,7 +21,8 @@ type SessionService interface {
 }
 
 const (
-	SelectedPayCurrencyAbbrSessionKey = "selected_pay_currency"
+	SelectedCryptoBotPayCurrencyAbbrSessionKey = "selected_pay_currency"
+	SelectedPaymentMethodSessionKey            = "selected_payment_method"
 )
 
 type sessionService struct {

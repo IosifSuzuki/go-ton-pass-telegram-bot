@@ -23,6 +23,7 @@ func PrepareAndConfigureRouter(
 	profileRepository repository.ProfileRepository,
 	smsHistoryRepository repository.SMSHistoryRepository,
 	temporalWorkflowRepository repository.TemporalWorkflowRepository,
+	telegramPaymentRepository repository.TelegramPaymentRepository,
 ) http.Handler {
 	router := mux.NewRouter()
 	telegramService := service.NewTelegramBot(container)
@@ -42,6 +43,7 @@ func PrepareAndConfigureRouter(
 		cryptoPayBot,
 		exchangeRate,
 		temporalWorkflowRepository,
+		telegramPaymentRepository,
 	)
 	cryptoController := crypto.NewCryptoController(
 		container,

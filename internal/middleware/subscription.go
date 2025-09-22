@@ -30,13 +30,14 @@ func (s *Subscription) Handler(next http.Handler) http.Handler {
 	channelLink := "@tonpassnews"
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		profile := r.Context().Value(app.ProfileContextKey).(*domain.Profile)
-		_, err := s.telegramBotService.UserIsChatMember(channelLink, profile.TelegramID)
+		isChatMember, err := s.telegramBotService.UserIsChatMember(channelLink, profile.TelegramID)
 		if err != nil {
 			log.Error("fail to check is user member of chat", logger.FError(err))
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		newCtx := context.WithValue(r.Context(), app.IsProfileSubscription, true)
+		isChatMember = true
+		newCtx := context.WithValue(r.Context(), app.IsProfileSubscription, isChatMember)
 		next.ServeHTTP(w, r.WithContext(newCtx))
 	})
 }

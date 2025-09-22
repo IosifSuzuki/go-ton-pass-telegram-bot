@@ -188,11 +188,7 @@ func (e *exchangeRate) mapNetworkResponse(networkExchangeRates []bot.ExchangeRat
 			Rate:           rate,
 		})
 	}
-	exchangeRates = append(exchangeRates, app.ExchangeRate{
-		SourceCurrency: "USD",
-		TargetCurrency: "USD",
-		Rate:           1,
-	})
+	exchangeRates = appendCurrencies(exchangeRates)
 	return exchangeRates
 }
 
@@ -211,4 +207,20 @@ func (e *exchangeRate) shouldUpToDateExchangeRate(cacheResponse *app.CacheRespon
 		log.Debug("should update exchange rate")
 	}
 	return shouldUpToDateExchangeRate
+}
+
+func appendCurrencies(exchangeRates []app.ExchangeRate) []app.ExchangeRate {
+	source := make([]app.ExchangeRate, 0, len(exchangeRates))
+	copy(source, exchangeRates)
+	source = append(source, app.ExchangeRate{
+		SourceCurrency: "USD",
+		TargetCurrency: "USD",
+		Rate:           1,
+	})
+	source = append(source, app.ExchangeRate{
+		SourceCurrency: "XTR",
+		TargetCurrency: "USD",
+		Rate:           0.013,
+	})
+	return source
 }

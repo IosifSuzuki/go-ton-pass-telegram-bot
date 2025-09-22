@@ -142,5 +142,16 @@
     "other": "🌍 *Country:* {{ .Country }}"
   },
   "confirm_sms_activation_footer_markdown": "Please *confirm* ✅ or *cancel* ❌ to proceed",
-  "success_cancel_pay_service_markdown": "You have *successfully* declined the SMS service payment"
+  "success_cancel_pay_service_markdown": "You have *successfully* declined the SMS service payment",
+  "verify_subscription": "I'm a Member",
+  "crypto_bot": "Crypto bot",
+  "telegram_stars": "Telegram stars",
+  "choose_payment_method_markdown": "Choose *a payment method* to top up your balance",
+  "invoice_telegram_stars_title": "Top-Up Balance",
+  "invoice_telegram_stars_description": "Tap \"Pay\" to top up your balance, or \"Cancel\" if you do not want to proceed",
+  "pay_telegram_stars":{
+    "description": "Pay",
+    "one": "Pay {{ .Amount }}⭐",
+    "other": "Pay {{ .Amount }}⭐"
+  }
 }

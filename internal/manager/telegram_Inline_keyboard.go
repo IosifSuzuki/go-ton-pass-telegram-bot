@@ -19,7 +19,7 @@ type TelegramInlineKeyboardManager interface {
 	LanguagesKeyboardMarkup() (*telegram.InlineKeyboardMarkup, error)
 	InitialPreferredCurrenciesKeyboardMarkup() (*telegram.InlineKeyboardMarkup, error)
 	PreferredCurrenciesKeyboardMarkup() (*telegram.InlineKeyboardMarkup, error)
-	PayCurrenciesKeyboardMarkup() (*telegram.InlineKeyboardMarkup, error)
+	CryptoBotPayCurrenciesKeyboardMarkup() (*telegram.InlineKeyboardMarkup, error)
 	MainMenuKeyboardButton() *telegram.InlineKeyboardButton
 	LinkKeyboardButton(text, link string) *telegram.InlineKeyboardButton
 	BackKeyboardMarkup() *telegram.InlineKeyboardMarkup
@@ -32,6 +32,8 @@ type TelegramInlineKeyboardManager interface {
 	ConfirmationPayInlineKeyboardMarkup(serviceCode string, countryID int64, maxPrice float64) (*telegram.InlineKeyboardMarkup, error)
 	RefundInlineKeyboardMarkup(smsHistoryID int64) (*telegram.InlineKeyboardMarkup, error)
 	EnteringAmountInlineKeyboardMarkup() (*telegram.InlineKeyboardMarkup, error)
+	IsSubscriptionMemberInlineKeyboardMarkup() (*telegram.InlineKeyboardMarkup, error)
+	TelegramStarsPayInlineKeyboardMarkup(stars int64) (*telegram.InlineKeyboardMarkup, error)
 }
 
 type telegramInlineKeyboardManager struct {
@@ -119,8 +121,8 @@ func (t *telegramInlineKeyboardManager) PreferredCurrenciesKeyboardMarkup() (*te
 	return t.preparePreferredCurrenciesKeyboardMarkup(app.SelectPreferredCurrencyCallbackQueryCmdText, true)
 }
 
-func (t *telegramInlineKeyboardManager) PayCurrenciesKeyboardMarkup() (*telegram.InlineKeyboardMarkup, error) {
-	payCurrencies := t.container.GetConfig().AvailablePayCurrencies()
+func (t *telegramInlineKeyboardManager) CryptoBotPayCurrenciesKeyboardMarkup() (*telegram.InlineKeyboardMarkup, error) {
+	payCurrencies := t.container.GetConfig().AvailableCryptoBotPayCurrencies()
 	payCurrenciesInlineKeyboardButtons := make([]telegram.InlineKeyboardButton, 0, len(payCurrencies))
 	for _, payCurrency := range payCurrencies {
 		payCurrencyInlineKeyboardButton, err := NewTelegramInlineButtonBuilder().
@@ -293,17 +295,33 @@ func (t *telegramInlineKeyboardManager) CryptoPayBotKeyboardMarkup(url string, i
 func (t *telegramInlineKeyboardManager) TopUpBalanceKeyboardMarkup() (*telegram.InlineKeyboardMarkup, error) {
 	log := t.container.GetLogger()
 	columns := 1
-	topUpBalanceButtonTitle := utils.ButtonTitle(t.localizer.LocalizedString("top_up_balance"), "💳")
-	topUpBalanceButton, err := NewTelegramInlineButtonBuilder().
-		SetText(topUpBalanceButtonTitle).
-		SetCommandName(app.ListPayCurrenciesCallbackQueryCmdText).
+
+	cryptoBotButtonTitle := utils.ButtonTitle(t.localizer.LocalizedString("crypto_bot"), "🪙")
+	cryptoBotPaymentMethodButton, err := NewTelegramInlineButtonBuilder().
+		SetText(cryptoBotButtonTitle).
+		SetCommandName(app.CryptoBotListPayCurrenciesCallbackQueryCmdText).
 		Build()
 	if err != nil {
-		log.Error("fail to create top up balance button", logger.FError(err))
+		log.Debug("fail to create 'pay with crypto bot' button", logger.FError(err))
 		return nil, err
 	}
+
+	telegramStarsButtonTitle := utils.ButtonTitle(t.localizer.LocalizedString("telegram_stars"), "⭐")
+	telegramStarsPaymentMethodButton, err := NewTelegramInlineButtonBuilder().
+		SetText(telegramStarsButtonTitle).
+		SetCommandName(app.SelectTelegramStarsCallbackQueryCmdText).
+		Build()
+	if err != nil {
+		log.Debug("fail to create 'pay with crypto bot' button", logger.FError(err))
+		return nil, err
+	}
+
 	backButton := t.BackKeyboardButton()
-	gridButtons := t.getGridInlineKeyboardButton([]telegram.InlineKeyboardButton{*topUpBalanceButton, *backButton}, columns)
+	gridButtons := t.getGridInlineKeyboardButton([]telegram.InlineKeyboardButton{
+		*cryptoBotPaymentMethodButton,
+		*telegramStarsPaymentMethodButton,
+		*backButton,
+	}, columns)
 	return &telegram.InlineKeyboardMarkup{
 		InlineKeyboard: gridButtons,
 	}, nil
@@ -364,6 +382,49 @@ func (t *telegramInlineKeyboardManager) EnteringAmountInlineKeyboardMarkup() (*t
 	}
 	return &telegram.InlineKeyboardMarkup{
 		InlineKeyboard: t.getGridInlineKeyboardButton(inlineKeyboardButtons, 1),
+	}, nil
+}
+
+func (t *telegramInlineKeyboardManager) IsSubscriptionMemberInlineKeyboardMarkup() (*telegram.InlineKeyboardMarkup, error) {
+	isSubscriptionMemberButton, err := NewTelegramInlineButtonBuilder().
+		SetText(utils.ButtonTitle(t.localizer.LocalizedString("verify_subscription"), "✔️")).
+		SetCommandName(app.MainMenuCallbackQueryCmdText).
+		Build()
+	if err != nil {
+		return nil, err
+	}
+	gridButtons := t.getGridInlineKeyboardButton([]telegram.InlineKeyboardButton{*isSubscriptionMemberButton}, 1)
+	return &telegram.InlineKeyboardMarkup{
+		InlineKeyboard: gridButtons,
+	}, nil
+}
+
+func (t *telegramInlineKeyboardManager) TelegramStarsPayInlineKeyboardMarkup(stars int64) (*telegram.InlineKeyboardMarkup, error) {
+	payButton, err := NewTelegramInlineButtonBuilder().
+		SetText(t.localizer.LocalizedStringWithTemplateData(
+			"pay_telegram_stars",
+			map[string]any{
+				"Amount": stars,
+			},
+		)).
+		SetPay(true).
+		Build()
+	if err != nil {
+		return nil, err
+	}
+	cancelInvoiceButton, err := NewTelegramInlineButtonBuilder().
+		SetText(utils.ButtonTitle(t.localizer.LocalizedString("cancel_invoice"), "❌")).
+		SetCommandName(app.CancelPayTelegramStarsCmdText).
+		Build()
+	if err != nil {
+		return nil, err
+	}
+	gridButtons := t.getGridInlineKeyboardButton([]telegram.InlineKeyboardButton{
+		*payButton,
+		*cancelInvoiceButton,
+	}, 1)
+	return &telegram.InlineKeyboardMarkup{
+		InlineKeyboard: gridButtons,
 	}, nil
 }
 

@@ -93,22 +93,31 @@ func (b *botController) balanceCallbackQueryCommandHandler(
 	return b.editMessageProfileBalance(ctx, ctxOptions)
 }
 
-func (b *botController) listPayCurrenciesCallbackQueryCommandHandler(
+func (b *botController) cryptoBotListPayCurrenciesCallbackQueryCommandHandler(
 	ctx context.Context,
 	ctxOptions *ContextOptions,
 	_ *app.TelegramCallbackData,
 ) error {
-	return b.editMessageListPayCurrencies(ctx, ctxOptions)
+	return b.editMessageCryptoBotListPayCurrencies(ctx, ctxOptions)
 }
 
 func (b *botController) cancelEnteringAmountCallbackQueryCommandHandler(
 	ctx context.Context,
 	ctxOptions *ContextOptions,
 ) error {
+	telegramID := ctxOptions.Profile.TelegramID
 	log := b.container.GetLogger()
 	deleteMessage := telegram.DeleteMessage{
 		ChatID:    ctxOptions.Update.GetChatID(),
 		MessageID: ctxOptions.Update.CallbackQuery.Message.ID,
+	}
+	if err := b.sessionService.ClearBotStateForUser(ctx, telegramID); err != nil {
+		log.Error(
+			"fail to clear bot state",
+			logger.FError(err),
+			logger.F("telegram_id", telegramID),
+		)
+		return b.editMessageInternalServerError(ctx, ctxOptions)
 	}
 	if err := b.deleteMessage(&deleteMessage); err != nil {
 		log.Error("fail to delete message", logger.FError(err))
@@ -117,7 +126,7 @@ func (b *botController) cancelEnteringAmountCallbackQueryCommandHandler(
 	return nil
 }
 
-func (b *botController) selectedPayCurrenciesCallbackQueryCommandHandler(
+func (b *botController) selectedCryptoBotPayCurrenciesCallbackQueryCommandHandler(
 	ctx context.Context,
 	ctxOptions *ContextOptions,
 	callbackData *app.TelegramCallbackData,
@@ -134,7 +143,12 @@ func (b *botController) selectedPayCurrenciesCallbackQueryCommandHandler(
 		log.Error("parameters[0] should be a string")
 		return b.editMessageInternalServerError(ctx, ctxOptions)
 	}
-	if err := b.sessionService.SaveString(ctx, service.SelectedPayCurrencyAbbrSessionKey, selectedPayCurrencyAbbr, telegramID); err != nil {
+	paymentMethod := app.CryptoBotPaymentMethod
+	if err := b.sessionService.SaveString(ctx, service.SelectedPaymentMethodSessionKey, paymentMethod, telegramID); err != nil {
+		log.Error("fail to save the selected payment method", logger.FError(err), logger.F("payment_method", paymentMethod))
+		return err
+	}
+	if err := b.sessionService.SaveString(ctx, service.SelectedCryptoBotPayCurrencyAbbrSessionKey, selectedPayCurrencyAbbr, telegramID); err != nil {
 		log.Error("fail to save selected pay currency", logger.FError(err))
 		return b.editMessageInternalServerError(ctx, ctxOptions)
 	}
@@ -562,4 +576,45 @@ func (b *botController) refundAmountFromSMSActivationQueryCommandHandler(
 		return b.editMessageInternalServerError(ctx, ctxOptions)
 	}
 	return b.AnswerCallbackQuery(ctxOptions.Update.CallbackQuery, nil, false)
+}
+
+func (b *botController) selectTelegramStarsQueryCommandHandler(ctx context.Context, ctxOptions *ContextOptions) error {
+	log := b.container.GetLogger()
+	telegramID := ctxOptions.Profile.TelegramID
+	if err := b.sessionService.SaveString(ctx, service.SelectedPaymentMethodSessionKey, app.TelegramStarsPaymentMethod, telegramID); err != nil {
+		log.Error("fail to save telegram id in session", logger.FError(err))
+		return b.editMessageInternalServerError(ctx, ctxOptions)
+	}
+	if err := b.sendMessageEnterAmountCurrency(ctx, ctxOptions); err != nil {
+		log.Error("fail to send message enter amount currency", logger.FError(err))
+		return b.editMessageInternalServerError(ctx, ctxOptions)
+	}
+	enteringAmountCurrencyBotState := app.EnteringAmountCurrencyBotState
+	if err := b.sessionService.SaveBotStateForUser(ctx, enteringAmountCurrencyBotState, telegramID); err != nil {
+		log.Error("fail to save bot state", logger.FError(err), logger.F("user_state", enteringAmountCurrencyBotState))
+		return b.editMessageInternalServerError(ctx, ctxOptions)
+	}
+	return nil
+}
+
+func (b *botController) cancelPayTelegramStarsQueryCommandHandler(ctx context.Context, ctxOptions *ContextOptions) error {
+	log := b.container.GetLogger()
+	deleteMessage := telegram.DeleteMessage{
+		ChatID:    ctxOptions.Update.GetChatID(),
+		MessageID: ctxOptions.Update.CallbackQuery.Message.ID,
+	}
+	if err := b.deleteMessage(&deleteMessage); err != nil {
+		log.Error(
+			"fail to delete message",
+			logger.F("chat_id", ctxOptions.Update.GetChatID()),
+			logger.F("message_id", ctxOptions.Update.Message.ID),
+			logger.FError(err),
+		)
+		return b.editMessageInternalServerError(ctx, ctxOptions)
+	}
+	if err := b.sendMessageMainMenu(ctx, ctxOptions); err != nil {
+		log.Error("fail to send message to the main menu", logger.FError(err))
+		return b.editMessageInternalServerError(ctx, ctxOptions)
+	}
+	return nil
 }

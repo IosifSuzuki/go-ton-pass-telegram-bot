@@ -87,6 +87,7 @@ func RunServer(box container.Container, conn *sql.DB, sessionService service.Ses
 	profileRepository := repository.NewProfileRepository(conn)
 	smsHistoryRepository := repository.NewSMSHistoryRepository(conn)
 	temporalWorkflowRepository := repository.NewTemporalWorkflowRepository(conn)
+	telegramPaymentRepository := repository.NewTelegramPaymentRepository(conn)
 	smsService := service.NewSMSService(box)
 	postponeService := postpone.NewPostpone(box, temporalClient, profileRepository, smsHistoryRepository)
 	if err := postponeService.Prepare(); err != nil {
@@ -101,6 +102,7 @@ func RunServer(box container.Container, conn *sql.DB, sessionService service.Ses
 		profileRepository,
 		smsHistoryRepository,
 		temporalWorkflowRepository,
+		telegramPaymentRepository,
 	)
 	openServer := &http.Server{
 		Handler:      r,
@@ -108,21 +110,24 @@ func RunServer(box container.Container, conn *sql.DB, sessionService service.Ses
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
-	secureServer := &http.Server{
-		Handler:      r,
-		Addr:         box.GetConfig().SecureConnectionAddress(),
-		WriteTimeout: 15 * time.Second,
-		ReadTimeout:  15 * time.Second,
-	}
+	//secureServer := &http.Server{
+	//	Handler:      r,
+	//	Addr:         box.GetConfig().SecureConnectionAddress(),
+	//	WriteTimeout: 15 * time.Second,
+	//	ReadTimeout:  15 * time.Second,
+	//}
 
-	go func() {
-		if err := openServer.ListenAndServe(); err != nil {
-			log.Fatalln(err)
-		}
-	}()
-	if err := secureServer.ListenAndServeTLS("tls/public.pem", "tls/private.key"); err != nil {
+	//go func() {
+	//	if err := openServer.ListenAndServe(); err != nil {
+	//		log.Fatalln(err)
+	//	}
+	//}()
+	if err := openServer.ListenAndServe(); err != nil {
 		log.Fatalln(err)
 	}
+	//if err := secureServer.ListenAndServeTLS("tls/public.pem", "tls/private.key"); err != nil {
+	//	log.Fatalln(err)
+	//}
 }
 
 func loadBundle() *i18n.Bundle {
