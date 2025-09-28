@@ -17,6 +17,7 @@ const (
 	SelectLanguageCallbackQueryCommand
 	CryptoBotListPayCurrenciesCallbackQueryCommand
 	SelectTelegramStarsCallbackQueryCommand
+	SelectStripePayCallbackQueryCommand
 	SelectCryptoBotPayCurrencyCallbackQueryCommand
 	PreferredCurrenciesCallbackQueryCommand
 	SelectPreferredCurrencyCallbackQueryCommand

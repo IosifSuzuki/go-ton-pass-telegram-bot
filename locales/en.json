@@ -146,6 +146,7 @@
   "verify_subscription": "I'm a Member",
   "crypto_bot": "Crypto bot",
   "telegram_stars": "Telegram stars",
+  "stripe": "Stripe",
   "choose_payment_method_markdown": "Choose *a payment method* to top up your balance",
   "invoice_telegram_stars_title": "Top-Up Balance",
   "invoice_telegram_stars_description": "Tap \"Pay\" to top up your balance, or \"Cancel\" if you do not want to proceed",
@@ -153,5 +154,6 @@
     "description": "Pay",
     "one": "Pay {{ .Amount }}⭐",
     "other": "Pay {{ .Amount }}⭐"
-  }
+  },
+  "invoice_stripe_title_markdown": "Tap \"Pay\" to add funds via Stripe"
 }

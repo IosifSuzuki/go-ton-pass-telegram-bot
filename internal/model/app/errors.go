@@ -17,4 +17,5 @@ var (
 	DeleteInvoiceError               = errors.New("delete invoice error")
 	UnknownPhoneNumberFormatError    = errors.New("unknown phone number format")
 	UserNotFoundError                = errors.New("user not found")
+	UnknownCurrencyError             = errors.New("unknown currency")
 )

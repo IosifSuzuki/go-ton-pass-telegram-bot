@@ -26,6 +26,7 @@ type TelegramInlineKeyboardManager interface {
 	BackKeyboardButton() *telegram.InlineKeyboardButton
 	TopUpBalanceKeyboardMarkup() (*telegram.InlineKeyboardMarkup, error)
 	CryptoPayBotKeyboardMarkup(url string, invoiceID int64) (*telegram.InlineKeyboardMarkup, error)
+	StripeKeyboardMarkup(url string) (*telegram.InlineKeyboardMarkup, error)
 	PageControlKeyboardButtons(commandName string, pagination app.Pagination, leftButtonParameters []any, rightButtonParameters []any) ([]telegram.InlineKeyboardButton, error)
 	ServicesInlineKeyboardMarkup(services []sms.Service, pagination app.Pagination) (*telegram.InlineKeyboardMarkup, error)
 	ServiceCountriesInlineKeyboardMarkup(serviceCode string, preferredCurrency string, pagination app.Pagination, servicePrices []sms.PriceForService, countries []sms.Country) (*telegram.InlineKeyboardMarkup, error)
@@ -292,6 +293,15 @@ func (t *telegramInlineKeyboardManager) CryptoPayBotKeyboardMarkup(url string, i
 	}, nil
 }
 
+func (t *telegramInlineKeyboardManager) StripeKeyboardMarkup(url string) (*telegram.InlineKeyboardMarkup, error) {
+	columns := 1
+	linkButton := t.LinkKeyboardButton(utils.ButtonTitle(t.localizer.LocalizedString("pay"), "🧾"), url)
+	gridButtons := t.getGridInlineKeyboardButton([]telegram.InlineKeyboardButton{*linkButton}, columns)
+	return &telegram.InlineKeyboardMarkup{
+		InlineKeyboard: gridButtons,
+	}, nil
+}
+
 func (t *telegramInlineKeyboardManager) TopUpBalanceKeyboardMarkup() (*telegram.InlineKeyboardMarkup, error) {
 	log := t.container.GetLogger()
 	columns := 1
@@ -312,7 +322,17 @@ func (t *telegramInlineKeyboardManager) TopUpBalanceKeyboardMarkup() (*telegram.
 		SetCommandName(app.SelectTelegramStarsCallbackQueryCmdText).
 		Build()
 	if err != nil {
-		log.Debug("fail to create 'pay with crypto bot' button", logger.FError(err))
+		log.Error("fail to create 'Telegram stars' button", logger.FError(err))
+		return nil, err
+	}
+
+	stripeButtonTitle := utils.ButtonTitle(t.localizer.LocalizedString("stripe"), "💳")
+	stripePaymentMethodButton, err := NewTelegramInlineButtonBuilder().
+		SetText(stripeButtonTitle).
+		SetCommandName(app.SelectStripeCallbackQueryCmdText).
+		Build()
+	if err != nil {
+		log.Error("fail to create 'Stripe' button", logger.FError(err))
 		return nil, err
 	}
 
@@ -320,6 +340,7 @@ func (t *telegramInlineKeyboardManager) TopUpBalanceKeyboardMarkup() (*telegram.
 	gridButtons := t.getGridInlineKeyboardButton([]telegram.InlineKeyboardButton{
 		*cryptoBotPaymentMethodButton,
 		*telegramStarsPaymentMethodButton,
+		*stripePaymentMethodButton,
 		*backButton,
 	}, columns)
 	return &telegram.InlineKeyboardMarkup{

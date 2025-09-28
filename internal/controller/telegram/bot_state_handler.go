@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"go-ton-pass-telegram-bot/internal/model/app"
-	"go-ton-pass-telegram-bot/internal/model/crypto/bot"
 	"go-ton-pass-telegram-bot/internal/model/telegram"
 	"go-ton-pass-telegram-bot/internal/service"
 	"go-ton-pass-telegram-bot/internal/utils"
@@ -56,6 +55,8 @@ func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Contex
 			return b.sendMessageInternalServerError(ctx, ctxOptions)
 		}
 		selectedCurrency = currency
+	case app.StripePaymentMethod:
+		selectedCurrency = ctxOptions.Profile.PreferredCurrency
 	default:
 		log.Error("detected unimplemented payment method")
 	}
@@ -103,46 +104,11 @@ func (b *botController) enteringAmountCurrencyBotStageHandler(ctx context.Contex
 		}
 		amountInXTR := int64(math.Ceil(*convertedAmount))
 		return b.sendTelegramStarsInvoice(ctx, ctxOptions, *amountInUSD, amountInXTR)
+	case app.StripePaymentMethod:
+		return b.sendStripeInvoice(ctx, ctxOptions, selectedCurrency, amount)
 	default:
 		return nil
 	}
-}
-
-func (b *botController) sendCryptoBotInvoice(ctx context.Context, ctxOptions *ContextOptions, currency *string, amount *float64) error {
-	log := b.container.GetLogger()
-	telegramID := ctxOptions.Update.GetTelegramID()
-
-	invoicePayload := bot.InvoicePayload{
-		ChatID:     ctxOptions.Update.GetChatID(),
-		TelegramID: telegramID,
-	}
-	encodedInvoicePayload, err := utils.EncodeCryptoBotInvoicePayload(invoicePayload)
-	if err != nil {
-		log.Error("fail to encode a invoice payload", logger.FError(err))
-		return b.sendMessageInternalServerError(ctx, ctxOptions)
-	}
-	invoice, err := b.cryptoPayBot.CreateInvoice(*currency, *amount, *encodedInvoicePayload)
-	if err != nil {
-		log.Error("fail to create a invoice", logger.FError(err))
-		return b.sendMessageInternalServerError(ctx, ctxOptions)
-	}
-	if err := b.sessionService.ClearBotStateForUser(ctx, telegramID); err != nil {
-		log.Error(
-			"fail to clear bot state",
-			logger.FError(err),
-			logger.F("telegram_id", telegramID),
-		)
-		return b.editMessageInternalServerError(ctx, ctxOptions)
-	}
-	if err := b.sessionService.ClearString(ctx, service.SelectedCryptoBotPayCurrencyAbbrSessionKey, telegramID); err != nil {
-		log.Error(
-			"fail to clear selected pay currency string",
-			logger.FError(err),
-			logger.F("telegram_id", telegramID),
-		)
-		return b.editMessageInternalServerError(ctx, ctxOptions)
-	}
-	return b.sendMessageConfirmTouchUpBalance(ctx, ctxOptions, invoice)
 }
 
 func (b *botController) sendTelegramStarsInvoice(_ context.Context, ctxOptions *ContextOptions, creditBalance float64, stars int64) error {

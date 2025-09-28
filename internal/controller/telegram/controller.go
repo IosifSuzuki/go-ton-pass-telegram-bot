@@ -12,6 +12,7 @@ import (
 	"go-ton-pass-telegram-bot/internal/service/postpone"
 	"go-ton-pass-telegram-bot/internal/worker"
 	"go-ton-pass-telegram-bot/pkg/logger"
+	"go-ton-pass-telegram-bot/pkg/stripe_payment"
 )
 
 type BotController interface {
@@ -42,11 +43,11 @@ const (
 type botController struct {
 	container                  container.Container
 	telegramBotService         service.TelegramBotService
-	telegramPaymentService     service.TelegramPaymentService
 	cryptoPayBot               service.CryptoPayBot
 	sessionService             service.SessionService
 	cacheService               service.Cache
 	smsService                 service.SMSService
+	paymentClient              stripe_payment.StripePaymentClient
 	postponeService            postpone.Postpone
 	profileRepository          repository.ProfileRepository
 	smsHistoryRepository       repository.SMSHistoryRepository
@@ -74,14 +75,19 @@ func NewBotController(
 	smsActivateWorker := worker.NewSMSActivate(container, smsService, cacheService)
 	formatterWorker := worker.NewFormatter(container)
 	callbackDataStack := service.NewCallbackDataStack(container, cacheService)
+	paymentClient := stripe_payment.NewStripePaymentClient(
+		container.GetConfig().GetStripeSecretKey(),
+		container.GetConfig().GetStripeSuccessURL(),
+		container.GetConfig().GetStripeCancelURL(),
+	)
 	return &botController{
 		container:                  container,
 		telegramBotService:         service.NewTelegramBot(container),
-		telegramPaymentService:     service.NewTelegramPaymentService(container),
 		cryptoPayBot:               cryptoPayBot,
 		sessionService:             sessionService,
 		cacheService:               cacheService,
 		smsService:                 smsService,
+		paymentClient:              paymentClient,
 		postponeService:            postponeService,
 		profileRepository:          profileRepository,
 		smsHistoryRepository:       smsHistoryRepository,
@@ -202,6 +208,8 @@ func (b *botController) Serve(ctxOptions *ContextOptions) error {
 		return b.cryptoBotListPayCurrenciesCallbackQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
 	case app.SelectCryptoBotPayCurrencyCallbackQueryCommand:
 		return b.selectedCryptoBotPayCurrenciesCallbackQueryCommandHandler(ctx, ctxOptions, transformedTelegramCallbackData)
+	case app.SelectStripePayCallbackQueryCommand:
+		return b.selectedStripeCallbackQueryCommandHandler(ctx, ctxOptions)
 	case app.SelectTelegramStarsCallbackQueryCommand:
 		return b.selectTelegramStarsQueryCommandHandler(ctx, ctxOptions)
 	case app.CancelEnterAmountCallbackQueryCommand:

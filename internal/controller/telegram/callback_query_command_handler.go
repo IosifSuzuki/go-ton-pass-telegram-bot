@@ -582,7 +582,30 @@ func (b *botController) selectTelegramStarsQueryCommandHandler(ctx context.Conte
 	log := b.container.GetLogger()
 	telegramID := ctxOptions.Profile.TelegramID
 	if err := b.sessionService.SaveString(ctx, service.SelectedPaymentMethodSessionKey, app.TelegramStarsPaymentMethod, telegramID); err != nil {
-		log.Error("fail to save telegram id in session", logger.FError(err))
+		log.Error("fail to save payment method in session", logger.FError(err))
+		return b.editMessageInternalServerError(ctx, ctxOptions)
+	}
+	if err := b.sendMessageEnterAmountCurrency(ctx, ctxOptions); err != nil {
+		log.Error("fail to send message enter amount currency", logger.FError(err))
+		return b.editMessageInternalServerError(ctx, ctxOptions)
+	}
+	enteringAmountCurrencyBotState := app.EnteringAmountCurrencyBotState
+	if err := b.sessionService.SaveBotStateForUser(ctx, enteringAmountCurrencyBotState, telegramID); err != nil {
+		log.Error("fail to save bot state", logger.FError(err), logger.F("user_state", enteringAmountCurrencyBotState))
+		return b.editMessageInternalServerError(ctx, ctxOptions)
+	}
+	return nil
+}
+
+func (b *botController) selectedStripeCallbackQueryCommandHandler(
+	ctx context.Context,
+	ctxOptions *ContextOptions,
+) error {
+	log := b.container.GetLogger()
+	telegramID := ctxOptions.Profile.TelegramID
+
+	if err := b.sessionService.SaveString(ctx, service.SelectedPaymentMethodSessionKey, app.StripePaymentMethod, telegramID); err != nil {
+		log.Error("fail to save payment method in session", logger.FError(err))
 		return b.editMessageInternalServerError(ctx, ctxOptions)
 	}
 	if err := b.sendMessageEnterAmountCurrency(ctx, ctxOptions); err != nil {

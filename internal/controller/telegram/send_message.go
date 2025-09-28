@@ -6,8 +6,11 @@ import (
 	"go-ton-pass-telegram-bot/internal/model/crypto/bot"
 	"go-ton-pass-telegram-bot/internal/model/domain"
 	"go-ton-pass-telegram-bot/internal/model/telegram"
+	"go-ton-pass-telegram-bot/internal/service"
 	"go-ton-pass-telegram-bot/internal/utils"
 	"go-ton-pass-telegram-bot/pkg/logger"
+	"go-ton-pass-telegram-bot/pkg/stripe_payment/model"
+	"strings"
 )
 
 func (b *botController) sendMessageToSelectInitialLanguage(_ context.Context, ctxOptions *ContextOptions) error {
@@ -223,5 +226,92 @@ func (b *botController) sendMessageConfirmTouchUpBalance(
 		text,
 		avatarImageURL,
 		cryptoPayReplyMarkup,
+	)
+}
+
+func (b *botController) sendCryptoBotInvoice(ctx context.Context, ctxOptions *ContextOptions, currency *string, amount *float64) error {
+	log := b.container.GetLogger()
+	telegramID := ctxOptions.Update.GetTelegramID()
+
+	invoicePayload := bot.InvoicePayload{
+		ChatID:     ctxOptions.Update.GetChatID(),
+		TelegramID: telegramID,
+	}
+	encodedInvoicePayload, err := utils.EncodeCryptoBotInvoicePayload(invoicePayload)
+	if err != nil {
+		log.Error("fail to encode a invoice payload", logger.FError(err))
+		return b.sendMessageInternalServerError(ctx, ctxOptions)
+	}
+	invoice, err := b.cryptoPayBot.CreateInvoice(*currency, *amount, *encodedInvoicePayload)
+	if err != nil {
+		log.Error("fail to create a invoice", logger.FError(err))
+		return b.sendMessageInternalServerError(ctx, ctxOptions)
+	}
+	if err := b.sessionService.ClearBotStateForUser(ctx, telegramID); err != nil {
+		log.Error(
+			"fail to clear bot state",
+			logger.FError(err),
+			logger.F("telegram_id", telegramID),
+		)
+		return b.editMessageInternalServerError(ctx, ctxOptions)
+	}
+	if err := b.sessionService.ClearString(ctx, service.SelectedCryptoBotPayCurrencyAbbrSessionKey, telegramID); err != nil {
+		log.Error(
+			"fail to clear selected pay currency string",
+			logger.FError(err),
+			logger.F("telegram_id", telegramID),
+		)
+		return b.editMessageInternalServerError(ctx, ctxOptions)
+	}
+	return b.sendMessageConfirmTouchUpBalance(ctx, ctxOptions, invoice)
+}
+
+func (b *botController) sendStripeInvoice(ctx context.Context, ctxOptions *ContextOptions, currency *string, amount float64) error {
+	log := b.container.GetLogger()
+	preferredLanguage := b.getPreferredLanguage(ctxOptions)
+	localizer := b.container.GetLocalizer(preferredLanguage)
+
+	if currency == nil {
+		err := app.NilError
+		log.Error("currency has nil", logger.FError(err))
+		return b.sendMessageInternalServerError(ctx, ctxOptions)
+	}
+	var stripeCurrency model.Currency
+	switch model.Currency(strings.ToLower(*currency)) {
+	case model.CurrencyUAH:
+		stripeCurrency = model.CurrencyUAH
+	case model.CurrencyUSD:
+		stripeCurrency = model.CurrencyUSD
+	case model.CurrencyEUR:
+		stripeCurrency = model.CurrencyEUR
+	default:
+		err := app.UnknownCurrencyError
+		log.Error("fail to determine the currency", logger.F("currency", *currency), logger.FError(err))
+		return b.sendMessageInternalServerError(ctx, ctxOptions)
+	}
+	title := localizer.LocalizedString("top_up_balance")
+	checkoutSession, err := b.paymentClient.CreatePaymentLink(title, amount, stripeCurrency, map[string]string{})
+	if err != nil {
+		log.Error("fail to create stripe payment link", logger.FError(err))
+		return b.sendMessageInternalServerError(ctx, ctxOptions)
+	}
+	if checkoutSession.PaymentLink == nil {
+		err := app.NilError
+		log.Error("stripe payment link contains nil", logger.FError(err))
+		return b.sendMessageInternalServerError(ctx, ctxOptions)
+	}
+	stripePayReplyMarkup, err := ctxOptions.TelegramInlineKeyboardManager.StripeKeyboardMarkup(
+		*checkoutSession.PaymentLink,
+	)
+	if err != nil {
+		log.Error("fail to get stripe reply markup", logger.FError(err))
+		return b.sendMessageInternalServerError(ctx, ctxOptions)
+	}
+	text := localizer.LocalizedString("invoice_stripe_title_markdown")
+	return b.SendTextWithPhotoMedia(
+		ctxOptions.Update.GetChatID(),
+		text,
+		avatarImageURL,
+		stripePayReplyMarkup,
 	)
 }

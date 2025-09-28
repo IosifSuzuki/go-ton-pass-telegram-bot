@@ -31,6 +31,7 @@ require (
 	github.com/robfig/cron v1.2.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/stretchr/testify v1.9.0 // indirect
+	github.com/stripe/stripe-go/v82 v82.5.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	go.temporal.io/api v1.38.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect

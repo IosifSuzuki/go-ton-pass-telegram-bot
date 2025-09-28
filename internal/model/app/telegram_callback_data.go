@@ -15,6 +15,7 @@ const (
 	SelectLanguageCallbackQueryCmdText                 = "s_lang"
 	CryptoBotListPayCurrenciesCallbackQueryCmdText     = "l_pay_curr"
 	SelectTelegramStarsCallbackQueryCmdText            = "s_telegram_stars"
+	SelectStripeCallbackQueryCmdText                   = "s_stripe"
 	SelectPayCurrencyCallbackQueryCmdText              = "s_pay_curr"
 	PreferredCurrenciesCallbackQueryCmdText            = "pre_curr"
 	SelectPreferredCurrencyCallbackQueryCmdText        = "s_pref_curr"
@@ -59,6 +60,8 @@ func (t *TelegramCallbackData) CallbackQueryCommand() CallbackQueryCommand {
 		return CryptoBotListPayCurrenciesCallbackQueryCommand
 	case SelectTelegramStarsCallbackQueryCmdText:
 		return SelectTelegramStarsCallbackQueryCommand
+	case SelectStripeCallbackQueryCmdText:
+		return SelectStripePayCallbackQueryCommand
 	case SelectPayCurrencyCallbackQueryCmdText:
 		return SelectCryptoBotPayCurrencyCallbackQueryCommand
 	case PreferredCurrenciesCallbackQueryCmdText:

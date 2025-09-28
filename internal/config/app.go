@@ -14,6 +14,9 @@ type Config interface {
 	OpenConnectionAddress() string
 	TelegramBotToken() string
 	CryptoBotToken() string
+	GetStripeSecretKey() string
+	GetStripeSuccessURL() string
+	GetStripeCancelURL() string
 	SMSKey() string
 	Redis() Redis
 	DB() DB
@@ -63,6 +66,9 @@ type config struct {
 	telegramBotToken      string
 	cryptoBotToken        string
 	smsServiceToken       string
+	stripeSecretKey       string
+	stripeSuccessURL      string
+	stripeCancelURL       string
 	allLanguages          []app.Language
 	localizedLanguageTags []string
 	allCurrencies         []app.Currency
@@ -85,6 +91,18 @@ func (c *config) TelegramBotToken() string {
 
 func (c *config) CryptoBotToken() string {
 	return c.cryptoBotToken
+}
+
+func (c *config) GetStripeSecretKey() string {
+	return c.stripeSecretKey
+}
+
+func (c *config) GetStripeSuccessURL() string {
+	return c.stripeSuccessURL
+}
+
+func (c *config) GetStripeCancelURL() string {
+	return c.stripeCancelURL
 }
 
 func (c *config) SMSKey() string {
@@ -182,7 +200,11 @@ func ParseConfig() (Config, error) {
 		telegramBotToken: os.Getenv("TELEGRAM_BOT_TOKEN"),
 		cryptoBotToken:   os.Getenv("CRYPTO_BOT_TOKEN"),
 		smsServiceToken:  os.Getenv("SMS_SERVICE_API_KEY"),
+		stripeSecretKey:  os.Getenv("STRIPE_SECRET_KEY"),
+		stripeSuccessURL: os.Getenv("STRIPE_SUCCESS_LINK"),
+		stripeCancelURL:  os.Getenv("STRIPE_CANCEL_LINK"),
 	}
+	
 	allLanguages, err := fetchAllLanguages()
 	if err != nil {
 		return nil, err
